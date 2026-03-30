@@ -1,0 +1,80 @@
+# ========================
+# Laravel (backend)
+# ========================
+backend/vendor/
+backend/.env
+backend/.env.backup
+backend/.env.testing
+backend/.env.*.local
+backend/.env.production
+backend/storage/*.key
+backend/storage/payload 2/
+backend/public/hot
+backend/public/storage
+backend/bootstrap/cache/*.php
+backend/.phpunit.cache
+backend/Homestead.json
+backend/Homestead.yaml
+backend/auth.json
+backend/.phpunit.result.cache
+
+# ========================
+# React (frontend)
+# ========================
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+frontend/coverage/
+
+# ========================
+# Next.js / Vercel
+# ========================
+.vercel/
+.next/
+out/
+
+# ========================
+# Base de datos
+# ========================
+database/dumps/
+database/*.sql.bak
+
+# ========================
+# Docker
+# ========================
+docker/data/
+
+# ========================
+# Testing & Coverage
+# ========================
+coverage/
+*.lcov
+.phpunit.result.cache
+
+# ========================
+# Logs
+# ========================
+npm-debug.log
+yarn-error.log
+*.log
+
+# ========================
+# Sistema operativo
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# Editores
+# ========================
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ========================
+# Root node_modules
+# ========================
+node_modules/

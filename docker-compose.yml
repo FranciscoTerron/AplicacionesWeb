@@ -1,0 +1,48 @@
+services:
+
+  # PHP-FPM — Laravel
+  app:
+    build:
+      context: .
+      dockerfile: docker/php.Dockerfile
+    volumes:
+      - ./backend:/var/www/backend
+    networks:
+      - ma-piscinas
+    depends_on:
+      - postgres
+
+  # Nginx — expone el backend en localhost:8000
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/var/www/backend
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - ma-piscinas
+    depends_on:
+      - app
+
+  # PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ma_piscinas
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - ma-piscinas
+
+networks:
+  ma-piscinas:
+    driver: bridge
+
+volumes:
+  postgres_data:
