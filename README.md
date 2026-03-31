@@ -112,3 +112,14 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 
 ### 7. Compatibilidad
 - RNF13: La aplicación deberá ser compatible con navegadores web modernos (Chrome, Firefox, Edge).
+
+### 8. Accesibilidad
+- RNF14: El sistema deberá garantizar un contraste cromático mínimo de 4.5:1 en todos los textos y elementos de navegación, asegurando la legibilidad para personas con baja visión o daltonismo.
+
+- RNF15: La aplicación será compatible con lectores de pantalla (como NVDA o VoiceOver) mediante el uso de HTML5 semántico y atributos ARIA, permitiendo que usuarios con ceguera total completen el flujo de compra de forma autónoma.
+
+- RNF16: El diseño debe permitir el zoom o escalado de texto hasta un 200% sin romper la estructura de la interfaz ni perder funcionalidades, facilitando la navegación a usuarios con visión reducida.
+
+- RNF17: Toda la información crítica (como mensajes de error en el carrito o estados de pago) no dependerá únicamente del color, integrando iconos o etiquetas de texto para ser identificada correctamente por personas con acromatopsia o daltonismo.
+
+- NF18: Todas las imágenes del catálogo de productos y repuestos deberán incluir textos alternativos (Alt Text) descriptivos para su correcta interpretación por software de asistencia.
