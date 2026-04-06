@@ -35,6 +35,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 - Frontend: Vercel
 - Backend: Servidor con soporte PHP (ej: VPS, Render, Railway)
 
+
 ### Herramientas de desarrollo
 - Visual Studio Code
 - Git
