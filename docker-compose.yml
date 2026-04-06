@@ -1,4 +1,4 @@
-name: ma-piscinas
+version: '3.8'
 
 services:
   # PHP-FPM — Laravel
