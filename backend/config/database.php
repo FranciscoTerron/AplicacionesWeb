@@ -17,7 +17,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'firestore'),
 
     /*
     |--------------------------------------------------------------------------
@@ -112,6 +112,13 @@ return [
             'prefix_indexes' => true,
             // 'encrypt' => env('DB_ENCRYPT', 'yes'),
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
+        ],
+
+        'firestore' => [
+            'driver' => 'firestore',
+            'project_id' => env('FIRESTORE_PROJECT_ID', ''),
+            'key_file' => env('FIRESTORE_KEY_FILE', ''),
+            'database_id' => env('FIRESTORE_DATABASE_ID', '(default)'),
         ],
 
     ],

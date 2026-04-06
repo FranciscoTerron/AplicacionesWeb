@@ -8,6 +8,7 @@ backend/.env.testing
 backend/.env.*.local
 backend/.env.production
 backend/storage/*.key
+backend/storage/app/private/firebase-service-account.json
 backend/storage/payload 2/
 backend/public/hot
 backend/public/storage

@@ -10,9 +10,6 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend:/var/www/backend
-    depends_on:
-      postgres:
-        condition: service_healthy
     networks:
       - ma-piscinas-network
 
@@ -30,54 +27,6 @@ services:
       - app
     networks:
       - ma-piscinas-network
-
-  # PostgreSQL
-  postgres:
-    image: postgres:16-alpine
-    container_name: ma-piscinas-postgres
-    restart: unless-stopped
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: ma_piscinas_dev
-      POSTGRES_USER: ma_piscinas_user
-      POSTGRES_PASSWORD: ma_piscinas_local_2026
-      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ma_piscinas_user -d ma_piscinas_dev"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - ma-piscinas-network
-
-  # pgAdmin — Gestión visual de DB (opcional)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: ma-piscinas-pgadmin
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@mapiscinas.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-    ports:
-      - "5050:80"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-    networks:
-      - ma-piscinas-network
-
-volumes:
-  postgres_data:
-    driver: local
-  pgadmin_data:
-    driver: local
 
 networks:
   ma-piscinas-network:
