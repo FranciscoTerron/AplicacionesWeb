@@ -1,5 +1,16 @@
 # Proyecto E-Commerce MA Piscinas
 
+## Integrantes
+
+| Nombre | Rol |
+|--------|-----|
+| Francisco Terron | Desarrollador Full Stack |
+| Mauro San Pedro | Desarrollador Full Stack |
+
+## Empresa Ficticia
+
+**MA Piscinas** — E-commerce de venta de piscinas e insumos de mantenimiento.
+
 ## Enunciado del Proyecto
 Se propone el desarrollo de una aplicación web de tipo e-commerce orientada a la comercialización de piscinas e insumos asociados, tales como productos de mantenimiento, accesorios y repuestos.
 El sistema estará compuesto por dos módulos principales: un panel administrativo y una interfaz de usuario para clientes. El panel administrativo permitirá la gestión integral del sistema, incluyendo la administración de categorías, subcategorías, productos, usuarios, pedidos y envíos. Este módulo será desarrollado utilizando PHP con el framework Laravel y vistas renderizadas mediante Blade, aplicando el patrón de arquitectura MVC.
