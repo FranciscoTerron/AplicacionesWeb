@@ -1,0 +1,14 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    # Nivel 5 de 10: detecta tipos incorrectos, variables indefinidas,
+    # y llamadas a métodos que no existen. Buen punto de partida.
+    level: 5
+
+    paths:
+        - app
+
+    # Ignora errores que Laravel genera internamente (son falsos positivos)
+    ignoreErrors:
+        - '#Unsafe usage of new static#'

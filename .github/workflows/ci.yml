@@ -1,6 +1,6 @@
-name: CI — Tests PHP
+name: CI — Calidad de código
 
-# Se ejecuta cuando pusheamos a desarrollo o abrimos/actualizamos un PR hacia main
+# Se dispara en push a desarrollo y en PRs hacia main
 on:
   push:
     branches: [desarrollo]
@@ -8,16 +8,16 @@ on:
     branches: [main]
 
 jobs:
-  tests:
-    name: Correr tests Laravel
+  quality:
+    name: Validaciones
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Descarga el código del repo
+      # 1. Descarga el código
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. Instala PHP 8.3 con las extensiones que necesita Laravel
+      # 2. Instala PHP 8.3 con las extensiones necesarias
       - name: Setup PHP 8.3
         uses: shivammathur/setup-php@v2
         with:
@@ -25,26 +25,37 @@ jobs:
           extensions: mbstring, bcmath, sqlite3
           coverage: none
 
-      # 3. Instala dependencias de Composer (sin devtools de scripts)
+      # 3. Instala dependencias (usa composer update para incluir nuevos paquetes)
       - name: Instalar dependencias
         working-directory: backend
-        run: composer install --no-interaction --prefer-dist --no-scripts
+        run: composer update --no-interaction --prefer-dist --no-scripts
 
-      # 4. Crea el .env de testing a partir del ejemplo
+      # ── CHECK 1: Estilo de código ────────────────────────────────
+      # Pint verifica que el código siga las convenciones de Laravel.
+      # --test hace que falle si encuentra algo mal (sin modificar archivos).
+      - name: Estilo de código (Pint)
+        working-directory: backend
+        run: ./vendor/bin/pint --test
+
+      # ── CHECK 2: Análisis estático de tipos ─────────────────────
+      # PHPStan analiza el código sin ejecutarlo y detecta errores de tipos,
+      # variables indefinidas y llamadas a métodos inexistentes.
+      - name: Tipos y análisis estático (PHPStan)
+        working-directory: backend
+        run: ./vendor/bin/phpstan analyse --memory-limit=512M
+
+      # ── CHECK 3: Tests ───────────────────────────────────────────
       - name: Configurar entorno de testing
         working-directory: backend
         run: |
           cp .env.example .env
-          # Usamos SQLite en memoria para los tests (no necesita Firestore)
           echo "DB_CONNECTION=sqlite" >> .env
           echo "DB_DATABASE=:memory:" >> .env
 
-      # 5. Genera la APP_KEY
       - name: Generar clave de aplicación
         working-directory: backend
         run: php artisan key:generate
 
-      # 6. Corre los tests
-      - name: Ejecutar tests
+      - name: Ejecutar tests (PHPUnit)
         working-directory: backend
         run: php artisan test
