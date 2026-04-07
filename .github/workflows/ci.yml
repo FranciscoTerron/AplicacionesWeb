@@ -1,0 +1,50 @@
+name: CI — Tests PHP
+
+# Se ejecuta cuando pusheamos a desarrollo o abrimos/actualizamos un PR hacia main
+on:
+  push:
+    branches: [desarrollo]
+  pull_request:
+    branches: [main]
+
+jobs:
+  tests:
+    name: Correr tests Laravel
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Descarga el código del repo
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Instala PHP 8.3 con las extensiones que necesita Laravel
+      - name: Setup PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, sqlite3
+          coverage: none
+
+      # 3. Instala dependencias de Composer (sin devtools de scripts)
+      - name: Instalar dependencias
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --no-scripts
+
+      # 4. Crea el .env de testing a partir del ejemplo
+      - name: Configurar entorno de testing
+        working-directory: backend
+        run: |
+          cp .env.example .env
+          # Usamos SQLite en memoria para los tests (no necesita Firestore)
+          echo "DB_CONNECTION=sqlite" >> .env
+          echo "DB_DATABASE=:memory:" >> .env
+
+      # 5. Genera la APP_KEY
+      - name: Generar clave de aplicación
+        working-directory: backend
+        run: php artisan key:generate
+
+      # 6. Corre los tests
+      - name: Ejecutar tests
+        working-directory: backend
+        run: php artisan test
