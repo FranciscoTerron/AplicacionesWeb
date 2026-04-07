@@ -1,12 +1,17 @@
 <?php
 
-require __DIR__ . '/../vendor/autoload.php';
+declare(strict_types=1);
 
-$app = require_once __DIR__ . '/../bootstrap/app.php';
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Request;
 
-$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+require __DIR__.'/../vendor/autoload.php';
 
-$request = Illuminate\Http\Request::capture();
+$app = require_once __DIR__.'/../bootstrap/app.php';
+
+$kernel = $app->make(Kernel::class);
+
+$request = Request::capture();
 
 $response = $kernel->handle($request);
 
