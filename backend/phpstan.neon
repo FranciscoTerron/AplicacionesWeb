@@ -9,6 +9,3 @@ parameters:
     paths:
         - app
 
-    # Ignora errores que Laravel genera internamente (son falsos positivos)
-    ignoreErrors:
-        - '#Unsafe usage of new static#'
