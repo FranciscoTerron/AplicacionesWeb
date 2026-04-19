@@ -79,3 +79,9 @@ Thumbs.db
 # Root node_modules
 # ========================
 node_modules/
+
+# ========================
+# Kilo CLI (configuración local)
+# ========================
+.kilo/
+AGENTS.md
