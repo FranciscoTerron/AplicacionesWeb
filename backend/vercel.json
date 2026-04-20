@@ -1,15 +1,14 @@
 {
-    "buildCommand": "",
-    "outputDirectory": "public",
-    "functions": {
-        "api/index.php": {
-            "runtime": "vercel-php@0.7.2"
+    "builds": [
+        {
+            "src": "backend/api/index.php",
+            "use": "vercel-php@0.7.2"
         }
-    },
+    ],
     "routes": [
         {
             "src": "/(.*)",
-            "dest": "/api/index.php"
+            "dest": "backend/api/index.php"
         }
     ]
 }
