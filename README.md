@@ -11,7 +11,7 @@
 
 **MA Piscinas** — E-commerce de venta de piscinas e insumos de mantenimiento.
 
-## Enunciado del Proyecto
+## Enunciado del Proyecto 
 Se propone el desarrollo de una aplicación web de tipo e-commerce orientada a la comercialización de piscinas e insumos asociados, tales como productos de mantenimiento, accesorios y repuestos.
 El sistema estará compuesto por dos módulos principales: un panel administrativo y una interfaz de usuario para clientes. El panel administrativo permitirá la gestión integral del sistema, incluyendo la administración de categorías, subcategorías, productos, descuentos, usuarios, pedidos, envíos y dashboard con reportes (Panel estadístico con gráficos de ventas, productos más vendidos, análisis de negocio). Este módulo será desarrollado utilizando PHP con el framework Laravel y vistas renderizadas mediante Blade, aplicando el patrón de arquitectura MVC.
 Por otro lado, la interfaz de usuario estará orientada a la experiencia de compra, permitiendo la navegación del catálogo, la selección de productos, la gestión de un carrito de compras y la realización de pedidos. Este módulo será implementado como una aplicación de una sola página (SPA) utilizando React, consumiendo una API REST provista por el backend.
