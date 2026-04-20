@@ -9,13 +9,21 @@
     "installCommand": "cd backend && composer install --no-dev --optimize-autoloader",
     "routes": [
         {
+            "src": "/api/(.*)",
+            "dest": "/backend/api/index.php"
+        },
+        {
+            "src": "/(.*)\\.(.*)",
+            "dest": "/backend/public/$1.$2"
+        },
+        {
             "src": "/(.*)",
             "dest": "/backend/api/index.php"
         }
     ],
     "env": {
         "APP_ENV": "production",
-        "APP_DEBUG": "true",
+        "APP_DEBUG": true,
         "APP_URL": "https://aplicaciones-web-one.vercel.app",
         "APP_CONFIG_CACHE": "/tmp/config.php",
         "APP_EVENTS_CACHE": "/tmp/events.php",
@@ -25,6 +33,8 @@
         "VIEW_COMPILED_PATH": "/tmp",
         "CACHE_DRIVER": "array",
         "LOG_CHANNEL": "stderr",
-        "SESSION_DRIVER": "cookie"
+        "SESSION_DRIVER": "cookie",
+        "DB_CONNECTION": "sqlite",
+        "DB_DATABASE": "/tmp/database.sqlite"
     }
 }
