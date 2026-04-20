@@ -1,0 +1,11 @@
+# Ignorar backend - solo deploy frontend estático
+backend/
+node_modules/
+vendor/
+.env
+.env.*
+!.env.local
+.git/
+.vscode/
+*.md
+!vercelignore
