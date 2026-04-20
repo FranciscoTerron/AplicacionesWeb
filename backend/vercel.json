@@ -7,6 +7,7 @@
         }
     },
     "installCommand": "cd backend && composer install --no-dev --optimize-autoloader",
+    "buildCommand": "cd backend && touch database/database.sqlite && php artisan migrate --force",
     "routes": [
         {
             "src": "/api/(.*)",
