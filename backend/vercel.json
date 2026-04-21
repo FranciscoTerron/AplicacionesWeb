@@ -2,24 +2,24 @@
     "version": 2,
     "framework": null,
     "functions": {
-        "backend/api/index.php": {
+        "api/index.php": {
             "runtime": "vercel-php@0.7.2"
         }
     },
-    "installCommand": "cd backend && composer install --no-dev --optimize-autoloader",
-    "buildCommand": "cd backend && touch database/database.sqlite && php artisan migrate --force",
+    "installCommand": "composer install --no-dev --optimize-autoloader",
+    "buildCommand": "touch database/database.sqlite && php artisan migrate --force",
     "routes": [
         {
             "src": "/api/(.*)",
-            "dest": "/backend/api/index.php"
+            "dest": "/api/index.php"
         },
         {
             "src": "/(.*)\\.(.*)",
-            "dest": "/backend/public/$1.$2"
+            "dest": "/public/$1.$2"
         },
         {
             "src": "/(.*)",
-            "dest": "/backend/api/index.php"
+            "dest": "/public/index.php"
         }
     ],
     "env": {

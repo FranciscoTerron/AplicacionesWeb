@@ -85,3 +85,5 @@ node_modules/
 # ========================
 .kilo/
 AGENTS.md
+.vercel
+.env*.local
