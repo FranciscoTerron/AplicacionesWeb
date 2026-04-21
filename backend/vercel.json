@@ -6,7 +6,7 @@
             "runtime": "vercel-php@0.7.2"
         }
     },
-    "installCommand": "composer install --no-dev --optimize-autoloader",
+    "installCommand": "curl -sS https://getcomposer.org/installer | php && php composer.phar install --no-dev --optimize-autoloader",
     "buildCommand": "touch database/database.sqlite && php artisan migrate --force",
     "routes": [
         {
