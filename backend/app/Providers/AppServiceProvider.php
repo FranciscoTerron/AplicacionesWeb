@@ -2,18 +2,18 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\URL;
 use App\Auth\FirestoreUserProvider;
 use App\Services\FirestoreService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->app->singleton(FirestoreService::class, function ($app) {
-            return new FirestoreService();
+            return new FirestoreService;
         });
     }
 
@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Auth::provider('firestore', function ($app, array $config) {
-            return new FirestoreUserProvider();
+            return new FirestoreUserProvider;
         });
     }
 }

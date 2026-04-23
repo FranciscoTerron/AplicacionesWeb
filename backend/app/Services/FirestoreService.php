@@ -2,28 +2,30 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
-use Google\Auth\Credentials\ServiceAccountCredentials;
 use Exception;
+use Google\Auth\Credentials\ServiceAccountCredentials;
+use Illuminate\Support\Facades\Http;
 
 class FirestoreService
 {
     protected string $projectId;
+
     protected string $baseUrl;
+
     protected string $accessToken;
-    
+
     public function __construct()
     {
         $this->projectId = $this->resolveProjectId();
-        
-        if (!$this->projectId) {
+
+        if (! $this->projectId) {
             throw new Exception('Firebase project ID not configured. Set FIRESTORE_PROJECT_ID in .env or ensure credentials file has project_id');
         }
-        
+
         $this->baseUrl = "https://firestore.googleapis.com/v1/projects/{$this->projectId}/databases/(default)/documents";
         $this->accessToken = $this->fetchAccessToken();
     }
-    
+
     protected function resolveProjectId(): ?string
     {
         // 1. Try environment variable directly
@@ -31,13 +33,13 @@ class FirestoreService
         if ($projectId) {
             return $projectId;
         }
-        
+
         // 2. Try config (when config not cached)
         $projectId = config('firebase.projects.app.project_id');
         if ($projectId) {
             return $projectId;
         }
-        
+
         // 3. Try to read from credentials file
         $path = storage_path('app/private/firebase-service-account.json');
         if (file_exists($path)) {
@@ -46,33 +48,34 @@ class FirestoreService
                 return $json['project_id'];
             }
         }
-        
+
         return null;
     }
-    
+
     protected function fetchAccessToken(): string
     {
         $credentialsJson = env('FIRESTORE_CREDENTIALS_JSON');
         $credentialsArray = null;
-        
+
         if ($credentialsJson) {
             $credentialsArray = json_decode($credentialsJson, true);
         } else {
             $path = storage_path('app/private/firebase-service-account.json');
-            if (!file_exists($path)) {
+            if (! file_exists($path)) {
                 throw new Exception("Firebase credentials file not found at: {$path}");
             }
         }
-        
+
         $cred = new ServiceAccountCredentials(
             'https://www.googleapis.com/auth/datastore',
             $credentialsArray ?? $path
         );
-        
+
         $token = $cred->fetchAuthToken();
+
         return $token['access_token'] ?? '';
     }
-    
+
     public function getDocument(string $collection, string $docId): ?array
     {
         $url = "{$this->baseUrl}/{$collection}/{$docId}";
@@ -80,16 +83,17 @@ class FirestoreService
         if ($response->status() === 404) {
             return null;
         }
+
         return $this->parseDocument($response->json());
     }
-    
+
     public function query(string $collection, array $fields, int $limit = 1): array
     {
         $url = "{$this->baseUrl}/:runQuery";
-        
+
         $fieldName = array_keys($fields)[0];
         $fieldValue = reset($fields);
-        
+
         $structured = [
             'structuredQuery' => [
                 'from' => [['collectionId' => $collection]],
@@ -97,19 +101,19 @@ class FirestoreService
                     'fieldFilter' => [
                         'field' => ['fieldPath' => $fieldName],
                         'op' => 'EQUAL',
-                        'value' => $this->encodeValue($fieldValue)
-                    ]
+                        'value' => $this->encodeValue($fieldValue),
+                    ],
                 ],
-                'limit' => $limit
-            ]
+                'limit' => $limit,
+            ],
         ];
-        
+
         $response = Http::withToken($this->accessToken)->post($url, $structured);
-        
+
         if ($response->failed()) {
-            throw new Exception('Firestore query failed: ' . $response->body());
+            throw new Exception('Firestore query failed: '.$response->body());
         }
-        
+
         $results = $response->json();
         $documents = [];
         foreach ($results as $result) {
@@ -117,55 +121,57 @@ class FirestoreService
                 $documents[] = $this->parseDocument($result['document']);
             }
         }
+
         return $documents;
     }
-    
+
     public function createDocument(string $collection, array $data): array
     {
         $url = "{$this->baseUrl}/{$collection}";
         $body = ['fields' => $this->encodeFields($data)];
         $response = Http::withToken($this->accessToken)->post($url, $body);
-        
+
         if ($response->failed()) {
-            throw new Exception('Firestore create failed: ' . $response->body());
+            throw new Exception('Firestore create failed: '.$response->body());
         }
-        
+
         $result = $response->json();
         $docName = $result['name'] ?? '';
         $parts = explode('/', $docName);
         $id = end($parts);
-        
+
         return $this->getDocument($collection, $id);
     }
-    
+
     public function updateDocument(string $collection, string $docId, array $data): array
     {
-        $url = "{$this->baseUrl}/{$collection}/{$docId}?updateMask.fieldPaths=" . implode(',', array_keys($data));
+        $url = "{$this->baseUrl}/{$collection}/{$docId}?updateMask.fieldPaths=".implode(',', array_keys($data));
         $body = ['fields' => $this->encodeFields($data)];
         $response = Http::withToken($this->accessToken)->patch($url, $body);
-        
+
         if ($response->failed()) {
-            throw new Exception('Firestore update failed: ' . $response->body());
+            throw new Exception('Firestore update failed: '.$response->body());
         }
-        
+
         return $this->getDocument($collection, $docId);
     }
-    
+
     public function deleteDocument(string $collection, string $docId): void
     {
         $url = "{$this->baseUrl}/{$collection}/{$docId}";
         Http::withToken($this->accessToken)->delete($url);
     }
-    
+
     protected function encodeFields(array $data): array
     {
         $fields = [];
         foreach ($data as $key => $value) {
             $fields[$key] = $this->encodeValue($value);
         }
+
         return $fields;
     }
-    
+
     protected function encodeValue($value): array
     {
         if (is_int($value)) {
@@ -185,11 +191,13 @@ class FirestoreService
             foreach ($value as $v) {
                 $arrayValues[] = $this->encodeValue($v);
             }
+
             return ['arrayValue' => ['values' => $arrayValues]];
         }
-        return ['stringValue' => (string)$value];
+
+        return ['stringValue' => (string) $value];
     }
-    
+
     protected function parseDocument(array $doc): array
     {
         $data = $doc['fields'] ?? [];
@@ -199,24 +207,39 @@ class FirestoreService
         }
         $pathParts = explode('/', $doc['name'] ?? '');
         $result['id'] = end($pathParts);
+
         return $result;
     }
-    
+
     protected function decodeValue(array $field)
     {
-        if (isset($field['stringValue'])) return $field['stringValue'];
-        if (isset($field['integerValue'])) return (int)$field['integerValue'];
-        if (isset($field['doubleValue'])) return (float)$field['doubleValue'];
-        if (isset($field['booleanValue'])) return (bool)$field['booleanValue'];
-        if (isset($field['nullValue'])) return null;
+        if (isset($field['stringValue'])) {
+            return $field['stringValue'];
+        }
+        if (isset($field['integerValue'])) {
+            return (int) $field['integerValue'];
+        }
+        if (isset($field['doubleValue'])) {
+            return (float) $field['doubleValue'];
+        }
+        if (isset($field['booleanValue'])) {
+            return (bool) $field['booleanValue'];
+        }
+        if (isset($field['nullValue'])) {
+            return null;
+        }
         if (isset($field['arrayValue'])) {
             $values = $field['arrayValue']['values'] ?? [];
+
             return array_map([$this, 'decodeValue'], $values);
         }
         if (isset($field['mapValue'])) {
             return $this->decodeValue($field['mapValue']);
         }
-        if (isset($field['timestampValue'])) return $field['timestampValue'];
+        if (isset($field['timestampValue'])) {
+            return $field['timestampValue'];
+        }
+
         return null;
     }
 }
