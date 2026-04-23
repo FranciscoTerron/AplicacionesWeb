@@ -3,22 +3,29 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
+use App\Auth\FirestoreUserProvider;
+use App\Services\FirestoreService;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        //
+        $this->app->singleton(FirestoreService::class, function ($app) {
+            return new FirestoreService();
+        });
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        // Force HTTPS en producción o Vercel
+        if ($this->app->environment('production') || isset($_SERVER['VERCEL'])) {
+            URL::forceScheme('https');
+        }
+
+        Auth::provider('firestore', function ($app, array $config) {
+            return new FirestoreUserProvider();
+        });
     }
 }
