@@ -18,6 +18,13 @@
             --aqua:      #22d3ee;
             --light:     #bae6fd;
             --white:     #f0f9ff;
+            /* Colores para login */
+            --primary: #0077B6;
+            --primary-light: #00B4D8;
+            --accent: #00ADB5;
+            --dark: #023E8A;
+            --text: #212529;
+            --danger: #DC3545;
         }
 
         html { scroll-behavior: smooth; }
@@ -55,6 +62,11 @@
 
     <footer style="text-align:center;padding:3.5rem 2rem;border-top:1px solid rgba(6,182,212,.1);color:rgba(186,230,253,.3);font-size:.78rem;letter-spacing:.15em;">
         <p>© {{ date('Y') }} <strong style="color:var(--cyan);font-weight:400">MA Piscinas</strong> &mdash; Aplicaciones Web &middot; Universidad</p>
+        <div style="margin-top:1.5rem;">
+            <a href="{{ route('login') }}" style="display:inline-block;padding:.6rem 1.8rem;border:1px solid var(--cyan);color:var(--cyan);text-decoration:none;border-radius:2rem;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;transition:all .3s;">
+                Panel Admin
+            </a>
+        </div>
     </footer>
 
     {{-- Efecto agua global --}}
