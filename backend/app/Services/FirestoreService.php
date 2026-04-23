@@ -28,8 +28,8 @@ class FirestoreService
 
     protected function resolveProjectId(): ?string
     {
-        // 1. Try environment variable directly
-        $projectId = $_ENV['FIRESTORE_PROJECT_ID'] ?? null;
+        // 1. Try config (mapped from env)
+        $projectId = config('app.firestore_project_id');
         if ($projectId) {
             return $projectId;
         }
@@ -57,8 +57,8 @@ class FirestoreService
         $credentialsArray = null;
         $path = null;
 
-        // 1. Try environment variable FIRESTORE_CREDENTIALS_JSON (JSON string) - Vercel
-        $firestoreCredentialsJson = env('FIRESTORE_CREDENTIALS_JSON');
+        // 1. Try config FIRESTORE_CREDENTIALS_JSON (JSON string) - Vercel
+        $firestoreCredentialsJson = config('app.firestore_credentials_json');
         if ($firestoreCredentialsJson) {
             $maybeArray = json_decode($firestoreCredentialsJson, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
@@ -66,9 +66,9 @@ class FirestoreService
             }
         }
 
-        // 2. Try environment variable FIREBASE_CREDENTIALS_JSON (JSON string) - backward compatibility
-        if (!$path && !$credentialsArray) {
-            $firebaseCredentialsJson = env('FIREBASE_CREDENTIALS_JSON');
+        // 2. Try config FIREBASE_CREDENTIALS_JSON (JSON string) - backward compatibility
+        if (! $credentialsArray) {
+            $firebaseCredentialsJson = config('app.firebase_credentials_json');
             if ($firebaseCredentialsJson) {
                 $maybeArray = json_decode($firebaseCredentialsJson, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($maybeArray)) {
@@ -77,16 +77,16 @@ class FirestoreService
             }
         }
 
-        // 3. Try environment variable FIRESTORE_KEY_FILE (path to credentials file)
-        if (!$path && !$credentialsArray) {
-            $keyFile = env('FIRESTORE_KEY_FILE');
+        // 3. Try config FIRESTORE_KEY_FILE (path to credentials file)
+        if (! $credentialsArray) {
+            $keyFile = config('app.firestore_key_file');
             if ($keyFile && file_exists($keyFile)) {
                 $path = $keyFile;
             }
         }
 
         // 4. Try to get credentials from Firebase config (might be JSON string or path)
-        if (!$path && !$credentialsArray) {
+        if (! $path && ! $credentialsArray) {
             $credentials = config('firebase.projects.app.credentials');
             if ($credentials) {
                 if (is_string($credentials)) {
@@ -105,7 +105,7 @@ class FirestoreService
         }
 
         // 5. Fallback to the old config key (JSON string)
-        if (!$path && !$credentialsArray) {
+        if (! $path && ! $credentialsArray) {
             $credentialsJson = config('app.firestore_credentials_json');
             if ($credentialsJson) {
                 $credentialsArray = json_decode($credentialsJson, true);
@@ -113,7 +113,7 @@ class FirestoreService
         }
 
         // 6. Fallback to default path
-        if (!$path && !$credentialsArray) {
+        if (! $path && ! $credentialsArray) {
             $path = storage_path('app/private/firebase-service-account.json');
             if (! file_exists($path)) {
                 throw new Exception("Firebase credentials file not found at: {$path}");
