@@ -64,9 +64,29 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Laravel 13 instalado | ✅ | Estructura base funcional |
 | Landing page con datos | ✅ | Empresa "MA Piscinas" + integrantes |
 | PR creado hacia `main` | ✅ | PR en espera de aprobación de docentes |
-| Deploy en Vercel | ⏳ | Pendiente de aprobación del PR |
+| Deploy en Vercel | ✅ | Aprobado el PR |
 
-**Conclusión**: Se cumplió con lo mínimo requerido para el 20/04. Se espera aprobación del PR y configuración de Vercel una vez aprobado.
+**Conclusión**: Se cumplió con lo mínimo requerido para el 20/04.
+
+---
+
+### Segunda Entrega (PR) — 11 de Mayo 2026
+**Módulo**: Backend Laravel (CRUDs parciales + Panel Admin + Firestore)
+
+| Item | Estado | Observaciones |
+|------|--------|---------------|
+| CRUD Categorías | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
+| CRUD Subcategorías | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
+| CRUD Productos | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
+| CRUD Descuentos | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
+| CRUD Usuarios | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
+| Configuración Firestore | ✅ | FirestoreService implementado con soporte para credenciales JSON y archivo |
+| Login Administrativos | ⚠️ | AuthController con Firebase implementado, pendiente validación completa |
+| Panel Administrativo | ⚠️ | Estructura base con sidebar, ruteo y vistas Blade, pendiente funcionalidades completas |
+| Dashboard con estadísticas | ⏳ | Pendiente implementación |
+| Ruteo configurado | ✅ | Web routes definidas para admin y auth |
+
+**Conclusión**: Avance en vistas de CRUDs y configuración de Firestore. Faltan métodos de escritura (guardar, actualizar, eliminar) y lógica completa de login.
 
 ---
 
@@ -74,7 +94,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 
 | Fecha Límite | Hito | Estado |
 |--------------|------|--------|
-| 20 de Abril | Deploy en Vercel (frontpage mínimo) | ⚠️ Pendiente PR |
+| 20 de Abril | Deploy en Vercel (frontpage mínimo) | ✅ Completo PR |
 | 11 de Mayo | Avance Laravel (CRUDs parciales) | ⏳ Pendiente |
 | 25 de Mayo | Avance Laravel (funcionalidades adicionales) | ⏳ Pendiente |
 | 7 de Junio | PR Final — Laravel + API Completa | ⏳ Pendiente |
