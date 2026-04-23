@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Función auxiliar: verifica si el usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Colección: Usuarios
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update, delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Colección: Categorías
+    match /categories/{categoryId} {
+      allow read: if true; // Lectura pública para el e-commerce
+      allow write: if isAuthenticated(); // Solo admins (usuarios autenticados)
+    }
+
+    // Colección: Subcategorías
+    match /subcategories/{subcategoryId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Colección: Productos
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Colección: Descuentos
+    match /discounts/{discountId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Colección: Pedidos
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId);
+      allow create: if isAuthenticated() && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Colección: Envíos
+    match /shipments/{shipmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+  }
+}
