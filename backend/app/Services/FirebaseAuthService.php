@@ -26,14 +26,11 @@ class FirebaseAuthService
     {
         try {
             $firestore = app(FirestoreService::class);
-            $usersRef = $firestore->collection('users');
+            $documents = $firestore->query('users', ['email' => $email], 1);
 
-            $query = $usersRef->where('email', '==', $email)->limit(1)->documents();
-
-            foreach ($query as $document) {
-                $userData = $document->data();
+            foreach ($documents as $userData) {
                 if (isset($userData['password']) && password_verify($password, $userData['password'])) {
-                    return $userData + ['uid' => $document->id()];
+                    return $userData + ['uid' => $userData['id']];
                 }
             }
 

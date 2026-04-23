@@ -54,8 +54,9 @@ class FirestoreService
 
     protected function fetchAccessToken(): string
     {
-        $credentialsJson = env('FIRESTORE_CREDENTIALS_JSON');
+        $credentialsJson = config('app.firestore_credentials_json');
         $credentialsArray = null;
+        $path = null;
 
         if ($credentialsJson) {
             $credentialsArray = json_decode($credentialsJson, true);

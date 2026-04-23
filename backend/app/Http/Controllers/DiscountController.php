@@ -3,29 +3,30 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View;
 
 class DiscountController extends Controller
 {
     public function index()
     {
-        return view('admin.discounts.index');
+        return View::make('admin.discounts.index');
     }
 
     public function create()
     {
-        return view('admin.discounts.create');
+        return View::make('admin.discounts.create');
     }
 
     public function store(Request $request) {}
 
     public function show(string $id)
     {
-        return view('admin.discounts.show', compact('id'));
+        return View::make('admin.discounts.show', compact('id'));
     }
 
     public function edit(string $id)
     {
-        return view('admin.discounts.edit', compact('id'));
+        return View::make('admin.discounts.edit', compact('id'));
     }
 
     public function update(Request $request, string $id) {}
