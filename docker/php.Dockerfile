@@ -7,10 +7,13 @@ RUN apk add --no-cache \
     zip \
     unzip \
     linux-headers \
+    libzip-dev \
+    zlib-dev \
+    php83-pecl-grpc \
     $PHPIZE_DEPS
 
 # Extensiones PHP
-RUN docker-php-ext-install pdo pcntl bcmath
+RUN docker-php-ext-install pdo pcntl bcmath zip
 
 # Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
