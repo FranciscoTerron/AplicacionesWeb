@@ -54,7 +54,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 
 ## Estado del Proyecto y Avances
 
-### Última Entrega (PR) — 20 de Abril 2025
+### Primer Entrega (PR) — 20 de Abril 2025
 **Módulo**: Backend Laravel (Deploy inicial + Frontpage)
 
 | Item | Estado | Observaciones |
@@ -63,8 +63,8 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Docker configurado | ✅ | Contenedores backend y nginx |
 | Laravel 13 instalado | ✅ | Estructura base funcional |
 | Landing page con datos | ✅ | Empresa "MA Piscinas" + integrantes |
-| PR creado hacia `main` | ✅ | PR en espera de aprobación de docentes |
-| Deploy en Vercel | ✅ | Aprobado el PR |
+| PR creado hacia `main` | ✅ | PR Aprobado |
+| Deploy en Vercel | ✅ | Correcto |
 
 **Conclusión**: Se cumplió con lo mínimo requerido para el 20/04.
 
