@@ -58,16 +58,20 @@ $currentRoute = Route::currentRouteName();
                 <div class="nav-section-title">{{ $section['title'] }}</div>
                 @foreach($section['items'] as $item)
                     @php
-                    $isActive = $currentRoute === $item['route'] || (str_starts_with($currentRoute, $item['route']) && $item['route'] !== 'admin.dashboard');
+                        $isActive = $currentRoute === $item['route'] || (str_starts_with($currentRoute, $item['route']) && $item['route'] !== 'admin.dashboard');
                     @endphp
-                    <a href="{{ route($item['route']) }}" class="nav-link {{ $isActive ? 'active' : '' }}">
-                        <span class="nav-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                                {!! $iconPaths[$item['icon']] ?? '' !!}
-                            </svg>
-                        </span>
-                        {{ $item['label'] }}
-                    </a>
+
+                    {{-- Condición para ocultar Usuarios si no es admin --}}
+                    @if(!($item['route'] === 'admin.users.index' && (Auth::user()->role ?? '') !== 'admin'))
+                        <a href="{{ route($item['route']) }}" class="nav-link {{ $isActive ? 'active' : '' }}">
+                            <span class="nav-icon">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    {!! $iconPaths[$item['icon']] ?? '' !!}
+                                </svg>
+                            </span>
+                            {{ $item['label'] }}
+                        </a>
+                    @endif
                 @endforeach
             </div>
         @endforeach

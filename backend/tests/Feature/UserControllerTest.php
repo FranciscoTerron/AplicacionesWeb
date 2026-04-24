@@ -23,8 +23,19 @@ class UserControllerTest extends TestCase
 
     public function test_can_display_users_index()
     {
+        // Mock Auth for admin user
+        $authUser = \Mockery::mock();
+        $authUser->role = 'admin';
+        $authUser->shouldReceive('getAuthIdentifier')->andReturn('1');
+        Auth::shouldReceive('user')->andReturn($authUser);
+        Auth::shouldReceive('check')->andReturn(true);
+
         $this->firestoreMock->method('listDocuments')->willReturn([
-            ['id' => '1', 'name' => 'Test User', 'email' => 'test@example.com', 'role' => 'admin'],
+            'documents' => [
+                ['id' => '1', 'name' => 'Test User', 'email' => 'test@example.com', 'role' => 'admin'],
+            ],
+            'hasMore' => false,
+            'lastDocumentId' => null,
         ]);
 
         $response = $this->get(route('admin.users.index'));
@@ -35,6 +46,13 @@ class UserControllerTest extends TestCase
 
     public function test_can_display_create_user_form()
     {
+        // Mock Auth for admin user
+        $authUser = \Mockery::mock();
+        $authUser->role = 'admin';
+        $authUser->shouldReceive('getAuthIdentifier')->andReturn('1');
+        Auth::shouldReceive('user')->andReturn($authUser);
+        Auth::shouldReceive('check')->andReturn(true);
+
         $response = $this->get(route('admin.users.create'));
 
         $response->assertRedirect(route('admin.users.index'));
@@ -51,6 +69,15 @@ class UserControllerTest extends TestCase
         ];
 
         $this->firestoreMock->method('createDocument');
+
+        // Mock Auth for admin user
+        $authUser = \Mockery::mock();
+        $authUser->role = 'admin';
+        $authUser->shouldReceive('getAuthIdentifier')->andReturn('1');
+        Auth::shouldReceive('user')->andReturn($authUser);
+        Auth::shouldReceive('check')->andReturn(true);
+
+        $this->firestoreMock->method('query')->willReturn([]); // For email duplicate check
 
         $response = $this->post(route('admin.users.store'), $userData);
 
@@ -78,6 +105,13 @@ class UserControllerTest extends TestCase
 
         $this->firestoreMock->method('getDocument')->willReturn($user);
 
+        // Mock Auth for admin user
+        $authUser = \Mockery::mock();
+        $authUser->role = 'admin';
+        $authUser->shouldReceive('getAuthIdentifier')->andReturn('1');
+        Auth::shouldReceive('user')->andReturn($authUser);
+        Auth::shouldReceive('check')->andReturn(true);
+
         $response = $this->get(route('admin.users.show', '1'));
 
         $response->assertRedirect(route('admin.users.index'));
@@ -88,6 +122,13 @@ class UserControllerTest extends TestCase
         $user = ['id' => '1', 'name' => 'Test User', 'email' => 'test@example.com', 'role' => 'admin'];
 
         $this->firestoreMock->method('getDocument')->willReturn($user);
+
+        // Mock Auth for admin user
+        $authUser = \Mockery::mock();
+        $authUser->role = 'admin';
+        $authUser->shouldReceive('getAuthIdentifier')->andReturn('1');
+        Auth::shouldReceive('user')->andReturn($authUser);
+        Auth::shouldReceive('check')->andReturn(true);
 
         $response = $this->get(route('admin.users.edit', '1'));
 

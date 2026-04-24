@@ -24,6 +24,37 @@
     @endif    
 </div>
 
+<!-- Search and Filters -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" action="{{ route('admin.users.index') }}" class="row g-3">
+            <div class="col-md-6">
+                <input type="text" name="search" class="form-control" placeholder="Buscar por nombre o email..." value="{{ $search ?? '' }}">
+            </div>
+            <div class="col-md-2">
+                <select name="role" class="form-select">
+                    <option value="">Todos los roles</option>
+                    <option value="admin" {{ ($roleFilter ?? '') == 'admin' ? 'selected' : '' }}>Administrador</option>
+                    <option value="editor" {{ ($roleFilter ?? '') == 'editor' ? 'selected' : '' }}>Editor</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">Todos los estados</option>
+                    <option value="active" {{ ($statusFilter ?? '') == 'active' ? 'selected' : '' }}>Activo</option>
+                    <option value="inactive" {{ ($statusFilter ?? '') == 'inactive' ? 'selected' : '' }}>Inactivo</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                @if($search || $roleFilter || $statusFilter)
+                    <a href="{{ route('admin.users.index') }}" class="btn btn-outline-secondary w-100 mt-1">Limpiar</a>
+                @endif
+            </div>
+        </form>
+    </div>
+</div>
+
 @include('admin.users.create_modal')
 
 <div class="card">
@@ -106,6 +137,27 @@
         </tbody>
     </table>
 </div>
+
+<!-- Pagination -->
+@if(isset($hasMore) && ($hasMore || $page > 1))
+<div class="d-flex justify-content-between align-items-center mt-3">
+    <div>
+        @if($page > 1)
+            <a href="{{ route('admin.users.index', array_merge(['page' => $page - 1, 'after' => request('after_prev')], array_filter(['search' => $search ?? '', 'role' => $roleFilter ?? '', 'status' => $statusFilter ?? '']))) }}" 
+               class="btn btn-outline-primary btn-sm">← Anterior</a>
+        @endif
+    </div>
+    <div>
+        Página {{ $page ?? 1 }}
+    </div>
+    <div>
+        @if($hasMore ?? false)
+            <a href="{{ route('admin.users.index', array_merge(['page' => ($page ?? 1) + 1, 'after' => $lastDocumentId ?? ''], array_filter(['search' => $search ?? '', 'role' => $roleFilter ?? '', 'status' => $statusFilter ?? '']))) }}" 
+               class="btn btn-outline-primary btn-sm">Siguiente →</a>
+        @endif
+    </div>
+</div>
+@endif
 
 @foreach($users as $user)
     @include('admin.users.edit_modal', ['user' => $user])

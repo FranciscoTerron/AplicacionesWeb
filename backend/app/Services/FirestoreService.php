@@ -220,27 +220,60 @@ class FirestoreService
         Http::withToken($this->accessToken)->delete($url);
     }
 
-    public function listDocuments(string $collection, int $limit = 100): array
+    public function listDocuments(string $collection, int $limit = 20, ?string $startAfter = null, string $orderBy = 'name'): array
     {
-        $url = "{$this->baseUrl}/{$collection}";
-        $queryParams = [];
-        if ($limit > 0) {
-            $queryParams['pageSize'] = $limit;
+        // Use structured query for cursor-based pagination
+        $url = "{$this->baseUrl}/:runQuery";
+
+        $structuredQuery = [
+            'structuredQuery' => [
+                'from' => [['collectionId' => $collection]],
+                'limit' => $limit + 1, // Fetch one extra to check if there are more pages
+                'orderBy' => [
+                    ['field' => ['fieldPath' => $orderBy], 'direction' => 'ASCENDING'],
+                ],
+            ],
+        ];
+
+        // Add startAfter cursor if provided
+        if ($startAfter) {
+            $structuredQuery['structuredQuery']['startAt'] = [
+                'values' => [$this->encodeValue($startAfter)],
+                'before' => false,
+            ];
         }
-        if (! empty($queryParams)) {
-            $url .= '?'.http_build_query($queryParams);
-        }
-        $response = Http::withToken($this->accessToken)->get($url);
+
+        $response = Http::withToken($this->accessToken)->post($url, $structuredQuery);
+
         if ($response->failed()) {
             throw new Exception('Firestore list documents failed: '.$response->body());
         }
-        $responseData = $response->json();
+
+        $results = $response->json();
         $documents = [];
-        foreach ($responseData['documents'] ?? [] as $doc) {
-            $documents[] = $this->parseDocument($doc);
+        foreach ($results as $result) {
+            if (isset($result['document'])) {
+                $documents[] = $this->parseDocument($result['document']);
+            }
         }
 
-        return $documents;
+        // Check if there are more results
+        $hasMore = count($documents) > $limit;
+        if ($hasMore) {
+            array_pop($documents); // Remove the extra document
+        }
+
+        // Get the last document's ID for next page cursor
+        $lastDocumentId = null;
+        if (! empty($documents) && $hasMore) {
+            $lastDocumentId = end($documents)['id'] ?? null;
+        }
+
+        return [
+            'documents' => $documents,
+            'hasMore' => $hasMore,
+            'lastDocumentId' => $lastDocumentId,
+        ];
     }
 
     protected function encodeFields(array $data): array

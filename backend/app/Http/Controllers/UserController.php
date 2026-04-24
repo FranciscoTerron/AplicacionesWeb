@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\User;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
@@ -19,18 +20,71 @@ class UserController extends Controller
 
     public function index()
     {
-        $users = $this->firestore->listDocuments('users');
+        // Manual authorization: only admins can view user list
+        $authUser = Auth::user();
+        if (! $authUser || $authUser->role !== 'admin') {
+            return View::make('admin.users.unauthorized');
+        }
 
-        return View::make('admin.users.index', compact('users'));
+        $page = request()->get('page', 1);
+        $startAfter = request()->get('after');
+        $search = request()->get('search');
+        $roleFilter = request()->get('role');
+        $statusFilter = request()->get('status');
+
+        $result = $this->firestore->listDocuments('users', 20, $startAfter);
+
+        // Apply filters in PHP (since Firestore has limited query capabilities)
+        $users = collect($result['documents']);
+
+        if ($search) {
+            $users = $users->filter(function ($user) use ($search) {
+                return stripos($user['name'] ?? '', $search) !== false ||
+                       stripos($user['email'] ?? '', $search) !== false;
+            });
+        }
+
+        if ($roleFilter) {
+            $users = $users->where('role', $roleFilter);
+        }
+
+        if ($statusFilter !== null) {
+            $statusBool = $statusFilter === 'active';
+            $users = $users->filter(function ($user) use ($statusBool) {
+                return ($user['active'] ?? true) == $statusBool;
+            });
+        }
+
+        return View::make('admin.users.index', [
+            'users' => $users->values()->all(),
+            'hasMore' => $result['hasMore'],
+            'lastDocumentId' => $result['lastDocumentId'],
+            'page' => $page,
+            'search' => $search,
+            'roleFilter' => $roleFilter,
+            'statusFilter' => $statusFilter,
+        ]);
     }
 
     public function create()
     {
+        // Only admins can create users
+        $authUser = Auth::user();
+        if (! $authUser || $authUser->role !== 'admin') {
+            return View::make('admin.users.unauthorized');
+        }
+
         return redirect()->route('admin.users.index');
     }
 
     public function store(StoreUserRequest $request)
     {
+        // Only admins can create users
+        $authUser = Auth::user();
+        if (! $authUser || $authUser->role !== 'admin') {
+            return back()->withErrors(['email' => 'No tienes permisos para realizar esta acción.'])->withInput();
+        }
+
         $validated = $request->validated();
 
         // Verificar si el email ya existe
@@ -55,33 +109,38 @@ class UserController extends Controller
 
     public function show(string $id)
     {
-        // Only allow if admin or viewing own profile
-        if (! (Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->getAuthIdentifier() == $id))) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'No tienes permisos para realizar esta acción.');
+        $user = $this->firestore->getDocument('users', $id);
+        $authUser = Auth::user();
+
+        // Allow if admin or viewing own profile
+        if (! $authUser || ($authUser->role !== 'admin' && $authUser->getAuthIdentifier() !== ($user['id'] ?? ''))) {
+            return View::make('admin.users.unauthorized');
         }
 
-        // Redirect to index since we're using modals for showing user details
         return redirect()->route('admin.users.index');
     }
 
     public function edit(string $id)
     {
-        // Only allow if admin or editing own profile
-        if (! (Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->getAuthIdentifier() == $id))) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'No tienes permisos para realizar esta acción.');
+        $user = $this->firestore->getDocument('users', $id);
+        $authUser = Auth::user();
+
+        // Allow if admin or editing own profile
+        if (! $authUser || ($authUser->role !== 'admin' && $authUser->getAuthIdentifier() !== ($user['id'] ?? ''))) {
+            return View::make('admin.users.unauthorized');
         }
 
-        // Redirect to index since we're using modals for editing
         return redirect()->route('admin.users.index');
     }
 
     public function update(UpdateUserRequest $request, string $id)
     {
-        // Only allow if admin or updating own profile
-        if (! (Auth::check() && (Auth::user()->role === 'admin' || Auth::user()->getAuthIdentifier() == $id))) {
-            return back()->withErrors(['email' => 'No tienes permisos para realizar esta acción.'])->withInput();
+        $user = $this->firestore->getDocument('users', $id);
+        $authUser = Auth::user();
+
+        // Allow if admin or updating own profile
+        if (! $authUser || ($authUser->role !== 'admin' && $authUser->getAuthIdentifier() !== ($user['id'] ?? ''))) {
+            return View::make('admin.users.unauthorized');
         }
 
         $validated = $request->validated();
@@ -111,39 +170,35 @@ class UserController extends Controller
 
     public function destroy(string $id)
     {
-        // Prevent users from deleting themselves
-        if (Auth::check() && Auth::user() && Auth::user()->getAuthIdentifier() == $id) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'No puedes bloquearte a ti mismo.');
-        }
-
-        // Only admins can deactivate other users
-        if (! (Auth::check() && Auth::user() && Auth::user()->role === 'admin') &&
-            ! (Auth::check() && Auth::user() && Auth::user()->getAuthIdentifier() != $id)) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'No tienes permisos para realizar esta acción.');
-        }
-
+        $authUser = Auth::user();
         $user = $this->firestore->getDocument('users', $id);
-        if ($user) {
-            $this->firestore->updateDocument('users', $id, ['active' => false]);
+
+        // Admin can delete anyone except themselves
+        if ($authUser && $authUser->role === 'admin') {
+            if ($authUser->getAuthIdentifier() === $id) {
+                return redirect()->route('admin.users.index')
+                    ->with('error', 'No puedes bloquearte a ti mismo.');
+            }
+        } elseif (! $authUser || $authUser->getAuthIdentifier() !== $id) {
+            return View::make('admin.users.unauthorized');
         }
+
+        $this->firestore->updateDocument('users', $id, ['active' => false]);
 
         return redirect()->route('admin.users.index')->with('success', 'Usuario bloqueado correctamente.');
     }
 
     public function activate(string $id)
     {
+        $authUser = Auth::user();
+        $user = $this->firestore->getDocument('users', $id);
+
         // Only admins can activate users
-        if (! (Auth::check() && Auth::user()->role === 'admin')) {
-            return redirect()->route('admin.users.index')
-                ->with('error', 'No tienes permisos para realizar esta acción.');
+        if (! $authUser || $authUser->role !== 'admin') {
+            return View::make('admin.users.unauthorized');
         }
 
-        $user = $this->firestore->getDocument('users', $id);
-        if ($user) {
-            $this->firestore->updateDocument('users', $id, ['active' => true]);
-        }
+        $this->firestore->updateDocument('users', $id, ['active' => true]);
 
         return redirect()->route('admin.users.index')->with('success', 'Usuario desbloqueado correctamente.');
     }
