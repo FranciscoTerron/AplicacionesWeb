@@ -9,13 +9,12 @@ RUN apk add --no-cache \
     linux-headers \
     libzip-dev \
     zlib-dev \
-    php83-pecl-grpc \
     $PHPIZE_DEPS
 
-# Extensiones PHP
+# Extensiones PHP nativas
 RUN docker-php-ext-install pdo pcntl bcmath zip
 
-# Composer
+# Composer (instalar dependencias sin verificar extensión gRPC)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Usuario para desarrollo (opcional, para permisos)

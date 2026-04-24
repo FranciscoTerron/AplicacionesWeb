@@ -139,7 +139,7 @@ class UserControllerTest extends TestCase
         $response = $this->delete(route('admin.users.destroy', '1'));
 
         $response->assertRedirect(route('admin.users.index'));
-        $response->assertSessionHas('success', 'Usuario desactivado correctamente.');
+        $response->assertSessionHas('success', 'Usuario bloqueado correctamente.');
     }
 
     public function test_cannot_delete_self()
@@ -162,6 +162,6 @@ class UserControllerTest extends TestCase
 
         // Should redirect to index with error message
         $response->assertRedirect(route('admin.users.index'));
-        $response->assertSessionHas('error', 'No puedes eliminarte a ti mismo.');
+        $response->assertSessionHas('error', 'No puedes bloquearte a ti mismo.');
     }
 }

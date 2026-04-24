@@ -3,12 +3,12 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel{{ $user['id'] ?? '' }}">Confirmar Eliminación</h5>
+                <h5 class="modal-title" id="deleteModalLabel{{ $user['id'] ?? '' }}">Confirmar Bloqueo</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                ¿Está seguro de eliminar al usuario "<strong>{{ $user['name'] ?? '' }}</strong>"?<br>
-                Esta acción marcará al usuario como inactivo y no podrá acceder al sistema.
+                ¿Está seguro de bloquear al usuario "<strong>{{ $user['name'] ?? '' }}</strong>"?<br>
+                Esta acción evitará que el usuario acceda al sistema.
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -16,7 +16,7 @@
                     @csrf
                     @method('DELETE')
                 </form>
-                <button type="button" class="btn btn-danger" form="deleteForm{{ $user['id'] ?? '' }}">Eliminar</button>
+                <button type="submit" class="btn btn-danger" form="deleteForm{{ $user['id'] ?? '' }}">Bloquear</button>
             </div>
         </div>
     </div>

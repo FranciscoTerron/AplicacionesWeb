@@ -114,7 +114,7 @@ class UserController extends Controller
         // Prevent users from deleting themselves
         if (Auth::check() && Auth::user() && Auth::user()->getAuthIdentifier() == $id) {
             return redirect()->route('admin.users.index')
-                ->with('error', 'No puedes eliminarte a ti mismo.');
+                ->with('error', 'No puedes bloquearte a ti mismo.');
         }
 
         // Only admins can deactivate other users
@@ -129,7 +129,7 @@ class UserController extends Controller
             $this->firestore->updateDocument('users', $id, ['active' => false]);
         }
 
-        return redirect()->route('admin.users.index')->with('success', 'Usuario desactivado correctamente.');
+        return redirect()->route('admin.users.index')->with('success', 'Usuario bloqueado correctamente.');
     }
 
     public function activate(string $id)
@@ -145,6 +145,6 @@ class UserController extends Controller
             $this->firestore->updateDocument('users', $id, ['active' => true]);
         }
 
-        return redirect()->route('admin.users.index')->with('success', 'Usuario activado correctamente.');
+        return redirect()->route('admin.users.index')->with('success', 'Usuario desbloqueado correctamente.');
     }
 }

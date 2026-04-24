@@ -74,24 +74,24 @@
     @if($isAdmin)
         <!-- Admins can deactivate anyone -->
         @if($isActive)
-            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $user['id'] }}">Desactivar</button>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $user['id'] }}">Bloquear</button>
         @else
             <!-- If inactive, show activate button instead -->
-            <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#activateModal{{ $user['id'] }}">Activar</button>
+            <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#activateModal{{ $user['id'] }}">Desbloquear</button>
         @endif
     @elseif($isOwnProfile)
         <!-- Users can only deactivate/activate themselves -->
         @if($isActive)
-            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $user['id'] }}">Desactivar</button>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $user['id'] }}">Bloquear</button>
         @else
-            <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#activateModal{{ $user['id'] }}">Activar</button>
+            <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#activateModal{{ $user['id'] }}">Desbloquear</button>
         @endif
     @else
         <!-- Regular users (editors) cannot touch others -->
         @if($isActive)
-            <button type="button" class="btn btn-outline-danger btn-sm" disabled title="Solo los administradores pueden desactivar usuarios">Desactivar</button>
+            <button type="button" class="btn btn-outline-danger btn-sm" disabled title="Solo los administradores pueden bloquear usuarios">Bloquear</button>
         @else
-            <button type="button" class="btn btn-outline-success btn-sm" disabled title="Solo los administradores pueden activar usuarios">Activar</button>
+            <button type="button" class="btn btn-outline-success btn-sm" disabled title="Solo los administradores pueden desbloquear usuarios">Desbloquear</button>
         @endif
     @endif
 </td>
@@ -119,7 +119,7 @@
 <script>
 function confirmDelete(event, userName) {
     event.preventDefault();
-    if (confirm('¿Está seguro de eliminar al usuario "' + userName + '"? Esta acción no se puede deshacer.')) {
+    if (confirm('¿Está seguro de bloquear al usuario "' + userName + '"? Esta acción evitará que el usuario acceda al sistema.')) {
         event.target.closest('form').submit();
     }
 }
