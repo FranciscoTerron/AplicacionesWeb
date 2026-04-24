@@ -10,7 +10,7 @@ use App\Http\Controllers\SubcategoryController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [HomeController::class, 'index']);
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -33,5 +33,6 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::resource('subcategories', SubcategoryController::class)->names('admin.subcategories');
     Route::resource('products', ProductController::class)->names('admin.products');
     Route::resource('users', UserController::class)->names('admin.users');
+    Route::post('users/{user}/activate', [UserController::class, 'activate'])->name('admin.users.activate');
     Route::resource('discounts', DiscountController::class)->names('admin.discounts');
 });

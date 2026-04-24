@@ -199,7 +199,11 @@ class FirestoreService
 
     public function updateDocument(string $collection, string $docId, array $data): array
     {
-        $url = "{$this->baseUrl}/{$collection}/{$docId}?updateMask.fieldPaths=".implode(',', array_keys($data));
+        $queryParams = [];
+        foreach (array_keys($data) as $field) {
+            $queryParams[] = 'updateMask.fieldPaths='.urlencode($field);
+        }
+        $url = "{$this->baseUrl}/{$collection}/{$docId}?".implode('&', $queryParams);
         $body = ['fields' => $this->encodeFields($data)];
         $response = Http::withToken($this->accessToken)->patch($url, $body);
 
@@ -214,6 +218,29 @@ class FirestoreService
     {
         $url = "{$this->baseUrl}/{$collection}/{$docId}";
         Http::withToken($this->accessToken)->delete($url);
+    }
+
+    public function listDocuments(string $collection, int $limit = 100): array
+    {
+        $url = "{$this->baseUrl}/{$collection}";
+        $queryParams = [];
+        if ($limit > 0) {
+            $queryParams['pageSize'] = $limit;
+        }
+        if (! empty($queryParams)) {
+            $url .= '?'.http_build_query($queryParams);
+        }
+        $response = Http::withToken($this->accessToken)->get($url);
+        if ($response->failed()) {
+            throw new Exception('Firestore list documents failed: '.$response->body());
+        }
+        $responseData = $response->json();
+        $documents = [];
+        foreach ($responseData['documents'] ?? [] as $doc) {
+            $documents[] = $this->parseDocument($doc);
+        }
+
+        return $documents;
     }
 
     protected function encodeFields(array $data): array
