@@ -20,12 +20,23 @@ class FirestoreUserProvider implements UserProvider
     {
         $doc = $this->fs->getDocument('users', $identifier);
 
+        // Check if user is active
+        if ($doc && ! ($doc['active'] ?? true)) {
+            return null;
+        }
+
         return $doc ? $this->getUserFromArray($doc) : null;
     }
 
     public function retrieveByToken($identifier, $token)
     {
         $doc = $this->fs->getDocument('users', $identifier);
+
+        // Check if user is active
+        if ($doc && ! ($doc['active'] ?? true)) {
+            return null;
+        }
+
         if ($doc && hash_equals($doc['remember_token'] ?? '', $token)) {
             return $this->getUserFromArray($doc);
         }
@@ -47,13 +58,27 @@ class FirestoreUserProvider implements UserProvider
 
         $users = $this->fs->query('users', ['email' => $email], 1);
 
-        return count($users) > 0 ? $this->getUserFromArray($users[0]) : null;
+        if (count($users) > 0) {
+            // Check if user is active
+            if (! ($users[0]['active'] ?? true)) {
+                return null;
+            }
+
+            return $this->getUserFromArray($users[0]);
+        }
+
+        return null;
     }
 
     public function validateCredentials(Authenticatable $user, array $credentials)
     {
         $password = $credentials['password'] ?? null;
         if (! $password) {
+            return false;
+        }
+
+        // Check if user is active
+        if (! ($user->active ?? true)) {
             return false;
         }
 

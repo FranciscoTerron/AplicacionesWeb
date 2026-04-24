@@ -21,7 +21,11 @@ class UserController extends Controller
     public function index()
     {
         // Manual authorization: only admins can view user list
+        // Note: Blocked users (active=false) are handled by FirestoreUserProvider
+        // They cannot log in (retrieveByCredentials returns null)
+        // If already logged in, they get logged out automatically (retrieveById returns null)
         $authUser = Auth::user();
+        
         if (! $authUser || $authUser->role !== 'admin') {
             return View::make('admin.users.unauthorized');
         }
