@@ -79,8 +79,8 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | CRUD Subcategorías | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
 | CRUD Productos | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
 | CRUD Descuentos | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
-| CRUD Usuarios | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
-| Configuración Firestore | ✅ | FirestoreService implementado con soporte para credenciales JSON y archivo |
+| CRUD Usuarios | ⏳ | CRUD proceso con vistas Índice, crear, ver, eliminar (logico), editar y persistencia en Firestore |
+| Configuración Firestore | ✅ | FirestoreService implementado, reglas y indexes desplegados en Firebase |
 | Login Administrativos | ⚠️ | AuthController con Firebase implementado, pendiente validación completa |
 | Panel Administrativo | ⚠️ | Estructura base con sidebar, ruteo y vistas Blade, pendiente funcionalidades completas |
 | Dashboard con estadísticas | ⏳ | Pendiente implementación |
