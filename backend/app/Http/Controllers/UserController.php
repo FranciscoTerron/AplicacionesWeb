@@ -25,7 +25,7 @@ class UserController extends Controller
         // They cannot log in (retrieveByCredentials returns null)
         // If already logged in, they get logged out automatically (retrieveById returns null)
         $authUser = Auth::user();
-        
+
         if (! $authUser || $authUser->role !== 'admin') {
             return View::make('admin.users.unauthorized');
         }
