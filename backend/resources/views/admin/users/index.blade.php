@@ -1,119 +1,127 @@
 @extends('layouts.admin')
 
 @section('title', 'Usuarios - MA Piscinas')
+@section('page-title', 'Usuarios')
+@section('page-subtitle', 'Gestión de usuarios del sistema')
 
 @section('styles')
-.page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-}
-
-.page-header h1 {
-    font-size: 1.5rem;
-    color: var(--dark);
-}
-
-.btn {
-    display: inline-block;
-    padding: .5rem 1rem;
-    border-radius: .375rem;
-    text-decoration: none;
-    font-size: .9rem;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-}
-
-.btn-primary {
-    background: var(--primary);
-    color: var(--white);
-}
-
-.btn-primary:hover {
-    background: var(--dark);
-}
-
-.card {
-    background: var(--white);
-    border-radius: .5rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,.1);
-    overflow: hidden;
-}
-
-.table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.table th,
-.table td {
-    padding: 1rem;
-    text-align: left;
-    border-bottom: 1px solid #dee2e6;
-}
-
-.table th {
-    background: var(--bg-light);
-    font-weight: 500;
-    font-size: .85rem;
-    color: #6c757d;
-}
-
-.table tr:hover {
-    background: var(--bg-light);
-}
-
-.empty-state {
-    text-align: center;
-    padding: 3rem;
-    color: #6c757d;
-}
-
-.badge {
-    display: inline-block;
-    padding: .25rem .5rem;
-    font-size: .75rem;
-    border-radius: .25rem;
-    font-weight: 500;
-}
-
-.badge-admin {
-    background: #e7f1ff;
-    color: var(--primary);
-}
-
-.badge-empleado {
-    background: #fff3cd;
-    color: #856404;
-}
+/* No custom styles needed - using Bootstrap */
 @endsection
 
 @section('content')
-<div class="page-header">
-    <h1></h1>
-    <a href="{{ route('admin.users.create') }}" class="btn btn-primary">+ Nuevo Usuario</a>
+@php
+    $currentUser = Auth::user();
+    $currentUserId = $currentUser?->getAuthIdentifier();
+    $currentUserRole = $currentUser?->role ?? 'editor';
+@endphp
+
+<div class="page-header d-flex justify-content-between align-items-center mb-4">
+    <h1>Usuarios</h1>
+    @if($currentUser && $currentUserRole == 'admin')
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">+ Nuevo Usuario</button>
+    @else
+        <button type="button" class="btn btn-outline-danger btn-sm" disabled title="No puedes crear usuarios">Nuevo Usuario</button>
+    @endif    
 </div>
 
+@include('admin.users.create_modal')
+
 <div class="card">
-    <table class="table">
+    <table class="table table-hover">
         <thead>
             <tr>
                 <th>Nombre</th>
                 <th>Email</th>
                 <th>Rol</th>
-                <th>Estado</th>
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td colspan="5" class="empty-state">
-                    No hay usuarios aún.
-                </td>
-            </tr>
+            @forelse($users as $user)
+                <tr>
+                    <td>{{ $user['name'] ?? 'N/A' }}</td>
+                    <td>{{ $user['email'] ?? 'N/A' }}</td>
+                    <td>
+                        @if(isset($user['role']) && $user['role'] == 'admin')
+                            <span class="badge bg-primary">Administrador</span>
+                        @else
+                            <span class="badge bg-warning text-dark">Editor</span>
+                        @endif
+                    </td>
+<td class="actions">
+    <!-- Ver button - always visible (subject to permission checks in controller) -->
+    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#showUserModal{{ $user['id'] }}">Ver</button>
+    
+    @php
+        // Check if current user is admin
+        $isAdmin = Auth::check() && Auth::user()->role === 'admin';
+        // Check if current user is trying to access their own record
+        $isOwnProfile = Auth::check() && Auth::user()->getAuthIdentifier() == ($user['id'] ?? '');
+        // Check if target user is active
+        $isActive = $user['active'] ?? true;
+    @endphp
+    
+    <!-- Edit button logic -->
+    @if($isAdmin || $isOwnProfile)
+        <!-- Admins can edit anyone, users can edit themselves -->
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user['id'] }}">Editar</button>
+    @else
+        <!-- Others cannot edit -->
+        <button type="button" class="btn btn-outline-danger btn-sm" disabled title="No tienes permisos para editar">Editar</button>
+    @endif
+    
+    <!-- Delete/Deactivate button logic -->
+    @if($isAdmin)
+        <!-- Admins can deactivate anyone -->
+        @if($isActive)
+            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $user['id'] }}">Desactivar</button>
+        @else
+            <!-- If inactive, show activate button instead -->
+            <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#activateModal{{ $user['id'] }}">Activar</button>
+        @endif
+    @elseif($isOwnProfile)
+        <!-- Users can only deactivate/activate themselves -->
+        @if($isActive)
+            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $user['id'] }}">Desactivar</button>
+        @else
+            <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#activateModal{{ $user['id'] }}">Activar</button>
+        @endif
+    @else
+        <!-- Regular users (editors) cannot touch others -->
+        @if($isActive)
+            <button type="button" class="btn btn-outline-danger btn-sm" disabled title="Solo los administradores pueden desactivar usuarios">Desactivar</button>
+        @else
+            <button type="button" class="btn btn-outline-success btn-sm" disabled title="Solo los administradores pueden activar usuarios">Activar</button>
+        @endif
+    @endif
+</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="4" class="empty-state">
+                        No hay usuarios aún.
+                    </td>
+                </tr>
+            @endforelse
         </tbody>
     </table>
 </div>
+
+@foreach($users as $user)
+    @include('admin.users.edit_modal', ['user' => $user])
+    @include('admin.users.show_modal', ['user' => $user])
+    @include('admin.users.delete_modal', ['user' => $user])
+    @include('admin.users.activate_modal', ['user' => $user])
+@endforeach
+@endsection
+
+@section('scripts')
+<script>
+function confirmDelete(event, userName) {
+    event.preventDefault();
+    if (confirm('¿Está seguro de eliminar al usuario "' + userName + '"? Esta acción no se puede deshacer.')) {
+        event.target.closest('form').submit();
+    }
+}
+</script>
 @endsection

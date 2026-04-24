@@ -7,6 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -238,22 +240,37 @@
     <div class="layout">
         @include('admin.partials.sidebar')
         
-        <div class="main-content">
-            <header class="top-bar">
-                @include('admin.components.page-header')
-                <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" style="background:none;border:none;cursor:pointer;padding:0.5rem;">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 12h18M3 6h18M3 18h18"/>
-                    </svg>
-                </button>
-            </header>
+     <div class="main-content">
+        <header class="top-bar">
+            @include('admin.components.page-header')
+            <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" style="background:none;border:none;cursor:pointer;padding:0.5rem;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12h18M3 6h18M3 18h18"/>
+                </svg>
+            </button>
+        </header>
+        
+        <main class="content">
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
             
-            <main class="content">
-                @yield('content')
-            </main>
-        </div>
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+            
+            @yield('content')
+        </main>
     </div>
+</div>
 
-    @yield('scripts')
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+ @yield('scripts')
 </body>
 </html>
