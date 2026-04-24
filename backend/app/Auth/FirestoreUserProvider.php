@@ -89,7 +89,7 @@ class FirestoreUserProvider implements UserProvider
             'id' => (string) $data['id'],
             'name' => $data['name'] ?? '',
             'email' => $data['email'] ?? '',
-            'role' => $data['role'] ?? 'empleado',
+            'role' => $data['role'] ?? 'editor',
             'active' => $data['active'] ?? true,
         ]);
         $user->exists = true;

@@ -17,6 +17,11 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    /**
+     * @var string
+     */
+    protected $role;
+
     protected $keyType = 'string';
 
     public $incrementing = false;
@@ -35,8 +40,8 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
-    public function isEmpleado(): bool
+    public function isEditor(): bool
     {
-        return $this->role === 'empleado';
+        return $this->role === 'editor';
     }
 }
