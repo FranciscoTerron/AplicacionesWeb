@@ -6,6 +6,7 @@ use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Services\FirestoreService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 
@@ -86,7 +87,11 @@ class UserController extends Controller
         // Only admins can create users
         $authUser = Auth::user();
         if (! $authUser || $authUser->role !== 'admin') {
-            return back()->withErrors(['email' => 'No tienes permisos para realizar esta acción.'])->withInput();
+            $error = 'No tienes permisos para realizar esta acción.';
+
+            return $request->ajax()
+                ? response()->json(['errors' => ['email' => [$error]]], 422)
+                : back()->withErrors(['email' => $error])->withInput();
         }
 
         $validated = $request->validated();
@@ -94,7 +99,11 @@ class UserController extends Controller
         // Verificar si el email ya existe
         $existingUsers = $this->firestore->query('users', ['email' => $validated['email']]);
         if (! empty($existingUsers)) {
-            return back()->withErrors(['email' => 'El email ya está registrado.'])->withInput();
+            $error = 'El email ya está registrado.';
+
+            return $request->ajax()
+                ? response()->json(['errors' => ['email' => [$error]]], 422)
+                : back()->withErrors(['email' => $error])->withInput();
         }
 
         $data = [
@@ -104,24 +113,17 @@ class UserController extends Controller
             'password' => bcrypt($validated['password']),
             'role' => $validated['role'],
             'created_at' => now()->toISOString(),
+            'created_by' => Auth::id(),
+            'updated_by' => Auth::id(),
         ];
 
         $this->firestore->createDocument('users', $data);
 
-        return redirect()->route('admin.users.index')->with('success', 'Usuario creado correctamente.');
-    }
+        $success = 'Usuario creado correctamente.';
 
-    public function show(string $id)
-    {
-        $user = $this->firestore->getDocument('users', $id);
-        $authUser = Auth::user();
-
-        // Allow if admin or viewing own profile
-        if (! $authUser || ($authUser->role !== 'admin' && $authUser->getAuthIdentifier() !== ($user['id'] ?? ''))) {
-            return View::make('admin.users.unauthorized');
-        }
-
-        return redirect()->route('admin.users.index');
+        return $request->ajax()
+            ? response()->json(['success' => $success, 'redirect' => route('admin.users.index')])
+            : redirect()->route('admin.users.index')->with('success', $success);
     }
 
     public function edit(string $id)
@@ -153,7 +155,11 @@ class UserController extends Controller
         $existingUsers = $this->firestore->query('users', ['email' => $validated['email']]);
         foreach ($existingUsers as $existingUser) {
             if ($existingUser['id'] !== $id) {
-                return back()->withErrors(['email' => 'El email ya está registrado por otro usuario.'])->withInput();
+                $error = 'El email ya está registrado por otro usuario.';
+
+                return $request->ajax()
+                    ? response()->json(['errors' => ['email' => [$error]]], 422)
+                    : back()->withErrors(['email' => $error])->withInput();
             }
         }
 
@@ -161,6 +167,7 @@ class UserController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
+            'updated_by' => Auth::id(),
         ];
 
         if (! empty($validated['password'])) {
@@ -169,10 +176,14 @@ class UserController extends Controller
 
         $this->firestore->updateDocument('users', $id, $data);
 
-        return redirect()->route('admin.users.index')->with('success', 'Usuario actualizado correctamente.');
+        $success = 'Usuario actualizado correctamente.';
+
+        return $request->ajax()
+            ? response()->json(['success' => $success, 'redirect' => route('admin.users.index')])
+            : redirect()->route('admin.users.index')->with('success', $success);
     }
 
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
         $authUser = Auth::user();
         $user = $this->firestore->getDocument('users', $id);
@@ -187,12 +198,16 @@ class UserController extends Controller
             return View::make('admin.users.unauthorized');
         }
 
-        $this->firestore->updateDocument('users', $id, ['active' => false]);
+        $this->firestore->updateDocument('users', $id, ['active' => false, 'updated_by' => Auth::id()]);
 
-        return redirect()->route('admin.users.index')->with('success', 'Usuario bloqueado correctamente.');
+        $success = 'Usuario bloqueado correctamente.';
+
+        return $request->ajax()
+            ? response()->json(['success' => $success, 'redirect' => route('admin.users.index')])
+            : redirect()->route('admin.users.index')->with('success', $success);
     }
 
-    public function activate(string $id)
+    public function activate(Request $request, string $id)
     {
         $authUser = Auth::user();
         $user = $this->firestore->getDocument('users', $id);
@@ -202,8 +217,12 @@ class UserController extends Controller
             return View::make('admin.users.unauthorized');
         }
 
-        $this->firestore->updateDocument('users', $id, ['active' => true]);
+        $this->firestore->updateDocument('users', $id, ['active' => true, 'updated_by' => Auth::id()]);
 
-        return redirect()->route('admin.users.index')->with('success', 'Usuario desbloqueado correctamente.');
+        $success = 'Usuario desbloqueado correctamente.';
+
+        return $request->ajax()
+            ? response()->json(['success' => $success, 'redirect' => route('admin.users.index')])
+            : redirect()->route('admin.users.index')->with('success', $success);
     }
 }

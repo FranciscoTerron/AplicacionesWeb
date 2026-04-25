@@ -76,6 +76,7 @@ class UserControllerTest extends TestCase
         $authUser->shouldReceive('getAuthIdentifier')->andReturn('1');
         Auth::shouldReceive('user')->andReturn($authUser);
         Auth::shouldReceive('check')->andReturn(true);
+        Auth::shouldReceive('id')->andReturn('1');
 
         $this->firestoreMock->method('query')->willReturn([]); // For email duplicate check
 
@@ -97,24 +98,6 @@ class UserControllerTest extends TestCase
 
         // Check for 422 status (validation failed)
         $response->assertStatus(422);
-    }
-
-    public function test_can_display_user_show()
-    {
-        $user = ['id' => '1', 'name' => 'Test User', 'email' => 'test@example.com', 'role' => 'admin'];
-
-        $this->firestoreMock->method('getDocument')->willReturn($user);
-
-        // Mock Auth for admin user
-        $authUser = \Mockery::mock();
-        $authUser->role = 'admin';
-        $authUser->shouldReceive('getAuthIdentifier')->andReturn('1');
-        Auth::shouldReceive('user')->andReturn($authUser);
-        Auth::shouldReceive('check')->andReturn(true);
-
-        $response = $this->get(route('admin.users.show', '1'));
-
-        $response->assertRedirect(route('admin.users.index'));
     }
 
     public function test_can_display_edit_user_form()
@@ -146,8 +129,9 @@ class UserControllerTest extends TestCase
         $authUser = \Mockery::mock();
         $authUser->role = 'admin';
         $authUser->shouldReceive('getAuthIdentifier')->andReturn('1');
-        Auth::shouldReceive('check')->andReturn(true);
         Auth::shouldReceive('user')->andReturn($authUser);
+        Auth::shouldReceive('check')->andReturn(true);
+        Auth::shouldReceive('id')->andReturn('1');
 
         $this->firestoreMock->method('query')->willReturn([]); // For email duplicate check
 
@@ -176,6 +160,7 @@ class UserControllerTest extends TestCase
         $authUser->shouldReceive('getAuthIdentifier')->andReturn('2'); // Different ID than the user being deleted (ID 1)
         Auth::shouldReceive('check')->andReturn(true);
         Auth::shouldReceive('user')->andReturn($authUser);
+        Auth::shouldReceive('id')->andReturn('2');
 
         $response = $this->delete(route('admin.users.destroy', '1'));
 
@@ -204,5 +189,61 @@ class UserControllerTest extends TestCase
         // Should redirect to index with error message
         $response->assertRedirect(route('admin.users.index'));
         $response->assertSessionHas('error', 'No puedes bloquearte a ti mismo.');
+    }
+
+    public function test_activate_user()
+    {
+        $user = ['id' => '1', 'name' => 'Test User', 'email' => 'test@example.com', 'role' => 'editor', 'active' => false];
+        $this->firestoreMock->method('getDocument')->willReturn($user);
+        $this->firestoreMock->method('updateDocument');
+
+        // Mock Auth for admin user
+        $authUser = \Mockery::mock();
+        $authUser->role = 'admin';
+        $authUser->shouldReceive('getAuthIdentifier')->andReturn('2');
+        Auth::shouldReceive('check')->andReturn(true);
+        Auth::shouldReceive('user')->andReturn($authUser);
+        Auth::shouldReceive('id')->andReturn('2');
+
+        $response = $this->post(route('admin.users.activate', '1'));
+
+        $response->assertRedirect(route('admin.users.index'));
+        $response->assertSessionHas('success', 'Usuario desbloqueado correctamente.');
+    }
+
+    public function test_activate_user_not_allowed_by_editor()
+    {
+        $user = ['id' => '1', 'name' => 'Test User', 'email' => 'test@example.com', 'role' => 'editor', 'active' => false];
+        $this->firestoreMock->method('getDocument')->willReturn($user);
+
+        // Mock Auth for editor user (not admin)
+        $authUser = \Mockery::mock();
+        $authUser->role = 'editor';
+        $authUser->shouldReceive('getAuthIdentifier')->andReturn('2');
+        Auth::shouldReceive('check')->andReturn(true);
+        Auth::shouldReceive('user')->andReturn($authUser);
+        Auth::shouldReceive('id')->andReturn('2');
+
+        $response = $this->post(route('admin.users.activate', '1'));
+
+        $response->assertStatus(200);
+    }
+
+    public function test_activate_user_not_allowed_by_self()
+    {
+        $user = ['id' => '1', 'name' => 'Test User', 'email' => 'test@example.com', 'role' => 'editor', 'active' => false];
+        $this->firestoreMock->method('getDocument')->willReturn($user);
+
+        // Mock Auth for same user trying to activate themselves
+        $authUser = \Mockery::mock();
+        $authUser->role = 'editor';
+        $authUser->shouldReceive('getAuthIdentifier')->andReturn('1');
+        Auth::shouldReceive('check')->andReturn(true);
+        Auth::shouldReceive('user')->andReturn($authUser);
+        Auth::shouldReceive('id')->andReturn('1');
+
+        $response = $this->post(route('admin.users.activate', '1'));
+
+        $response->assertStatus(200);
     }
 }

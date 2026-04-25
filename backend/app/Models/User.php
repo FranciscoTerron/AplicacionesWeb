@@ -16,8 +16,10 @@ use Illuminate\Notifications\Notifiable;
  * @property string $email
  * @property bool $active
  * @property string $password
+ * @property string|null $created_by
+ * @property string|null $updated_by
  */
-#[Fillable(['name', 'email', 'password', 'role', 'active'])]
+#[Fillable(['name', 'email', 'password', 'role', 'active', 'created_by', 'updated_by'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
