@@ -79,14 +79,14 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | CRUD Subcategorías | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
 | CRUD Productos | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
 | CRUD Descuentos | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
-| CRUD Usuarios | ⏳ | CRUD proceso con vistas Índice, crear, ver, eliminar (logico), editar y persistencia en Firestore |
-| Configuración Firestore | ✅ | FirestoreService implementado, reglas y indexes desplegados en Firebase |
-| Login Administrativos | ⚠️ | AuthController con Firebase implementado, pendiente validación completa |
-| Panel Administrativo | ⚠️ | Estructura base con sidebar, ruteo y vistas Blade, pendiente funcionalidades completas |
+| **CRUD Usuarios** | ✅ | **Completo y funcional**: CRUD 100% operativo en Firestore. Modal único dinámico, validación AJAX inline (422), bloqueo de usuarios inactivos, paginación cursor-based, búsqueda y filtros, auditoría (created_by/updated_by). Tests: 13 (27 assertions). PHPStan: 0 errores. |
+| Configuración Firestore | ✅ | FirestoreService implementado, reglas y desplegados en Firebase |
+| Login Administrativos | ⚠️ | AuthController con Firebase implementado; FirestoreUserProvider bloquea usuarios inactivos |
+| Panel Administrativo | ⚠️ | Estructura base con sidebar, ruteo y vistas Blade |
 | Dashboard con estadísticas | ⏳ | Pendiente implementación |
 | Ruteo configurado | ✅ | Web routes definidas para admin y auth |
 
-**Conclusión**: Avance en vistas de CRUDs y configuración de Firestore. Faltan métodos de escritura (guardar, actualizar, eliminar) y lógica completa de login.
+**Conclusión**: CRUD Usuarios 100% funcional con UX optimizada (modal único, AJAX inline) y código robusto (tests + PHPStan). Faltan métodos de escritura en CRUDs restantes.
 
 ---
 
@@ -95,7 +95,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Fecha Límite | Hito | Estado |
 |--------------|------|--------|
 | 20 de Abril | Deploy en Vercel (frontpage mínimo) | ✅ Completo PR |
-| 11 de Mayo | Avance Laravel (CRUDs parciales) | ⏳ Pendiente |
+| 11 de Mayo | Avance Laravel (CRUDs parciales) | ✅ En proceso |
 | 25 de Mayo | Avance Laravel (funcionalidades adicionales) | ⏳ Pendiente |
 | 7 de Junio | PR Final — Laravel + API Completa | ⏳ Pendiente |
 
