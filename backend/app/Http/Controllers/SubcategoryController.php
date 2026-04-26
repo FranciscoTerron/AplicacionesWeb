@@ -40,4 +40,20 @@ class SubcategoryController extends Controller
     {
         return UpdateSubcategoryRequest::class;
     }
+
+    protected function getExtraCreateData(): array
+    {
+        $result = $this->firestore->listDocuments('categories', 100);
+        $categories = collect($result['documents'] ?? []);
+
+        return ['categories' => $categories];
+    }
+
+    protected function getExtraEditData(string $id): array
+    {
+        $result = $this->firestore->listDocuments('categories', 100);
+        $categories = collect($result['documents'] ?? []);
+
+        return ['categories' => $categories];
+    }
 }

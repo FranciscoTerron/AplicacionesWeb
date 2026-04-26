@@ -8,6 +8,7 @@
     $selected = $selected ?? '';
     $errors = session('errors');
     $error = $errors ? $errors->first($name) : null;
+    $displayValue = old($name, $value);
 @endphp
 
 <div class="mb-3">
@@ -20,18 +21,21 @@
     
     @if($type === 'select')
         <select name="{{ $name }}" id="{{ $name }}" class="form-select @if($error) is-invalid @endif">
+            <option value="">Seleccionar...</option>
             @foreach($options as $optionValue => $optionLabel)
                 <option value="{{ $optionValue }}" {{ ($selected == $optionValue) ? 'selected' : '' }}>
                     {{ $optionLabel }}
                 </option>
             @endforeach
         </select>
+    @elseif($type === 'textarea')
+        <textarea name="{{ $name }}" id="{{ $name }}" class="form-control @if($error) is-invalid @endif">{{ $displayValue }}</textarea>
     @else
         <input 
             type="{{ $type }}" 
             name="{{ $name }}" 
             id="{{ $name }}" 
-            value="{{ old($name, $value) }}"
+            value="{{ $displayValue }}"
             class="form-control @if($error) is-invalid @endif"
         >
     @endif

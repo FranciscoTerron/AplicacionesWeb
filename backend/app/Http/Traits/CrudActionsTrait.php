@@ -21,6 +21,18 @@ trait CrudActionsTrait
 
     abstract protected function getUpdateRequestClass(): string;
 
+    protected function getDomainErrors(): array;
+
+    protected function getExtraCreateData(): array
+    {
+        return [];
+    }
+
+    protected function getExtraEditData(string $id): array
+    {
+        return [];
+    }
+
     protected FirestoreService $firestore;
 
     public function index()
@@ -50,7 +62,9 @@ trait CrudActionsTrait
     {
         $this->authorizeRequest();
 
-        return View::make("{$this->getViewFolder()}.create");
+        $data = $this->getExtraCreateData();
+
+        return View::make("{$this->getViewFolder()}.create", $data);
     }
 
     public function store(FormRequest $request): RedirectResponse
@@ -102,10 +116,11 @@ trait CrudActionsTrait
             return redirect()->route($this->getRedirectRoute())->with('error', 'Registro no encontrado.');
         }
 
-        return View::make("{$this->getViewFolder()}.edit", [
-            'item' => $item,
-            'id' => $id,
-        ]);
+        $data = $this->getExtraEditData($id);
+        $data['item'] = $item;
+        $data['id'] = $id;
+
+        return View::make("{$this->getViewFolder()}.edit", $data);
     }
 
     public function update(FormRequest $request, string $id): RedirectResponse
