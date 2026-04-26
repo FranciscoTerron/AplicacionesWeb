@@ -1,10 +1,12 @@
 {
   "name": "aplicacionesweb",
   "version": "1.0.0",
-  "description": "## Integrantes",
+  "description": "MA Piscinas - Panel de Administración",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "cd backend && composer test",
+    "dev": "cd backend && php artisan serve",
+    "dev:full": "cd backend && concurrently \"php artisan serve\" \"cd ../ && pnpm dev\""
   },
   "keywords": [],
   "author": "",
