@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Discount;
 
+use App\Services\FirestoreService;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreDiscountRequest extends FormRequest
@@ -14,15 +15,36 @@ class StoreDiscountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code' => 'required|string|max:50|unique:discounts,code',
-            'description' => 'nullable|string|max:500',
-            'discountType' => 'required|in:percentage,fixed',
-            'discountValue' => 'required|numeric|min:0',
-            'minPurchase' => 'nullable|numeric|min:0',
-            'maxDiscount' => 'nullable|numeric|min:0',
-            'validFrom' => 'nullable|date',
-            'validUntil' => 'nullable|date|after:validFrom',
-            'active' => 'nullable|boolean',
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                function ($attribute, $value, $fail) {
+                    $fs = app(FirestoreService::class);
+                    $existing = $fs->query('discounts', ['code' => strtoupper($value)], 1);
+                    if (count($existing) > 0) {
+                        $fail('Ya existe un descuento con ese código.');
+                    }
+                },
+            ],
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'discount_type' => 'required|in:percentage,fixed',
+            'value' => 'required|numeric|min:0',
+            'max_uses' => 'nullable|integer|min:1',
+            'valid_from' => 'required|date',
+            'valid_to' => 'required|date|after:valid_from',
+            'active' => 'boolean',
+            'applies_to' => 'required|in:all,categories,products',
+            'applicable_ids' => [
+                'nullable',
+                'array',
+                function ($attribute, $value, $fail) {
+                    if ($this->input('applies_to') !== 'all' && empty($value)) {
+                        $fail('Debes seleccionar al menos un ítem aplicable cuando applies_to no es "all".');
+                    }
+                },
+            ],
         ];
     }
 
@@ -31,17 +53,23 @@ class StoreDiscountRequest extends FormRequest
         return [
             'code.required' => 'El código es obligatorio.',
             'code.max' => 'El código no puede tener más de 50 caracteres.',
-            'code.unique' => 'Ya existe un descuento con ese código.',
-            'discountType.required' => 'El tipo de descuento es obligatorio.',
-            'discountType.in' => 'El tipo de descuento debe ser percentage o fixed.',
-            'discountValue.required' => 'El valor del descuento es obligatorio.',
-            'discountValue.numeric' => 'El valor debe ser un número válido.',
-            'discountValue.min' => 'El valor no puede ser negativo.',
-            'minPurchase.numeric' => 'La compra mínima debe ser un número válido.',
-            'minPurchase.min' => 'La compra mínima no puede ser negativa.',
-            'maxDiscount.numeric' => 'El descuento máximo debe ser un número válido.',
-            'maxDiscount.min' => 'El descuento máximo no puede ser negativo.',
-            'validUntil.after' => 'La fecha de vigencia debe ser posterior a la fecha de inicio.',
+            'name.required' => 'El nombre es obligatorio.',
+            'name.max' => 'El nombre no puede tener más de 255 caracteres.',
+            'description.max' => 'La descripción no puede tener más de 1000 caracteres.',
+            'discount_type.required' => 'El tipo de descuento es obligatorio.',
+            'discount_type.in' => 'El tipo debe ser "percentage" o "fixed".',
+            'value.required' => 'El valor del descuento es obligatorio.',
+            'value.numeric' => 'El valor debe ser un número.',
+            'value.min' => 'El valor no puede ser negativo.',
+            'max_uses.integer' => 'Los usos máximos debe ser un número entero.',
+            'max_uses.min' => 'Los usos máximos debe ser al menos 1.',
+            'valid_from.required' => 'La fecha de inicio es obligatoria.',
+            'valid_from.date' => 'La fecha de inicio debe ser válida.',
+            'valid_to.required' => 'La fecha de fin es obligatoria.',
+            'valid_to.date' => 'La fecha de fin debe ser válida.',
+            'valid_to.after' => 'La fecha de fin debe ser posterior a la fecha de inicio.',
+            'applies_to.required' => 'El campo "aplica a" es obligatorio.',
+            'applies_to.in' => 'Valor no válido para "aplica a".',
         ];
     }
 }
