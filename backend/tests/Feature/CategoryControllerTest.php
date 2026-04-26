@@ -2,15 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\CategoryController;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
-/**
- * Tests para el CRUD de Categorías.
- * Verifica: index, create, store, show, edit, update, destroy
- */
 class CategoryControllerTest extends TestCase
 {
     protected FirestoreService $firestoreMock;

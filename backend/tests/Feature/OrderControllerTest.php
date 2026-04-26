@@ -2,15 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\OrderController;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
-/**
- * Tests para el CRUD de Pedidos.
- * Verifica: index, create, store, show, edit, update, destroy
- */
 class OrderControllerTest extends TestCase
 {
     protected FirestoreService $firestoreMock;

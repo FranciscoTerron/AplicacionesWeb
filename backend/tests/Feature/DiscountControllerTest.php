@@ -2,14 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\DiscountController;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
-/**
- * Tests para el CRUD de Descuentos.
- */
 class DiscountControllerTest extends TestCase
 {
     protected FirestoreService $firestoreMock;

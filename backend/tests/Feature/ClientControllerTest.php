@@ -2,15 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Http\Controllers\ClientController;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
-/**
- * Tests para el CRUD de Clientes.
- * Verifica: index, create, store, show, edit, update, destroy
- */
 class ClientControllerTest extends TestCase
 {
     protected FirestoreService $firestoreMock;
