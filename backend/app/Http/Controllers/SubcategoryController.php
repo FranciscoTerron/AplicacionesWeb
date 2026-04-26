@@ -2,34 +2,42 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\View;
+use App\Http\Requests\Subcategory\StoreSubcategoryRequest;
+use App\Http\Requests\Subcategory\UpdateSubcategoryRequest;
+use App\Http\Traits\CrudActionsTrait;
+use App\Services\FirestoreService;
 
 class SubcategoryController extends Controller
 {
-    public function index()
+    use CrudActionsTrait;
+
+    public function __construct(FirestoreService $firestore)
     {
-        return View::make('admin.subcategories.index');
+        $this->firestore = $firestore;
     }
 
-    public function create()
+    protected function getCollectionName(): string
     {
-        return View::make('admin.subcategories.create');
+        return 'subcategories';
     }
 
-    public function store(Request $request) {}
-
-    public function show(string $id)
+    protected function getRedirectRoute(): string
     {
-        return View::make('admin.subcategories.show', compact('id'));
+        return 'admin.subcategories.index';
     }
 
-    public function edit(string $id)
+    protected function getViewFolder(): string
     {
-        return View::make('admin.subcategories.edit', compact('id'));
+        return 'admin.subcategories';
     }
 
-    public function update(Request $request, string $id) {}
+    protected function getStoreRequestClass(): string
+    {
+        return StoreSubcategoryRequest::class;
+    }
 
-    public function destroy(string $id) {}
+    protected function getUpdateRequestClass(): string
+    {
+        return UpdateSubcategoryRequest::class;
+    }
 }

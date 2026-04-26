@@ -2,34 +2,42 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\View;
+use App\Http\Requests\Discount\StoreDiscountRequest;
+use App\Http\Requests\Discount\UpdateDiscountRequest;
+use App\Http\Traits\CrudActionsTrait;
+use App\Services\FirestoreService;
 
 class DiscountController extends Controller
 {
-    public function index()
+    use CrudActionsTrait;
+
+    public function __construct(FirestoreService $firestore)
     {
-        return View::make('admin.discounts.index');
+        $this->firestore = $firestore;
     }
 
-    public function create()
+    protected function getCollectionName(): string
     {
-        return View::make('admin.discounts.create');
+        return 'discounts';
     }
 
-    public function store(Request $request) {}
-
-    public function show(string $id)
+    protected function getRedirectRoute(): string
     {
-        return View::make('admin.discounts.show', compact('id'));
+        return 'admin.discounts.index';
     }
 
-    public function edit(string $id)
+    protected function getViewFolder(): string
     {
-        return View::make('admin.discounts.edit', compact('id'));
+        return 'admin.discounts';
     }
 
-    public function update(Request $request, string $id) {}
+    protected function getStoreRequestClass(): string
+    {
+        return StoreDiscountRequest::class;
+    }
 
-    public function destroy(string $id) {}
+    protected function getUpdateRequestClass(): string
+    {
+        return UpdateDiscountRequest::class;
+    }
 }

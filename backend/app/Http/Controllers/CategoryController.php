@@ -2,34 +2,42 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\View;
+use App\Http\Requests\Category\StoreCategoryRequest;
+use App\Http\Requests\Category\UpdateCategoryRequest;
+use App\Http\Traits\CrudActionsTrait;
+use App\Services\FirestoreService;
 
 class CategoryController extends Controller
 {
-    public function index()
+    use CrudActionsTrait;
+
+    public function __construct(FirestoreService $firestore)
     {
-        return View::make('admin.categories.index');
+        $this->firestore = $firestore;
     }
 
-    public function create()
+    protected function getCollectionName(): string
     {
-        return View::make('admin.categories.create');
+        return 'categories';
     }
 
-    public function store(Request $request) {}
-
-    public function show(string $id)
+    protected function getRedirectRoute(): string
     {
-        return View::make('admin.categories.show', compact('id'));
+        return 'admin.categories.index';
     }
 
-    public function edit(string $id)
+    protected function getViewFolder(): string
     {
-        return View::make('admin.categories.edit', compact('id'));
+        return 'admin.categories';
     }
 
-    public function update(Request $request, string $id) {}
+    protected function getStoreRequestClass(): string
+    {
+        return StoreCategoryRequest::class;
+    }
 
-    public function destroy(string $id) {}
+    protected function getUpdateRequestClass(): string
+    {
+        return UpdateCategoryRequest::class;
+    }
 }
