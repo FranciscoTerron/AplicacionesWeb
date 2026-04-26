@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "dev": "concurrently \"php artisan serve\" \"vite\"",
+        "dev": "concurrently -k \"php artisan serve\" \"vite --host\"",
         "dev:php": "php artisan serve",
         "dev:vite": "vite",
         "build": "vite build",
