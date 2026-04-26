@@ -14,6 +14,22 @@
 ])
 
 @include('admin.components.form-field', [
+    'name' => 'order',
+    'label' => 'Orden',
+    'type' => 'number',
+    'required' => true,
+    'value' => old('order', $item['order'] ?? 0)
+])
+
+@include('admin.components.form-field', [
+    'name' => 'image',
+    'label' => 'URL de Imagen (Cloudinary)',
+    'type' => 'text',
+    'placeholder' => 'https://res.cloudinary.com/...',
+    'value' => old('image', $item['image'] ?? '')
+])
+
+@include('admin.components.form-field', [
     'name' => 'active',
     'label' => 'Estado',
     'type' => 'select',

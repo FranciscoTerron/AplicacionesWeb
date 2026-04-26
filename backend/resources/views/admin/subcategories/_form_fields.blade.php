@@ -7,23 +7,23 @@ $categories = $categories ?? collect([]);
     'label' => 'Nombre',
     'type' => 'text',
     'required' => true,
-    'value' => old('name')
+    'value' => old('name', $item['name'] ?? '')
 ])
 
 @include('admin.components.form-field', [
     'name' => 'description',
     'label' => 'Descripción',
     'type' => 'textarea',
-    'value' => old('description')
+    'value' => old('description', $item['description'] ?? '')
 ])
 
 @include('admin.components.form-field', [
-    'name' => 'categoryId',
+    'name' => 'category_id',
     'label' => 'Categoría',
     'type' => 'select',
     'required' => true,
-    'options' => $categories->pluck('name', 'name')->toArray(),
-    'selected' => old('categoryId', $item['categoryId'] ?? '')
+    'options' => $categories->pluck('name', 'id')->toArray(),
+    'selected' => old('category_id', $item['category_id'] ?? '')
 ])
 
 @include('admin.components.form-field', [
