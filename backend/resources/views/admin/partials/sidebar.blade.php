@@ -19,8 +19,8 @@ $navItems = [
         'title' => 'Gestión',
         'items' => [
             ['route' => 'admin.users.index', 'label' => 'Usuarios', 'icon' => 'users'],
-            ['route' => 'admin.orders', 'label' => 'Órdenes', 'icon' => 'orders'],
-            ['route' => 'admin.customers', 'label' => 'Clientes', 'icon' => 'customers'],
+            ['route' => 'admin.clients.index', 'label' => 'Clientes', 'icon' => 'customers'],
+            ['route' => 'admin.orders.index', 'label' => 'Pedidos', 'icon' => 'orders'],
         ]
     ],
     'system' => [

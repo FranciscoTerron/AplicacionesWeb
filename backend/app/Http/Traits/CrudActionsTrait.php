@@ -4,7 +4,7 @@ namespace App\Http\Traits;
 
 use App\Domain\Errors\DomainError;
 use App\Services\FirestoreService;
-use Illuminate\Contracts\View\View;
+use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\View;
@@ -21,7 +21,10 @@ trait CrudActionsTrait
 
     abstract protected function getUpdateRequestClass(): string;
 
-    protected function getDomainErrors(): array;
+    protected function getDomainErrors(): array
+    {
+        return [];
+    }
 
     protected function getExtraCreateData(): array
     {
@@ -58,7 +61,7 @@ trait CrudActionsTrait
         ]);
     }
 
-    public function create(): View
+    public function create(): ViewContract
     {
         $this->authorizeRequest();
 
@@ -90,7 +93,7 @@ trait CrudActionsTrait
         }
     }
 
-    public function show(string $id): View|RedirectResponse
+    public function show(string $id): ViewContract|RedirectResponse
     {
         $this->authorizeRequest();
 
@@ -106,7 +109,7 @@ trait CrudActionsTrait
         ]);
     }
 
-    public function edit(string $id): View|RedirectResponse
+    public function edit(string $id): ViewContract|RedirectResponse
     {
         $this->authorizeRequest();
 
