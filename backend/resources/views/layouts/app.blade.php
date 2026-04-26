@@ -37,21 +37,6 @@
             cursor: crosshair;
         }
 
-        /* ── RIPPLE al click (efecto agua — disponible en todas las páginas) ── */
-        .ripple {
-            position: fixed;
-            border-radius: 50%;
-            transform: scale(0);
-            animation: rippleOut .9s linear forwards;
-            background: rgba(6,182,212,.12);
-            pointer-events: none;
-            z-index: 9999;
-        }
-
-        @keyframes rippleOut {
-            to { transform: scale(5); opacity: 0; }
-        }
-
         /* ── Estilos adicionales por página ── */
         @yield('styles')
     </style>
@@ -68,18 +53,6 @@
             </a>
         </div>
     </footer>
-
-    {{-- Efecto agua global --}}
-    <script>
-        document.addEventListener('click', function (e) {
-            const r = document.createElement('div');
-            r.classList.add('ripple');
-            const size = 220;
-            r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - size/2}px;top:${e.clientY - size/2}px`;
-            document.body.appendChild(r);
-            r.addEventListener('animationend', () => r.remove());
-        });
-    </script>
 
     @yield('scripts')
 
