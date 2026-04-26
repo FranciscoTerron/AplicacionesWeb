@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Subcategory\StoreSubcategoryRequest;
 use App\Http\Requests\Subcategory\UpdateSubcategoryRequest;
-use App\Http\Traits\CrudActionsTrait;
+use App\Models\Subcategory;
 use App\Services\FirestoreService;
+use App\Http\Traits\CrudActionsTrait;
 
 class SubcategoryController extends Controller
 {
@@ -41,19 +42,23 @@ class SubcategoryController extends Controller
         return UpdateSubcategoryRequest::class;
     }
 
+    protected function getModelClass(): string
+    {
+        return Subcategory::class;
+    }
+
     protected function getExtraCreateData(): array
     {
         $result = $this->firestore->listDocuments('categories', 100);
         $categories = collect($result['documents'] ?? []);
+        // Filtrar solo categorías activas
+        $categories = $categories->where('active', true);
 
         return ['categories' => $categories];
     }
 
     protected function getExtraEditData(string $id): array
     {
-        $result = $this->firestore->listDocuments('categories', 100);
-        $categories = collect($result['documents'] ?? []);
-
-        return ['categories' => $categories];
+        return $this->getExtraCreateData();
     }
 }

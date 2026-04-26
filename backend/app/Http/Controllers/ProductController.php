@@ -4,8 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
-use App\Http\Traits\CrudActionsTrait;
+use App\Models\Product;
 use App\Services\FirestoreService;
+use App\Http\Traits\CrudActionsTrait;
 
 class ProductController extends Controller
 {
@@ -39,5 +40,29 @@ class ProductController extends Controller
     protected function getUpdateRequestClass(): string
     {
         return UpdateProductRequest::class;
+    }
+
+    protected function getModelClass(): string
+    {
+        return Product::class;
+    }
+
+    protected function getExtraCreateData(): array
+    {
+        $categoriesResult = $this->firestore->listDocuments('categories', 100);
+        $categories = collect($categoriesResult['documents'] ?? [])->where('active', true);
+
+        $subcategoriesResult = $this->firestore->listDocuments('subcategories', 100);
+        $subcategories = collect($subcategoriesResult['documents'] ?? []);
+
+        return [
+            'categories' => $categories,
+            'subcategories' => $subcategories,
+        ];
+    }
+
+    protected function getExtraEditData(string $id): array
+    {
+        return $this->getExtraCreateData();
     }
 }
