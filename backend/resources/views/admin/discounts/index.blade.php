@@ -8,6 +8,31 @@
 <style>
     .modal-backdrop.show { opacity: 0.5; }
     .empty-state { text-align: center; padding: 2rem; color: #6c757d; }
+
+    .discount-details h6 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .discount-details .row {
+        margin-bottom: 1rem;
+    }
+
+    .discount-details .progress {
+        background-color: #e9ecef;
+    }
+
+    .discount-details code {
+        background-color: #f8f9fa;
+        padding: 0.2rem 0.4rem;
+        border-radius: 0.25rem;
+        font-size: 0.85em;
+    }
+
+    .discount-details .text-muted {
+        font-size: 0.85em;
+    }
 </style>
 @endsection
 
@@ -237,48 +262,113 @@
         const formEl = document.getElementById('modalForm');
 
         if (action === 'show') {
-            titleEl.textContent = 'Detalles del Descuento';
-            bodyEl.innerHTML = `
-                <div class="text-center mb-3">
-                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                         style="width: 80px; height: 80px;">
-                        <i class="bi bi-percent display-6 text-muted"></i>
-                    </div>
-                </div>
-                <div class="row">
+            titleEl.textContent = `Detalles del Descuento: ${escapeHtml(discount.code)}`;
+
+            // Información básica
+            const basicInfo = `
+                <div class="row mb-3">
                     <div class="col-md-6">
-                        <p><strong>Código:</strong> ${escapeHtml(discount.code)}</p>
-                        <p><strong>Nombre:</strong> ${escapeHtml(discount.name || '-')}</p>
-                        <p><strong>Tipo:</strong> ${discount.discount_type === 'percentage' ?
-                            '<span class="badge bg-info">Porcentaje</span>' :
+                        <h6 class="text-primary mb-2"><i class="bi bi-tag"></i> Información Básica</h6>
+                        <p class="mb-1"><strong>Código:</strong> <code>${escapeHtml(discount.code)}</code></p>
+                        <p class="mb-1"><strong>Nombre:</strong> ${escapeHtml(discount.name || '-')}</p>
+                        <p class="mb-1"><strong>Descripción:</strong> ${discount.description ? escapeHtml(discount.description) : '<em class="text-muted">Sin descripción</em>'}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-2"><i class="bi bi-graph-up"></i> Configuración del Descuento</h6>
+                        <p class="mb-1"><strong>Tipo:</strong> ${discount.discount_type === 'percentage' ?
+                            '<span class="badge bg-info">Porcentaje (%)</span>' :
                             discount.discount_type === 'fixed' ?
-                            '<span class="badge bg-warning">Importe Fijo</span>' :
+                            '<span class="badge bg-warning">Importe Fijo ($)</span>' :
                             '<span class="badge bg-secondary">Desconocido</span>'}</p>
-                        <p><strong>Valor:</strong> ${discount.discount_type === 'percentage' ?
-                            (discount.value || 0) + '%' :
-                            discount.discount_type === 'fixed' ?
-                            '$' + parseFloat(discount.value || 0).toFixed(2) :
-                            (discount.value || '-')}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong>Estado:</strong> ${discount.active ?
+                        <p class="mb-1"><strong>Valor:</strong> <span class="h5 text-success">${
+                            discount.discount_type === 'percentage' ?
+                                (discount.value || 0) + '%' :
+                                discount.discount_type === 'fixed' ?
+                                '$' + parseFloat(discount.value || 0).toFixed(2) :
+                                (discount.value || '-')
+                        }</span></p>
+                        <p class="mb-1"><strong>Estado:</strong> ${discount.active ?
                             '<span class="badge bg-success">Activo</span>' :
                             '<span class="badge bg-danger">Inactivo</span>'}</p>
-                        <p><strong>Válido Desde:</strong> ${discount.valid_from ?
-                            new Date(discount.valid_from).toLocaleString('es-ES') : '-'}</p>
-                        <p><strong>Válido Hasta:</strong> ${discount.valid_to ?
-                            new Date(discount.valid_to).toLocaleString('es-ES') : '-'}</p>
-                        <p><strong>Aplica a:</strong> ${getAppliesToText(discount.applies_to)}</p>
                     </div>
                 </div>
-                ${discount.description ? `<p><strong>Descripción:</strong> ${escapeHtml(discount.description)}</p>` : ''}
-                ${discount.applicable_ids && discount.applicable_ids.length ?
-                    `<p><strong>IDs Aplicables:</strong> ${discount.applicable_ids.join(', ')}</p>` : ''}
-                ${discount.max_uses ? `<p><strong>Usos Máximos:</strong> ${discount.max_uses}</p>` : ''}
-                ${discount.used_count ? `<p><strong>Usos Realizados:</strong> ${discount.used_count}</p>` : ''}
             `;
+
+            // Información de aplicación
+            const applicationInfo = `
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-2"><i class="bi bi-calendar-check"></i> Vigencia</h6>
+                        <p class="mb-1"><strong>Válido Desde:</strong> ${formatDateTime(discount.valid_from).replace('No disponible', '<em class="text-muted">No especificado</em>')}</p>
+                        <p class="mb-1"><strong>Válido Hasta:</strong> ${formatDateTime(discount.valid_to).replace('No disponible', '<em class="text-muted">Sin límite</em>')}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-2"><i class="bi bi-shop"></i> Aplicación</h6>
+                        <p class="mb-1"><strong>Aplica a:</strong> ${getAppliesToText(discount.applies_to)}</p>
+                        ${discount.applies_to !== 'all' && discount.applicable_ids && discount.applicable_ids.length ?
+                            `<p class="mb-1"><strong>IDs Aplicables:</strong> <small class="text-muted">${discount.applicable_ids.join(', ')}</small></p>` :
+                            discount.applies_to !== 'all' ?
+                            `<p class="mb-1"><strong>IDs Aplicables:</strong> <em class="text-warning">Ninguno especificado</em></p>` :
+                            ''
+                        }
+                    </div>
+                </div>
+            `;
+
+            // Información de uso
+            const usageInfo = discount.max_uses || discount.used_count ? `
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-2"><i class="bi bi-bar-chart"></i> Estadísticas de Uso</h6>
+                        ${discount.max_uses ? `<p class="mb-1"><strong>Usos Máximos:</strong> ${discount.max_uses}</p>` : ''}
+                        ${discount.used_count !== undefined ? `<p class="mb-1"><strong>Usos Realizados:</strong> ${discount.used_count}</p>` : ''}
+                        ${discount.max_uses && discount.used_count !== undefined ? `
+                            <div class="mb-1">
+                                <strong>Progreso:</strong>
+                                <div class="progress mt-1" style="height: 8px;">
+                                    <div class="progress-bar ${discount.used_count >= discount.max_uses ? 'bg-danger' : 'bg-success'}"
+                                         style="width: ${Math.min((discount.used_count / discount.max_uses) * 100, 100)}%">
+                                    </div>
+                                </div>
+                                <small class="text-muted">${discount.used_count}/${discount.max_uses} usos</small>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="col-12">
+                        <hr>
+                    </div>
+                </div>
+            ` : '';
+
+            // Información de auditoría
+            const auditInfo = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-2"><i class="bi bi-clock-history"></i> Auditoría</h6>
+                        <p class="mb-1"><strong>Creado:</strong> ${formatDateTime(discount.created_at).replace('No disponible', '<em class="text-muted">No disponible</em>')}</p>
+                        ${discount.created_by ? `<p class="mb-1"><strong>Por:</strong> <small class="text-muted">${escapeHtml(discount.created_by)}</small></p>` : ''}
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-2"><i class="bi bi-pencil-square"></i> Última Modificación</h6>
+                        <p class="mb-1"><strong>Actualizado:</strong> ${formatDateTime(discount.updated_at).replace('No disponible', '<em class="text-muted">No disponible</em>')}</p>
+                        ${discount.updated_by ? `<p class="mb-1"><strong>Por:</strong> <small class="text-muted">${escapeHtml(discount.updated_by)}</small></p>` : ''}
+                    </div>
+                </div>
+            `;
+
+            bodyEl.innerHTML = `
+                <div class="discount-details">
+                    ${basicInfo}
+                    ${applicationInfo}
+                    ${usageInfo}
+                    ${auditInfo}
+                </div>
+            `;
+
             footerEl.innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cerrar
+                </button>
             `;
             formEl.setAttribute('method', 'GET');
 
@@ -341,6 +431,13 @@
             case 'products': return 'Productos específicos';
             default: return appliesTo || 'Todos los productos';
         }
+    }
+
+    function formatDateTime(dateString) {
+        if (!dateString) return 'No disponible';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-ES') + ' ' +
+               date.toLocaleTimeString('es-ES', {hour: '2-digit', minute: '2-digit'});
     }
 
     function escapeHtml(text) {
