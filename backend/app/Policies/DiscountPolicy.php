@@ -9,20 +9,20 @@ class DiscountPolicy
 {
     /**
      * Determine whether the user can view any models.
-     * Solo Admin puede ver lista de descuentos
+     * Admins y Editors pueden ver lista de descuentos
      */
     public function viewAny(User $user): bool
     {
-        return $user->role === 'admin';
+        return in_array($user->role, ['admin', 'editor']);
     }
 
     /**
      * Determine whether the user can view the model.
-     * Solo Admin puede ver detalles de descuento
+     * Admins y Editors pueden ver detalles de descuento
      */
     public function view(User $user, Discount $discount): bool
     {
-        return $user->role === 'admin';
+        return in_array($user->role, ['admin', 'editor']);
     }
 
     /**
@@ -52,11 +52,28 @@ class DiscountPolicy
         return $user->role === 'admin';
     }
 
+    /**
+     * Determine whether the user can restore the model.
+     * Solo Admin puede reactivar descuentos
+     */
     public function restore(User $user, Discount $discount): bool
     {
-        return false;
+        return $user->role === 'admin';
     }
 
+    /**
+     * Determine whether the user can activate a deactivated discount.
+     * Solo Admin puede reactivar descuentos
+     */
+    public function activate(User $user, Discount $discount): bool
+    {
+        return $user->role === 'admin';
+    }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     * Nunca permitido para descuentos (siempre soft delete)
+     */
     public function forceDelete(User $user, Discount $discount): bool
     {
         return false;
