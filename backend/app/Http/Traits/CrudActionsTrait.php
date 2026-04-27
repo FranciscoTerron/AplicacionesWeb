@@ -3,13 +3,11 @@
 namespace App\Http\Traits;
 
 use App\Domain\Errors\DomainError;
-use App\Models\User;
 use App\Services\FirestoreService;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View as ViewContract;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
 
@@ -17,10 +15,15 @@ trait CrudActionsTrait
 {
     // --- Métodos abstractos que cada controller debe implementar ---
     abstract protected function getCollectionName(): string;
+
     abstract protected function getRedirectRoute(): string;
+
     abstract protected function getViewFolder(): string;
+
     abstract protected function getStoreRequestClass(): string;
+
     abstract protected function getUpdateRequestClass(): string;
+
     abstract protected function getModelClass(): string; // ← Nuevo: retorna FQCN del Model
 
     // --- Métodos auxiliares (opcionales) ---
@@ -80,9 +83,10 @@ trait CrudActionsTrait
         if (! $data) {
             abort(404, 'Registro no encontrado.');
         }
-        $model = new $modelClass();
+        $model = new $modelClass;
         $model->forceFill($data);
         $model->exists = true;
+
         return $model;
     }
 
@@ -158,8 +162,9 @@ trait CrudActionsTrait
         // Validación específica para subcategories (categoría debe existir y estar activa)
         if ($this->getCollectionName() === 'subcategories' && isset($validated['category_id'])) {
             $category = $this->firestore->getDocument('categories', $validated['category_id']);
-            if (! $category || !($category['active'] ?? false)) {
+            if (! $category || ! ($category['active'] ?? false)) {
                 $error = 'La categoría seleccionada no existe o está inactiva.';
+
                 return $request->ajax()
                     ? response()->json(['error' => $error], 422)
                     : back()->with('error', $error)->withInput();
@@ -187,6 +192,7 @@ trait CrudActionsTrait
             if ($request->ajax()) {
                 return response()->json(['error' => $e->getUserMessage()], 422);
             }
+
             return back()->with('error', $e->getUserMessage())->withInput();
         }
     }
@@ -224,8 +230,9 @@ trait CrudActionsTrait
         // Validación específica para subcategories
         if ($this->getCollectionName() === 'subcategories' && isset($validated['category_id'])) {
             $category = $this->firestore->getDocument('categories', $validated['category_id']);
-            if (! $category || !($category['active'] ?? false)) {
+            if (! $category || ! ($category['active'] ?? false)) {
                 $error = 'La categoría seleccionada no existe o está inactiva.';
+
                 return $request->ajax()
                     ? response()->json(['error' => $error], 422)
                     : back()->with('error', $error)->withInput();
@@ -254,6 +261,7 @@ trait CrudActionsTrait
             if ($request->ajax()) {
                 return response()->json(['error' => $e->getUserMessage()], 422);
             }
+
             return back()->with('error', $e->getUserMessage())->withInput();
         }
     }
@@ -286,6 +294,7 @@ trait CrudActionsTrait
             if (request()->ajax()) {
                 return response()->json(['error' => $e->getUserMessage()], 422);
             }
+
             return back()->with('error', $e->getUserMessage());
         }
     }

@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
+use App\Http\Traits\CrudActionsTrait;
 use App\Models\Category;
 use App\Services\FirestoreService;
-use App\Http\Traits\CrudActionsTrait;
 
 class CategoryController extends Controller
 {

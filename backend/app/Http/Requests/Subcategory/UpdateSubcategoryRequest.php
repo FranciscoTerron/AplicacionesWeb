@@ -55,7 +55,7 @@ class UpdateSubcategoryRequest extends FormRequest
             $categoryId = $this->input('category_id');
             if ($categoryId) {
                 $category = app(FirestoreService::class)->getDocument('categories', $categoryId);
-                if (!$category || !($category['active'] ?? false)) {
+                if (! $category || ! ($category['active'] ?? false)) {
                     $validator->errors()->add('category_id', 'La categoría seleccionada no existe o está inactiva.');
                 }
             }

@@ -23,7 +23,7 @@ class StoreSubcategoryRequest extends FormRequest
                     $fs = app(FirestoreService::class);
                     $existing = $fs->query('subcategories', ['name' => strtolower($value)], 1);
                     if (count($existing) > 0) {
-                        fail('Ya existe una subcategoría con ese nombre.');
+                        $fail('Ya existe una subcategoría con ese nombre.');
                     }
                 },
             ],
@@ -52,7 +52,7 @@ class StoreSubcategoryRequest extends FormRequest
             $categoryId = $this->input('category_id');
             if ($categoryId) {
                 $category = app(FirestoreService::class)->getDocument('categories', $categoryId);
-                if (!$category || !($category['active'] ?? false)) {
+                if (! $category || ! ($category['active'] ?? false)) {
                     $validator->errors()->add('category_id', 'La categoría seleccionada no existe o está inactiva.');
                 }
             }

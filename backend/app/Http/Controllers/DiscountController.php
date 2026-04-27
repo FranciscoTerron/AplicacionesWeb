@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Discount\StoreDiscountRequest;
 use App\Http\Requests\Discount\UpdateDiscountRequest;
+use App\Http\Traits\CrudActionsTrait;
 use App\Models\Discount;
 use App\Services\FirestoreService;
-use App\Http\Traits\CrudActionsTrait;
 
 class DiscountController extends Controller
 {

@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Category;
+use App\Models\User;
 
 class CategoryPolicy
 {
@@ -53,6 +53,13 @@ class CategoryPolicy
     }
 
     // restore y forceDelete no se usan (baja lógica via update active=false)
-    public function restore(User $user, Category $category): bool { return false; }
-    public function forceDelete(User $user, Category $category): bool { return false; }
+    public function restore(User $user, Category $category): bool
+    {
+        return false;
+    }
+
+    public function forceDelete(User $user, Category $category): bool
+    {
+        return false;
+    }
 }

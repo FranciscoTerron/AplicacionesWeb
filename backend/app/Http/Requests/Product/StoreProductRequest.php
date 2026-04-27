@@ -84,7 +84,7 @@ class StoreProductRequest extends FormRequest
             $categoryId = $this->input('category_id');
             if ($categoryId) {
                 $category = app(FirestoreService::class)->getDocument('categories', $categoryId);
-                if (!$category || !($category['active'] ?? false)) {
+                if (! $category || ! ($category['active'] ?? false)) {
                     $validator->errors()->add('category_id', 'La categoría seleccionada no existe o está inactiva.');
                 }
             }
@@ -92,11 +92,10 @@ class StoreProductRequest extends FormRequest
             $subcategoryId = $this->input('subcategory_id');
             if ($subcategoryId) {
                 $subcategory = app(FirestoreService::class)->getDocument('subcategories', $subcategoryId);
-                if (!$subcategory) {
+                if (! $subcategory) {
                     $validator->errors()->add('subcategory_id', 'La subcategoría seleccionada no existe.');
                 }
             }
         });
     }
 }
-

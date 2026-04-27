@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
@@ -81,7 +82,7 @@ class DiscountControllerTest extends TestCase
         ];
 
         $this->firestoreMock
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('getDocument')
             ->willReturn($discountData);
 
@@ -104,7 +105,7 @@ class DiscountControllerTest extends TestCase
         ];
 
         $this->firestoreMock
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('getDocument')
             ->willReturn($discountData);
 
@@ -126,7 +127,7 @@ class DiscountControllerTest extends TestCase
         ];
 
         $this->firestoreMock
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('getDocument')
             ->willReturn(['code' => 'VERANO20']);
 
@@ -147,7 +148,12 @@ class DiscountControllerTest extends TestCase
 
         $this->firestoreMock
             ->expects($this->once())
-            ->method('deleteDocument');
+            ->method('getDocument')
+            ->willReturn(['code' => 'VERANO20']);
+
+        $this->firestoreMock
+            ->expects($this->once())
+            ->method('updateDocument');
 
         $response = $this->delete(route('admin.discounts.destroy', $discountId));
 
@@ -156,9 +162,11 @@ class DiscountControllerTest extends TestCase
 
     protected function mockAuthUser(string $role): void
     {
-        $authUser = \Mockery::mock();
+        $authUser = \Mockery::mock(User::class)->makePartial();
         $authUser->role = $role;
+        $authUser->shouldReceive('getAuthIdentifier')->andReturn('1');
         Auth::shouldReceive('user')->andReturn($authUser);
         Auth::shouldReceive('check')->andReturn(true);
+        Auth::shouldReceive('id')->andReturn('1');
     }
 }

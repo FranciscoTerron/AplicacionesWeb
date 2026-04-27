@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use App\Services\FirestoreService;
-use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
 class CategoryControllerTest extends TestCase
@@ -104,7 +104,7 @@ class CategoryControllerTest extends TestCase
         ];
 
         $this->firestoreMock
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('getDocument')
             ->with('categories', $categoryId)
             ->willReturn($categoryData);
@@ -130,7 +130,7 @@ class CategoryControllerTest extends TestCase
         ];
 
         $this->firestoreMock
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('getDocument')
             ->with('categories', $categoryId)
             ->willReturn($categoryData);
@@ -157,7 +157,7 @@ class CategoryControllerTest extends TestCase
         ];
 
         $this->firestoreMock
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('getDocument')
             ->willReturn(['name' => 'Piscinas']);
 
@@ -183,8 +183,13 @@ class CategoryControllerTest extends TestCase
 
         $this->firestoreMock
             ->expects($this->once())
-            ->method('deleteDocument')
-            ->with('categories', $categoryId);
+            ->method('getDocument')
+            ->willReturn(['name' => 'Piscinas']);
+
+        $this->firestoreMock
+            ->expects($this->once())
+            ->method('updateDocument')
+            ->with('categories', $categoryId, $this->anything());
 
         $response = $this->delete(route('admin.categories.destroy', $categoryId));
 
@@ -197,10 +202,7 @@ class CategoryControllerTest extends TestCase
      */
     protected function mockAuthUser(string $role): void
     {
-        $authUser = \Mockery::mock();
-        $authUser->role = $role;
-        $authUser->shouldReceive('getAuthIdentifier')->andReturn('1');
-        Auth::shouldReceive('user')->andReturn($authUser);
-        Auth::shouldReceive('check')->andReturn(true);
+        $user = new User(['role' => $role, 'id' => '1']);
+        $this->actingAs($user);
     }
 }

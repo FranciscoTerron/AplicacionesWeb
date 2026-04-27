@@ -52,6 +52,13 @@ class DiscountPolicy
         return $user->role === 'admin';
     }
 
-    public function restore(User $user, Discount $discount): bool { return false; }
-    public function forceDelete(User $user, Discount $discount): bool { return false; }
+    public function restore(User $user, Discount $discount): bool
+    {
+        return false;
+    }
+
+    public function forceDelete(User $user, Discount $discount): bool
+    {
+        return false;
+    }
 }

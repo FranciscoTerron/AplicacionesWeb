@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
+use App\Http\Traits\CrudActionsTrait;
 use App\Models\Product;
 use App\Services\FirestoreService;
-use App\Http\Traits\CrudActionsTrait;
 
 class ProductController extends Controller
 {

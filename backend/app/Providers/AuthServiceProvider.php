@@ -3,10 +3,12 @@
 namespace App\Providers;
 
 use App\Models\Category;
+use App\Models\Client;
 use App\Models\Discount;
 use App\Models\Product;
 use App\Models\Subcategory;
 use App\Policies\CategoryPolicy;
+use App\Policies\ClientPolicy;
 use App\Policies\DiscountPolicy;
 use App\Policies\ProductPolicy;
 use App\Policies\SubcategoryPolicy;
@@ -21,6 +23,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Category::class => CategoryPolicy::class,
+        Client::class => ClientPolicy::class,
         Subcategory::class => SubcategoryPolicy::class,
         Product::class => ProductPolicy::class,
         Discount::class => DiscountPolicy::class,

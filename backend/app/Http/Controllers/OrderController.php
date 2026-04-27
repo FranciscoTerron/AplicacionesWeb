@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Order\StoreOrderRequest;
 use App\Http\Requests\Order\UpdateOrderRequest;
 use App\Http\Traits\CrudActionsTrait;
+use App\Models\Order;
 use App\Services\FirestoreService;
 
 class OrderController extends Controller
@@ -58,5 +59,10 @@ class OrderController extends Controller
     protected function getExtraEditData(string $id): array
     {
         return $this->getExtraCreateData();
+    }
+
+    protected function getModelClass(): string
+    {
+        return Order::class;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Category;
 
+use App\Services\FirestoreService;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreCategoryRequest extends FormRequest
@@ -19,10 +20,10 @@ class StoreCategoryRequest extends FormRequest
                 'string',
                 'max:255',
                 function ($attribute, $value, $fail) {
-                    $fs = app(\App\Services\FirestoreService::class);
+                    $fs = app(FirestoreService::class);
                     $existing = $fs->query('categories', ['name' => strtolower($value)], 1);
                     if (count($existing) > 0) {
-                        fail('Ya existe una categoría con ese nombre.');
+                        $fail('Ya existe una categoría con ese nombre.');
                     }
                 },
             ],

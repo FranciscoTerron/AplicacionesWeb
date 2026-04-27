@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
@@ -75,7 +76,7 @@ class SubcategoryControllerTest extends TestCase
         ];
 
         $this->firestoreMock
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('getDocument')
             ->willReturn($subcategoryData);
 
@@ -96,7 +97,7 @@ class SubcategoryControllerTest extends TestCase
         ];
 
         $this->firestoreMock
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('getDocument')
             ->willReturn($subcategoryData);
 
@@ -117,7 +118,7 @@ class SubcategoryControllerTest extends TestCase
         ];
 
         $this->firestoreMock
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('getDocument')
             ->willReturn(['name' => 'Cloro Líquido']);
 
@@ -138,7 +139,12 @@ class SubcategoryControllerTest extends TestCase
 
         $this->firestoreMock
             ->expects($this->once())
-            ->method('deleteDocument');
+            ->method('getDocument')
+            ->willReturn(['name' => 'Cloro Líquido']);
+
+        $this->firestoreMock
+            ->expects($this->once())
+            ->method('updateDocument');
 
         $response = $this->delete(route('admin.subcategories.destroy', $subcategoryId));
 
@@ -147,9 +153,11 @@ class SubcategoryControllerTest extends TestCase
 
     protected function mockAuthUser(string $role): void
     {
-        $authUser = \Mockery::mock();
+        $authUser = \Mockery::mock(User::class)->makePartial();
         $authUser->role = $role;
+        $authUser->shouldReceive('getAuthIdentifier')->andReturn('1');
         Auth::shouldReceive('user')->andReturn($authUser);
         Auth::shouldReceive('check')->andReturn(true);
+        Auth::shouldReceive('id')->andReturn('1');
     }
 }

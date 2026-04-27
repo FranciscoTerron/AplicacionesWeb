@@ -54,6 +54,13 @@ class ProductPolicy
     }
 
     // restore y forceDelete no se usan (baja lógica via update)
-    public function restore(User $user, Product $product): bool { return false; }
-    public function forceDelete(User $user, Product $product): bool { return false; }
+    public function restore(User $user, Product $product): bool
+    {
+        return false;
+    }
+
+    public function forceDelete(User $user, Product $product): bool
+    {
+        return false;
+    }
 }
