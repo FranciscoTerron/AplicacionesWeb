@@ -8,6 +8,7 @@ use App\Http\Traits\CrudActionsTrait;
 use App\Models\Discount;
 use App\Services\FirestoreService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View;
 
 class DiscountController extends Controller
 {
@@ -46,6 +47,54 @@ class DiscountController extends Controller
     protected function getModelClass(): string
     {
         return Discount::class;
+    }
+
+    /**
+     * Override index to add custom search and filters for discounts
+     */
+    public function index()
+    {
+        $this->authorizeRequest('viewAny');
+
+        $page = request()->get('page', 1);
+        $startAfter = request()->get('after');
+        $search = request()->get('search');
+        $typeFilter = request()->get('type');
+        $statusFilter = request()->get('status');
+
+        $result = $this->firestore->listDocuments($this->getCollectionName(), 20, $startAfter);
+        $items = collect($result['documents']);
+
+        // Apply search filter (by code or name)
+        if ($search) {
+            $items = $items->filter(function ($item) use ($search) {
+                return stripos($item['code'] ?? '', $search) !== false ||
+                       stripos($item['name'] ?? '', $search) !== false;
+            });
+        }
+
+        // Apply type filter (percentage/fixed)
+        if ($typeFilter) {
+            $items = $items->where('discount_type', $typeFilter);
+        }
+
+        // Apply status filter (active/inactive)
+        if ($statusFilter !== null) {
+            $statusBool = $statusFilter === 'active';
+            $items = $items->filter(function ($item) use ($statusBool) {
+                return ($item['active'] ?? true) == $statusBool;
+            });
+        }
+
+        return View::make("{$this->getViewFolder()}.index", [
+            'items' => $items,
+            'hasMore' => $result['hasMore'] ?? false,
+            'lastDocumentId' => $result['lastDocumentId'] ?? null,
+            'page' => $page,
+            'search' => $search,
+            'typeFilter' => $typeFilter,
+            'statusFilter' => $statusFilter,
+        ]);
     }
 
     /**
