@@ -126,6 +126,49 @@
     .applies-to-details {
         transition: all 0.3s ease;
     }
+
+    /* Delete/Activate modal styles */
+    .deactivation-modal .discount-summary,
+    .activation-modal .discount-summary {
+        border-left: 4px solid #0d6efd !important;
+    }
+
+    .deactivation-modal .impact-alert {
+        border-left: 4px solid #dc3545;
+    }
+
+    .activation-modal .impact-alert {
+        border-left: 4px solid #198754;
+    }
+
+    .deactivation-modal .confirmation-section,
+    .activation-modal .confirmation-section {
+        border-left: 4px solid currentColor !important;
+    }
+
+    .deactivation-modal .confirmation-section {
+        border-color: #dc3545 !important;
+    }
+
+    .activation-modal .confirmation-section {
+        border-color: #198754 !important;
+    }
+
+    .discount-summary h6 {
+        color: #495057;
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 0.25rem;
+    }
+
+    .impact-alert ul li {
+        margin-bottom: 0.25rem;
+    }
+
+    .impact-alert ul li:last-child {
+        margin-bottom: 0;
+    }
 </style>
 @endsection
 
@@ -520,41 +563,166 @@
             formEl.setAttribute('action', '/admin/discounts');
 
         } else if (action === 'delete') {
-            titleEl.textContent = 'Desactivar Descuento';
+            titleEl.innerHTML = `<i class="bi bi-lock"></i> Desactivar Descuento: ${escapeHtml(discount.code)}`;
+
+            const isPercentage = discount.discount_type === 'percentage';
+            const valueDisplay = isPercentage ?
+                `${discount.value}%` :
+                `$${parseFloat(discount.value || 0).toFixed(2)}`;
+
+            const hasBeenUsed = (discount.used_count || 0) > 0;
+            const usageText = hasBeenUsed ?
+                `Ha sido utilizado ${discount.used_count} ${discount.used_count === 1 ? 'vez' : 'veces'}.` :
+                'Aún no ha sido utilizado.';
+
+            const appliesToText = getAppliesToText(discount.applies_to);
+
             bodyEl.innerHTML = `
-                <div class="text-center">
-                    <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                         style="width: 60px; height: 60px;">
-                        <i class="bi bi-lock display-6 text-danger"></i>
+                <div class="deactivation-modal">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        <strong>¿Estás seguro de desactivar este descuento?</strong>
                     </div>
-                    <p class="mt-3">¿Estás seguro de desactivar el descuento <strong>${escapeHtml(discount.name || discount.code)}</strong>?</p>
-                    <p class="text-muted mb-0">Los clientes ya no podrán utilizar este descuento.</p>
+
+                    <div class="discount-summary border rounded p-3 mb-3 bg-light">
+                        <h6 class="text-primary mb-2"><i class="bi bi-tag"></i> Información del Descuento</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Código:</strong> <code>${escapeHtml(discount.code)}</code></p>
+                                <p class="mb-1"><strong>Nombre:</strong> ${escapeHtml(discount.name || '-')}</p>
+                                <p class="mb-1"><strong>Tipo:</strong> ${isPercentage ? 'Porcentaje' : 'Importe Fijo'}</p>
+                                <p class="mb-1"><strong>Valor:</strong> <span class="text-success fw-bold">${valueDisplay}</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Aplica a:</strong> ${appliesToText}</p>
+                                <p class="mb-1"><strong>Vigencia:</strong> ${discount.valid_to ?
+                                    'Hasta ' + new Date(discount.valid_to).toLocaleDateString('es-ES') :
+                                    'Sin límite'}</p>
+                                <p class="mb-1"><strong>Estado de uso:</strong> ${usageText}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="impact-alert alert alert-warning">
+                        <h6 class="alert-heading mb-2"><i class="bi bi-info-circle"></i> Impacto de la desactivación:</h6>
+                        <ul class="mb-0">
+                            <li>Los clientes <strong>ya no podrán utilizar</strong> este descuento</li>
+                            <li>Los códigos de descuento existentes <strong>dejarán de funcionar</strong></li>
+                            <li>Esta acción se puede <strong>revertir</strong> reactivando el descuento</li>
+                            ${hasBeenUsed ? '<li><strong>No afecta</strong> los usos ya realizados</li>' : ''}
+                            <li>El descuento aparecerá como <strong>"Inactivo"</strong> en la lista</li>
+                        </ul>
+                    </div>
+
+                    <div class="confirmation-section text-center border rounded p-3 bg-danger bg-opacity-10">
+                        <div class="mb-3">
+                            <i class="bi bi-lock-fill text-danger display-4"></i>
+                        </div>
+                        <p class="mb-1 fw-bold">¿Confirmas que deseas desactivar este descuento?</p>
+                        <p class="text-muted small mb-0">Esta acción se puede deshacer en cualquier momento.</p>
+                    </div>
                 </div>
                 <input type="hidden" name="_method" value="DELETE">
             `;
+
             footerEl.innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-danger">Desactivar Descuento</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-lock"></i> Sí, Desactivar Descuento
+                </button>
             `;
             formEl.setAttribute('method', 'POST');
             formEl.setAttribute('action', '/admin/discounts/' + discount.id);
 
         } else if (action === 'activate') {
-            titleEl.textContent = 'Reactivar Descuento';
+            titleEl.innerHTML = `<i class="bi bi-unlock"></i> Reactivar Descuento: ${escapeHtml(discount.code)}`;
+
+            const isPercentage = discount.discount_type === 'percentage';
+            const valueDisplay = isPercentage ?
+                `${discount.value}%` :
+                `$${parseFloat(discount.value || 0).toFixed(2)}`;
+
+            const appliesToText = getAppliesToText(discount.applies_to);
+            const usageText = discount.used_count ?
+                `Ha sido utilizado ${discount.used_count} ${discount.used_count === 1 ? 'vez' : 'veces'}.` :
+                'Aún no ha sido utilizado.';
+
+            // Check if discount is expired
+            const now = new Date();
+            const validTo = discount.valid_to ? new Date(discount.valid_to) : null;
+            const isExpired = validTo && validTo < now;
+
             bodyEl.innerHTML = `
-                <div class="text-center">
-                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                         style="width: 60px; height: 60px;">
-                        <i class="bi bi-unlock display-6 text-success"></i>
+                <div class="activation-modal">
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle-fill"></i>
+                        <strong>¿Estás seguro de reactivar este descuento?</strong>
                     </div>
-                    <p class="mt-3">¿Estás seguro de reactivar el descuento <strong>${escapeHtml(discount.name || discount.code)}</strong>?</p>
-                    <p class="text-muted mb-0">El descuento volverá a estar disponible para los clientes.</p>
+
+                    <div class="discount-summary border rounded p-3 mb-3 bg-light">
+                        <h6 class="text-primary mb-2"><i class="bi bi-tag"></i> Información del Descuento</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Código:</strong> <code>${escapeHtml(discount.code)}</code></p>
+                                <p class="mb-1"><strong>Nombre:</strong> ${escapeHtml(discount.name || '-')}</p>
+                                <p class="mb-1"><strong>Tipo:</strong> ${isPercentage ? 'Porcentaje' : 'Importe Fijo'}</p>
+                                <p class="mb-1"><strong>Valor:</strong> <span class="text-success fw-bold">${valueDisplay}</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Aplica a:</strong> ${appliesToText}</p>
+                                <p class="mb-1"><strong>Vigencia:</strong> ${discount.valid_to ?
+                                    (isExpired ?
+                                        '<span class="text-danger">Expirado el ' + validTo.toLocaleDateString('es-ES') + '</span>' :
+                                        'Hasta ' + validTo.toLocaleDateString('es-ES')) :
+                                    'Sin límite'}</p>
+                                <p class="mb-1"><strong>Estado de uso:</strong> ${usageText}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="impact-alert alert ${isExpired ? 'alert-warning' : 'alert-info'}">
+                        <h6 class="alert-heading mb-2"><i class="bi bi-info-circle"></i> Impacto de la reactivación:</h6>
+                        <ul class="mb-0">
+                            <li>Los clientes <strong>podrán volver a utilizar</strong> este descuento</li>
+                            <li>Los códigos de descuento <strong>volverán a funcionar</strong> inmediatamente</li>
+                            ${isExpired ?
+                                '<li class="text-warning"><strong>Atención:</strong> El descuento expiró, pero será reactivado de todas formas</li>' :
+                                '<li>El descuento estará disponible según su configuración de vigencia</li>'}
+                            <li>El descuento aparecerá como <strong>"Activo"</strong> en la lista</li>
+                            ${discount.max_uses && discount.used_count ?
+                                `<li>Usos restantes: <strong>${discount.max_uses - discount.used_count}</strong></li>` :
+                                ''}
+                        </ul>
+                    </div>
+
+                    ${isExpired ? `
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Nota:</strong> Este descuento está configurado para expirar el ${validTo.toLocaleDateString('es-ES')}.
+                            Si lo reactivas ahora, seguirá funcionando hasta esa fecha.
+                        </div>
+                    ` : ''}
+
+                    <div class="confirmation-section text-center border rounded p-3 bg-success bg-opacity-10">
+                        <div class="mb-3">
+                            <i class="bi bi-unlock-fill text-success display-4"></i>
+                        </div>
+                        <p class="mb-1 fw-bold">¿Confirmas que deseas reactivar este descuento?</p>
+                        <p class="text-muted small mb-0">Los clientes podrán utilizarlo inmediatamente.</p>
+                    </div>
                 </div>
                 <input type="hidden" name="_method" value="POST">
             `;
+
             footerEl.innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-success">Reactivar Descuento</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="submit" class="btn btn-success">
+                    <i class="bi bi-unlock"></i> Sí, Reactivar Descuento
+                </button>
             `;
             formEl.setAttribute('method', 'POST');
             formEl.setAttribute('action', '/admin/discounts/' + discount.id + '/activate');
