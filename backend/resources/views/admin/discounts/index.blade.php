@@ -471,8 +471,31 @@
             formEl.setAttribute('method', 'GET');
 
         } else if (action === 'edit') {
-            // Edit modal will be implemented in Phase 6
-            alert('Funcionalidad de edición próximamente disponible.');
+            // Multi-step edit modal
+            currentStep = 1;
+            totalSteps = 4;
+            // Pre-load existing discount data
+            formData = {
+                id: discount.id,
+                code: discount.code || '',
+                name: discount.name || '',
+                description: discount.description || '',
+                discount_type: discount.discount_type || 'percentage',
+                value: discount.value || '',
+                max_uses: discount.max_uses || '',
+                used_count: discount.used_count || 0,
+                valid_from: discount.valid_from ? new Date(discount.valid_from).toISOString().slice(0, 16) : '',
+                valid_to: discount.valid_to ? new Date(discount.valid_to).toISOString().slice(0, 16) : '',
+                applies_to: discount.applies_to || 'all',
+                applicable_ids: discount.applicable_ids || [],
+                active: discount.active !== false, // Default to true if undefined
+                created_at: discount.created_at,
+                updated_at: discount.updated_at
+            };
+
+            renderEditStep(currentStep);
+            formEl.setAttribute('method', 'POST');
+            formEl.setAttribute('action', '/admin/discounts/' + discount.id);
 
         } else if (action === 'new') {
             // Multi-step create modal
@@ -619,7 +642,7 @@
                         <i class="bi bi-chevron-left"></i> Anterior
                     </button>
                     <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle"></i> Crear Descuento
+                        <i class="bi bi-check-circle"></i> ${currentAction === 'new' ? 'Crear' : 'Actualizar'} Descuento
                     </button>
                 `;
                 break;
@@ -955,25 +978,361 @@
     }
 
     // ============================================
-    // FORM SUBMISSION HANDLER
+    // MULTI-STEP EDIT FUNCTIONS
     // ============================================
 
-    // Handle dynamic applies_to field visibility
-    document.addEventListener('change', function(e) {
-        if (e.target.name === 'applies_to') {
-            const appliesToDetails = document.querySelector('.applies-to-details');
-            const label = document.querySelector('.applies-to-details label small');
+    function renderEditStep(step) {
+        const titleEl = document.getElementById('modalTitle');
+        const bodyEl = document.getElementById('modalBody');
+        const footerEl = document.getElementById('modalFooter');
 
-            if (e.target.value === 'all') {
-                appliesToDetails.style.display = 'none';
-            } else {
-                appliesToDetails.style.display = 'block';
-                if (label) {
-                    label.textContent = e.target.value === 'categories' ? '(IDs de categorías)' : '(IDs de productos)';
+        // Update title with step indicator
+        titleEl.innerHTML = `<i class="bi bi-pencil"></i> Editar Descuento: ${escapeHtml(formData.code)} - Paso ${step} de ${totalSteps}`;
+
+        // Render step content
+        let stepContent = '';
+        let footerButtons = '';
+
+        switch(step) {
+            case 1:
+                stepContent = renderEditStep1();
+                footerButtons = `
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="nextEditStep()">
+                        <i class="bi bi-chevron-right"></i> Siguiente
+                    </button>
+                `;
+                break;
+            case 2:
+                stepContent = renderEditStep2();
+                footerButtons = `
+                    <button type="button" class="btn btn-outline-secondary" onclick="prevEditStep()">
+                        <i class="bi bi-chevron-left"></i> Anterior
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="nextEditStep()">
+                        <i class="bi bi-chevron-right"></i> Siguiente
+                    </button>
+                `;
+                break;
+            case 3:
+                stepContent = renderEditStep3();
+                footerButtons = `
+                    <button type="button" class="btn btn-outline-secondary" onclick="prevEditStep()">
+                        <i class="bi bi-chevron-left"></i> Anterior
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="nextEditStep()">
+                        <i class="bi bi-chevron-right"></i> Siguiente
+                    </button>
+                `;
+                break;
+            case 4:
+                stepContent = renderEditStep4();
+                footerButtons = `
+                    <button type="button" class="btn btn-outline-secondary" onclick="prevEditStep()">
+                        <i class="bi bi-chevron-left"></i> Anterior
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> ${currentAction === 'new' ? 'Crear' : 'Actualizar'} Descuento
+                    </button>
+                `;
+                break;
+        }
+
+        bodyEl.innerHTML = stepContent;
+        footerEl.innerHTML = footerButtons;
+
+        // Render progress indicator
+        renderProgressIndicator();
+    }
+
+    function renderEditStep1() {
+        return `
+            <div class="step-content">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    El código y tipo de descuento no se pueden modificar una vez creado.
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Código</label>
+                    <input type="text" class="form-control bg-light" value="${escapeHtml(formData.code)}" readonly>
+                    <div class="form-text text-muted">El código no se puede modificar.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" value="${escapeHtml(formData.name)}" required maxlength="255">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea name="description" class="form-control" rows="3" maxlength="1000">${escapeHtml(formData.description)}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Tipo de Descuento</label>
+                    <input type="text" class="form-control bg-light" value="${formData.discount_type === 'percentage' ? 'Porcentaje (%)' : 'Importe Fijo ($)'}" readonly>
+                    <div class="form-text text-muted">El tipo no se puede modificar.</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderEditStep2() {
+        const isPercentage = formData.discount_type === 'percentage';
+        const hasBeenUsed = formData.used_count > 0;
+
+        return `
+            <div class="step-content">
+                ${hasBeenUsed ? `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Este descuento ya ha sido utilizado ${formData.used_count} ${formData.used_count === 1 ? 'vez' : 'veces'}.
+                        Solo puedes aumentar los usos máximos, no reducirlos.
+                    </div>
+                ` : ''}
+
+                <div class="mb-3">
+                    <label class="form-label">Valor del Descuento <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="number" name="value" class="form-control" value="${formData.value}"
+                               step="0.01" min="0" required>
+                        <span class="input-group-text">${isPercentage ? '%' : '$'}</span>
+                    </div>
+                    <div class="form-text">
+                        ${isPercentage ? 'Valor entre 0 y 100 para porcentajes.' : 'Monto en pesos para descuento fijo.'}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Usos Máximos</label>
+                    <input type="number" name="max_uses" class="form-control" value="${formData.max_uses}"
+                           min="${hasBeenUsed ? formData.used_count : 1}" placeholder="Dejar vacío para usos ilimitados">
+                    <div class="form-text">
+                        ${hasBeenUsed ?
+                            `Debe ser al menos ${formData.used_count} (ya utilizado).` :
+                            'Número máximo de veces que se puede utilizar este descuento.'
+                        }
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Aplicar a</label>
+                    <input type="text" class="form-control bg-light" value="${getAppliesToText(formData.applies_to)}" readonly>
+                    <div class="form-text text-muted">Las condiciones de aplicación no se pueden modificar.</div>
+                </div>
+
+                ${formData.applies_to !== 'all' ? `
+                    <div class="mb-3">
+                        <label class="form-label">IDs Aplicables</label>
+                        <textarea class="form-control bg-light" rows="3" readonly>${formData.applicable_ids.join(', ')}</textarea>
+                        <div class="form-text text-muted">Los IDs aplicables no se pueden modificar.</div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    function renderEditStep3() {
+        return `
+            <div class="step-content">
+                <div class="alert alert-info">
+                    <i class="bi bi-calendar-event"></i>
+                    Modifica las fechas de vigencia del descuento. Los cambios afectan inmediatamente.
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Válido Desde <span class="text-danger">*</span></label>
+                    <input type="datetime-local" name="valid_from" class="form-control" value="${formData.valid_from}" required>
+                    <div class="form-text">Fecha y hora a partir de la cual el descuento estará disponible.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Válido Hasta <span class="text-danger">*</span></label>
+                    <input type="datetime-local" name="valid_to" class="form-control" value="${formData.valid_to}" required>
+                    <div class="form-text">Fecha y hora hasta la cual el descuento estará disponible.</div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" name="active" class="form-check-input" id="editActiveCheck" ${formData.active ? 'checked' : ''}>
+                        <label class="form-check-label" for="editActiveCheck">
+                            Descuento activo
+                        </label>
+                    </div>
+                    <div class="form-text">Activa o desactiva el descuento inmediatamente.</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderEditStep4() {
+        const isPercentage = formData.discount_type === 'percentage';
+        const valueDisplay = isPercentage ?
+            `${formData.value}%` :
+            `$${parseFloat(formData.value || 0).toFixed(2)}`;
+
+        const appliesToText = getAppliesToText(formData.applies_to);
+
+        const changes = getChangesSummary();
+
+        return `
+            <div class="step-content">
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Revisa los cambios antes de actualizar el descuento.
+                </div>
+
+                ${changes.length > 0 ? `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Cambios detectados:</strong>
+                        <ul class="mb-0 mt-2">
+                            ${changes.map(change => `<li>${change}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        No se detectaron cambios en los datos.
+                    </div>
+                `}
+
+                <div class="summary-card border rounded p-3 mb-3">
+                    <h6 class="text-primary mb-2"><i class="bi bi-tag"></i> Información Básica</h6>
+                    <p class="mb-1"><strong>Código:</strong> <code>${escapeHtml(formData.code.toUpperCase())}</code></p>
+                    <p class="mb-1"><strong>Nombre:</strong> ${escapeHtml(formData.name)}</p>
+                    ${formData.description ? `<p class="mb-1"><strong>Descripción:</strong> ${escapeHtml(formData.description)}</p>` : ''}
+                </div>
+
+                <div class="summary-card border rounded p-3 mb-3">
+                    <h6 class="text-primary mb-2"><i class="bi bi-graph-up"></i> Configuración</h6>
+                    <p class="mb-1"><strong>Tipo:</strong> ${isPercentage ? 'Porcentaje' : 'Importe Fijo'}</p>
+                    <p class="mb-1"><strong>Valor:</strong> <span class="h6 text-success">${valueDisplay}</span></p>
+                    ${formData.max_uses ? `<p class="mb-1"><strong>Usos Máximos:</strong> ${formData.max_uses}</p>` : ''}
+                    ${formData.used_count ? `<p class="mb-1"><strong>Usos Realizados:</strong> ${formData.used_count}</p>` : ''}
+                    <p class="mb-1"><strong>Aplica a:</strong> ${appliesToText}</p>
+                    ${formData.applicable_ids.length > 0 ?
+                        `<p class="mb-1"><strong>IDs Aplicables:</strong> ${formData.applicable_ids.join(', ')}</p>` : ''}
+                </div>
+
+                <div class="summary-card border rounded p-3 mb-3">
+                    <h6 class="text-primary mb-2"><i class="bi bi-calendar-check"></i> Vigencia</h6>
+                    <p class="mb-1"><strong>Desde:</strong> ${formatDateTime(formData.valid_from)}</p>
+                    <p class="mb-1"><strong>Hasta:</strong> ${formatDateTime(formData.valid_to)}</p>
+                    <p class="mb-1"><strong>Estado:</strong> ${formData.active ?
+                        '<span class="badge bg-success">Activo</span>' :
+                        '<span class="badge bg-danger">Inactivo</span>'}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    function getChangesSummary() {
+        const changes = [];
+
+        // Compare with original data
+        if (formData.name !== currentDiscount.name) {
+            changes.push(`Nombre: "${currentDiscount.name}" → "${formData.name}"`);
+        }
+        if (formData.description !== (currentDiscount.description || '')) {
+            changes.push(`Descripción modificada`);
+        }
+        if (formData.value !== currentDiscount.value) {
+            changes.push(`Valor: ${currentDiscount.value} → ${formData.value}`);
+        }
+        if (formData.max_uses !== (currentDiscount.max_uses || '')) {
+            changes.push(`Usos máximos: ${currentDiscount.max_uses || 'ilimitados'} → ${formData.max_uses || 'ilimitados'}`);
+        }
+        if (formData.valid_from !== (currentDiscount.valid_from ? new Date(currentDiscount.valid_from).toISOString().slice(0, 16) : '')) {
+            changes.push(`Fecha de inicio modificada`);
+        }
+        if (formData.valid_to !== (currentDiscount.valid_to ? new Date(currentDiscount.valid_to).toISOString().slice(0, 16) : '')) {
+            changes.push(`Fecha de fin modificada`);
+        }
+        if (formData.active !== (currentDiscount.active !== false)) {
+            changes.push(`Estado: ${currentDiscount.active !== false ? 'Activo' : 'Inactivo'} → ${formData.active ? 'Activo' : 'Inactivo'}`);
+        }
+
+        return changes;
+    }
+
+    function nextEditStep() {
+        if (!validateEditCurrentStep()) {
+            return;
+        }
+
+        saveStepData();
+
+        if (currentStep < totalSteps) {
+            currentStep++;
+            renderEditStep(currentStep);
+        }
+    }
+
+    function prevEditStep() {
+        saveStepData();
+
+        if (currentStep > 1) {
+            currentStep--;
+            renderEditStep(currentStep);
+        }
+    }
+
+    function validateEditCurrentStep() {
+        const stepInputs = document.querySelectorAll(`#modalBody input:not([readonly]), #modalBody select, #modalBody textarea:not([readonly])`);
+        let isValid = true;
+
+        // Clear previous errors
+        document.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+        stepInputs.forEach(input => {
+            if (input.hasAttribute('required') && !input.value.trim()) {
+                showFieldError(input, 'Este campo es obligatorio.');
+                isValid = false;
+            }
+
+            // Specific validations
+            if (input.name === 'value' && input.value) {
+                const value = parseFloat(input.value);
+                if (formData.discount_type === 'percentage' && (value < 0 || value > 100)) {
+                    showFieldError(input, 'El porcentaje debe estar entre 0 y 100.');
+                    isValid = false;
+                }
+                if (value < 0) {
+                    showFieldError(input, 'El valor no puede ser negativo.');
+                    isValid = false;
                 }
             }
-        }
-    });
+
+            if (input.name === 'max_uses' && input.value) {
+                const maxUses = parseInt(input.value);
+                const usedCount = formData.used_count || 0;
+                if (maxUses < usedCount) {
+                    showFieldError(input, `Los usos máximos no pueden ser menores a ${usedCount} (ya utilizado).`);
+                    isValid = false;
+                }
+            }
+
+            if (input.name === 'valid_from' && input.name === 'valid_to') {
+                const fromDate = new Date(formData.valid_from);
+                const toDate = new Date(formData.valid_to);
+                if (fromDate >= toDate) {
+                    showFieldError(document.querySelector('[name="valid_to"]'), 'La fecha de fin debe ser posterior a la fecha de inicio.');
+                    isValid = false;
+                }
+            }
+        });
+
+        return isValid;
+    }
+
+    // ============================================
+    // FORM SUBMISSION HANDLER
+    // ============================================
 
     // Manejar formulario con AJAX para mejor UX - muestra errores inline sin cerrar el modal
     document.getElementById('modalForm').addEventListener('submit', function(e) {
@@ -981,7 +1340,11 @@
 
         // Only submit on final step
         if (currentStep < totalSteps) {
-            nextStep();
+            if (currentAction === 'new') {
+                nextStep();
+            } else if (currentAction === 'edit') {
+                nextEditStep();
+            }
             return;
         }
 
@@ -1033,7 +1396,7 @@
                 const footer = document.getElementById('modalFooter');
                 const successDiv = document.createElement('div');
                 successDiv.className = 'alert alert-success mt-3 mb-0';
-                successDiv.innerHTML = '<i class="bi bi-check-circle"></i> Descuento creado exitosamente.';
+                successDiv.innerHTML = `<i class="bi bi-check-circle"></i> Descuento ${currentAction === 'new' ? 'creado' : 'actualizado'} exitosamente.`;
                 footer.insertBefore(successDiv, footer.firstChild);
 
                 setTimeout(() => {
@@ -1056,15 +1419,16 @@
                 });
 
                 // If validation errors, go back to appropriate step
-                if (data.errors.code || data.errors.name || data.errors.description || data.errors.discount_type) {
+                let renderFunction = currentAction === 'new' ? renderCreateStep : renderEditStep;
+                if (data.errors.name || data.errors.description) {
                     currentStep = 1;
-                    renderCreateStep(1);
-                } else if (data.errors.value || data.errors.max_uses || data.errors.applies_to || data.errors.applicable_ids) {
+                    renderFunction(1);
+                } else if (data.errors.value || data.errors.max_uses) {
                     currentStep = 2;
-                    renderCreateStep(2);
+                    renderFunction(2);
                 } else if (data.errors.valid_from || data.errors.valid_to || data.errors.active) {
                     currentStep = 3;
-                    renderCreateStep(3);
+                    renderFunction(3);
                 }
             } else {
                 // Otros errores: mostrar alerta en el modal
