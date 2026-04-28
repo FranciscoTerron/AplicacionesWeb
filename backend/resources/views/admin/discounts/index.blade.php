@@ -33,6 +33,99 @@
     .discount-details .text-muted {
         font-size: 0.85em;
     }
+
+    /* Multi-step form styles */
+    .step-progress {
+        margin-bottom: 1.5rem;
+    }
+
+    .step-progress .progress {
+        height: 6px;
+        background-color: #e9ecef;
+        border-radius: 3px;
+    }
+
+    .step-progress .progress-bar {
+        background: linear-gradient(90deg, #0d6efd, #6610f2);
+        border-radius: 3px;
+    }
+
+    .step-indicator {
+        flex: 1;
+        text-align: center;
+        position: relative;
+    }
+
+    .step-indicator:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 50%;
+        width: calc(100% - 30px);
+        height: 2px;
+        background: #e9ecef;
+        z-index: 1;
+    }
+
+    .step-indicator.completed:not(:last-child)::after {
+        background: #198754;
+    }
+
+    .step-circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #e9ecef;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.5rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .step-indicator.active .step-circle {
+        background: #0d6efd;
+        color: white;
+    }
+
+    .step-indicator.completed .step-circle {
+        background: #198754;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .step-indicator.active .step-label {
+        color: #0d6efd;
+        font-weight: 600;
+    }
+
+    .step-indicator.completed .step-label {
+        color: #198754;
+    }
+
+    .summary-card {
+        background: #f8f9fa;
+        border-color: #dee2e6 !important;
+    }
+
+    .summary-card h6 {
+        color: #495057;
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .applies-to-details {
+        transition: all 0.3s ease;
+    }
 </style>
 @endsection
 
@@ -253,6 +346,11 @@
     let currentAction = '';
     let currentDiscount = null;
 
+    // Multi-step form variables
+    let currentStep = 1;
+    let totalSteps = 4;
+    let formData = {};
+
     function openModal(action, discount) {
         currentAction = action;
         currentDiscount = discount;
@@ -377,8 +475,26 @@
             alert('Funcionalidad de edición próximamente disponible.');
 
         } else if (action === 'new') {
-            // New modal will be implemented in Phase 5
-            alert('Funcionalidad de creación próximamente disponible.');
+            // Multi-step create modal
+            currentStep = 1;
+            totalSteps = 4;
+            formData = {
+                code: '',
+                name: '',
+                description: '',
+                discount_type: 'percentage',
+                value: '',
+                max_uses: '',
+                valid_from: '',
+                valid_to: '',
+                applies_to: 'all',
+                applicable_ids: [],
+                active: true
+            };
+
+            renderCreateStep(currentStep);
+            formEl.setAttribute('method', 'POST');
+            formEl.setAttribute('action', '/admin/discounts');
 
         } else if (action === 'delete') {
             titleEl.textContent = 'Desactivar Descuento';
@@ -446,11 +562,443 @@
         return div.innerHTML;
     }
 
+    // ============================================
+    // MULTI-STEP CREATE FUNCTIONS
+    // ============================================
+
+    function renderCreateStep(step) {
+        const titleEl = document.getElementById('modalTitle');
+        const bodyEl = document.getElementById('modalBody');
+        const footerEl = document.getElementById('modalFooter');
+
+        // Update title with step indicator
+        titleEl.innerHTML = `<i class="bi bi-plus-circle"></i> Nuevo Descuento - Paso ${step} de ${totalSteps}`;
+
+        // Render step content
+        let stepContent = '';
+        let footerButtons = '';
+
+        switch(step) {
+            case 1:
+                stepContent = renderStep1();
+                footerButtons = `
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="nextStep()">
+                        <i class="bi bi-chevron-right"></i> Siguiente
+                    </button>
+                `;
+                break;
+            case 2:
+                stepContent = renderStep2();
+                footerButtons = `
+                    <button type="button" class="btn btn-outline-secondary" onclick="prevStep()">
+                        <i class="bi bi-chevron-left"></i> Anterior
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="nextStep()">
+                        <i class="bi bi-chevron-right"></i> Siguiente
+                    </button>
+                `;
+                break;
+            case 3:
+                stepContent = renderStep3();
+                footerButtons = `
+                    <button type="button" class="btn btn-outline-secondary" onclick="prevStep()">
+                        <i class="bi bi-chevron-left"></i> Anterior
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="nextStep()">
+                        <i class="bi bi-chevron-right"></i> Siguiente
+                    </button>
+                `;
+                break;
+            case 4:
+                stepContent = renderStep4();
+                footerButtons = `
+                    <button type="button" class="btn btn-outline-secondary" onclick="prevStep()">
+                        <i class="bi bi-chevron-left"></i> Anterior
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Crear Descuento
+                    </button>
+                `;
+                break;
+        }
+
+        bodyEl.innerHTML = stepContent;
+        footerEl.innerHTML = footerButtons;
+
+        // Render progress indicator
+        renderProgressIndicator();
+    }
+
+    function renderProgressIndicator() {
+        const existingIndicator = document.querySelector('.step-progress');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+
+        const progressHtml = `
+            <div class="step-progress mb-3">
+                <div class="d-flex justify-content-between mb-2">
+                    ${Array.from({length: totalSteps}, (_, i) => {
+                        const stepNum = i + 1;
+                        const isActive = stepNum === currentStep;
+                        const isCompleted = stepNum < currentStep;
+                        return `
+                            <div class="step-indicator ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}" data-step="${stepNum}">
+                                <div class="step-circle">${stepNum}</div>
+                                <div class="step-label">${getStepLabel(stepNum)}</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <div class="progress">
+                    <div class="progress-bar" style="width: ${(currentStep / totalSteps) * 100}%"></div>
+                </div>
+            </div>
+        `;
+
+        const bodyEl = document.getElementById('modalBody');
+        bodyEl.insertAdjacentHTML('afterbegin', progressHtml);
+    }
+
+    function getStepLabel(step) {
+        switch(step) {
+            case 1: return 'Información';
+            case 2: return 'Configuración';
+            case 3: return 'Vigencia';
+            case 4: return 'Resumen';
+            default: return '';
+        }
+    }
+
+    function renderStep1() {
+        return `
+            <div class="step-content">
+                <div class="mb-3">
+                    <label class="form-label">Código <span class="text-danger">*</span></label>
+                    <input type="text" name="code" class="form-control" value="${escapeHtml(formData.code)}" required
+                           placeholder="Ej: VERANO20" maxlength="50">
+                    <div class="form-text">Código alfanumérico único, se guardará en mayúsculas.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" value="${escapeHtml(formData.name)}" required
+                           placeholder="Ej: Descuento Verano 20%" maxlength="255">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea name="description" class="form-control" rows="3" maxlength="1000"
+                              placeholder="Descripción opcional del descuento">${escapeHtml(formData.description)}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Tipo de Descuento <span class="text-danger">*</span></label>
+                    <select name="discount_type" class="form-select" required>
+                        <option value="percentage" ${formData.discount_type === 'percentage' ? 'selected' : ''}>Porcentaje (%)</option>
+                        <option value="fixed" ${formData.discount_type === 'fixed' ? 'selected' : ''}>Importe Fijo ($)</option>
+                    </select>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderStep2() {
+        const isPercentage = formData.discount_type === 'percentage';
+        return `
+            <div class="step-content">
+                <div class="mb-3">
+                    <label class="form-label">Valor del Descuento <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="number" name="value" class="form-control" value="${formData.value}"
+                               step="0.01" min="0" required>
+                        <span class="input-group-text">${isPercentage ? '%' : '$'}</span>
+                    </div>
+                    <div class="form-text">
+                        ${isPercentage ? 'Valor entre 0 y 100 para porcentajes.' : 'Monto en pesos para descuento fijo.'}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Usos Máximos</label>
+                    <input type="number" name="max_uses" class="form-control" value="${formData.max_uses}"
+                           min="1" placeholder="Dejar vacío para usos ilimitados">
+                    <div class="form-text">Número máximo de veces que se puede utilizar este descuento.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Aplicar a <span class="text-danger">*</span></label>
+                    <select name="applies_to" class="form-select" required>
+                        <option value="all" ${formData.applies_to === 'all' ? 'selected' : ''}>Todos los productos</option>
+                        <option value="categories" ${formData.applies_to === 'categories' ? 'selected' : ''}>Categorías específicas</option>
+                        <option value="products" ${formData.applies_to === 'products' ? 'selected' : ''}>Productos específicos</option>
+                    </select>
+                </div>
+
+                <div class="mb-3 applies-to-details" style="${formData.applies_to === 'all' ? 'display: none;' : ''}">
+                    <label class="form-label">
+                        IDs Aplicables <span class="text-danger">*</span>
+                        <small class="text-muted">(${formData.applies_to === 'categories' ? 'IDs de categorías' : 'IDs de productos'})</small>
+                    </label>
+                    <textarea name="applicable_ids_text" class="form-control" rows="3"
+                              placeholder="Ingrese IDs separados por coma (ej: cat1, cat2, prod1)">${formData.applicable_ids.join(', ')}</textarea>
+                    <div class="form-text">Solo requerido cuando "Aplicar a" no es "Todos los productos".</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderStep3() {
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const formatDateTime = (date) => {
+            return date.getFullYear() + '-' +
+                   String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                   String(date.getDate()).padStart(2, '0') + 'T' +
+                   String(date.getHours()).padStart(2, '0') + ':' +
+                   String(date.getMinutes()).padStart(2, '0');
+        };
+
+        const defaultFrom = formData.valid_from || formatDateTime(now);
+        const defaultTo = formData.valid_to || formatDateTime(tomorrow);
+
+        return `
+            <div class="step-content">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    Define el período de vigencia del descuento. Los clientes solo podrán utilizarlo durante estas fechas.
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Válido Desde <span class="text-danger">*</span></label>
+                    <input type="datetime-local" name="valid_from" class="form-control" value="${defaultFrom}" required>
+                    <div class="form-text">Fecha y hora a partir de la cual el descuento estará disponible.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Válido Hasta <span class="text-danger">*</span></label>
+                    <input type="datetime-local" name="valid_to" class="form-control" value="${defaultTo}" required>
+                    <div class="form-text">Fecha y hora hasta la cual el descuento estará disponible.</div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" name="active" class="form-check-input" id="activeCheck" ${formData.active ? 'checked' : ''}>
+                        <label class="form-check-label" for="activeCheck">
+                            Activar descuento inmediatamente
+                        </label>
+                    </div>
+                    <div class="form-text">Si no está marcado, el descuento se creará como inactivo y podrás activarlo después.</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderStep4() {
+        const isPercentage = formData.discount_type === 'percentage';
+        const valueDisplay = isPercentage ?
+            `${formData.value}%` :
+            `$${parseFloat(formData.value || 0).toFixed(2)}`;
+
+        const appliesToText = getAppliesToText(formData.applies_to);
+
+        return `
+            <div class="step-content">
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Revisa la información antes de crear el descuento.
+                </div>
+
+                <div class="summary-card border rounded p-3 mb-3">
+                    <h6 class="text-primary mb-2"><i class="bi bi-tag"></i> Información Básica</h6>
+                    <p class="mb-1"><strong>Código:</strong> <code>${escapeHtml(formData.code.toUpperCase())}</code></p>
+                    <p class="mb-1"><strong>Nombre:</strong> ${escapeHtml(formData.name)}</p>
+                    ${formData.description ? `<p class="mb-1"><strong>Descripción:</strong> ${escapeHtml(formData.description)}</p>` : ''}
+                </div>
+
+                <div class="summary-card border rounded p-3 mb-3">
+                    <h6 class="text-primary mb-2"><i class="bi bi-graph-up"></i> Configuración</h6>
+                    <p class="mb-1"><strong>Tipo:</strong> ${isPercentage ? 'Porcentaje' : 'Importe Fijo'}</p>
+                    <p class="mb-1"><strong>Valor:</strong> <span class="h6 text-success">${valueDisplay}</span></p>
+                    ${formData.max_uses ? `<p class="mb-1"><strong>Usos Máximos:</strong> ${formData.max_uses}</p>` : ''}
+                    <p class="mb-1"><strong>Aplica a:</strong> ${appliesToText}</p>
+                    ${formData.applicable_ids.length > 0 ?
+                        `<p class="mb-1"><strong>IDs Aplicables:</strong> ${formData.applicable_ids.join(', ')}</p>` : ''}
+                </div>
+
+                <div class="summary-card border rounded p-3 mb-3">
+                    <h6 class="text-primary mb-2"><i class="bi bi-calendar-check"></i> Vigencia</h6>
+                    <p class="mb-1"><strong>Desde:</strong> ${formatDateTime(formData.valid_from)}</p>
+                    <p class="mb-1"><strong>Hasta:</strong> ${formatDateTime(formData.valid_to)}</p>
+                    <p class="mb-1"><strong>Estado Inicial:</strong> ${formData.active ?
+                        '<span class="badge bg-success">Activo</span>' :
+                        '<span class="badge bg-secondary">Inactivo</span>'}</p>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Una vez creado, podrás editar algunos campos pero no el código ni las condiciones de aplicación.
+                </div>
+            </div>
+        `;
+    }
+
+    function nextStep() {
+        if (!validateCurrentStep()) {
+            return;
+        }
+
+        saveStepData();
+
+        if (currentStep < totalSteps) {
+            currentStep++;
+            renderCreateStep(currentStep);
+        }
+    }
+
+    function prevStep() {
+        saveStepData();
+
+        if (currentStep > 1) {
+            currentStep--;
+            renderCreateStep(currentStep);
+        }
+    }
+
+    function validateCurrentStep() {
+        const stepInputs = document.querySelectorAll(`#modalBody input, #modalBody select, #modalBody textarea`);
+        let isValid = true;
+
+        // Clear previous errors
+        document.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+
+        stepInputs.forEach(input => {
+            if (input.hasAttribute('required') && !input.value.trim()) {
+                showFieldError(input, 'Este campo es obligatorio.');
+                isValid = false;
+            }
+
+            // Specific validations
+            if (input.name === 'code' && input.value) {
+                if (!/^[A-Za-z0-9]+$/.test(input.value)) {
+                    showFieldError(input, 'El código solo puede contener letras y números.');
+                    isValid = false;
+                }
+            }
+
+            if (input.name === 'value' && input.value) {
+                const value = parseFloat(input.value);
+                if (formData.discount_type === 'percentage' && (value < 0 || value > 100)) {
+                    showFieldError(input, 'El porcentaje debe estar entre 0 y 100.');
+                    isValid = false;
+                }
+                if (value < 0) {
+                    showFieldError(input, 'El valor no puede ser negativo.');
+                    isValid = false;
+                }
+            }
+
+            if (input.name === 'applicable_ids_text' && formData.applies_to !== 'all' && !input.value.trim()) {
+                showFieldError(input, 'Debes especificar al menos un ID aplicable.');
+                isValid = false;
+            }
+
+            if (input.name === 'valid_from' && input.name === 'valid_to') {
+                const fromDate = new Date(formData.valid_from);
+                const toDate = new Date(formData.valid_to);
+                if (fromDate >= toDate) {
+                    showFieldError(document.querySelector('[name="valid_to"]'), 'La fecha de fin debe ser posterior a la fecha de inicio.');
+                    isValid = false;
+                }
+            }
+        });
+
+        return isValid;
+    }
+
+    function saveStepData() {
+        const form = document.getElementById('modalForm');
+        const formDataObj = new FormData(form);
+
+        for (let [key, value] of formDataObj.entries()) {
+            if (key === 'applicable_ids_text') {
+                formData.applicable_ids = value ? value.split(',').map(id => id.trim()).filter(id => id) : [];
+            } else if (key === 'active') {
+                formData[key] = true; // Checkbox checked
+            } else if (key === 'max_uses') {
+                formData[key] = value ? parseInt(value) : '';
+            } else if (key === 'value') {
+                formData[key] = value ? parseFloat(value) : '';
+            } else {
+                formData[key] = value;
+            }
+        }
+
+        // Handle unchecked checkbox
+        if (!formDataObj.has('active')) {
+            formData.active = false;
+        }
+    }
+
+    function showFieldError(input, message) {
+        input.classList.add('is-invalid');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'invalid-feedback';
+        errorDiv.textContent = message;
+        input.parentNode.appendChild(errorDiv);
+    }
+
+    // ============================================
+    // FORM SUBMISSION HANDLER
+    // ============================================
+
+    // Handle dynamic applies_to field visibility
+    document.addEventListener('change', function(e) {
+        if (e.target.name === 'applies_to') {
+            const appliesToDetails = document.querySelector('.applies-to-details');
+            const label = document.querySelector('.applies-to-details label small');
+
+            if (e.target.value === 'all') {
+                appliesToDetails.style.display = 'none';
+            } else {
+                appliesToDetails.style.display = 'block';
+                if (label) {
+                    label.textContent = e.target.value === 'categories' ? '(IDs de categorías)' : '(IDs de productos)';
+                }
+            }
+        }
+    });
+
     // Manejar formulario con AJAX para mejor UX - muestra errores inline sin cerrar el modal
     document.getElementById('modalForm').addEventListener('submit', function(e) {
         e.preventDefault();
+
+        // Only submit on final step
+        if (currentStep < totalSteps) {
+            nextStep();
+            return;
+        }
+
         const form = e.target;
-        const formData = new FormData(form);
+        const formDataObj = new FormData(form);
+
+        // Add multi-step data to form
+        Object.keys(formData).forEach(key => {
+            if (key === 'applicable_ids') {
+                formDataObj.append('applicable_ids', JSON.stringify(formData.applicable_ids));
+            } else if (key === 'active') {
+                formDataObj.append('active', formData.active ? '1' : '0');
+            } else {
+                formDataObj.append(key, formData[key]);
+            }
+        });
+
         const method = form.querySelector('input[name="_method"]')?.value || 'POST';
         const url = form.action;
 
@@ -458,10 +1006,16 @@
         document.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
         document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
 
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creando...';
+
         // Enviar request
         fetch(url, {
             method: method,
-            body: formData,
+            body: formDataObj,
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
                 'X-Requested-With': 'XMLHttpRequest',
@@ -470,9 +1024,22 @@
         }).then(async (r) => {
             const data = await r.json();
 
+            // Reset button state
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+
             if (r.ok || r.status === 302) {
-                // Éxito: redirigir
-                window.location.href = data.redirect || window.location.href;
+                // Éxito: mostrar mensaje y redirigir
+                const footer = document.getElementById('modalFooter');
+                const successDiv = document.createElement('div');
+                successDiv.className = 'alert alert-success mt-3 mb-0';
+                successDiv.innerHTML = '<i class="bi bi-check-circle"></i> Descuento creado exitosamente.';
+                footer.insertBefore(successDiv, footer.firstChild);
+
+                setTimeout(() => {
+                    modal.hide();
+                    window.location.href = data.redirect || window.location.href;
+                }, 1500);
             } else if (r.status === 422) {
                 // Errores de validación: mostrar inline en el modal
                 Object.keys(data.errors || {}).forEach(field => {
@@ -487,24 +1054,46 @@
                         input.parentNode.appendChild(errorDiv);
                     }
                 });
+
+                // If validation errors, go back to appropriate step
+                if (data.errors.code || data.errors.name || data.errors.description || data.errors.discount_type) {
+                    currentStep = 1;
+                    renderCreateStep(1);
+                } else if (data.errors.value || data.errors.max_uses || data.errors.applies_to || data.errors.applicable_ids) {
+                    currentStep = 2;
+                    renderCreateStep(2);
+                } else if (data.errors.valid_from || data.errors.valid_to || data.errors.active) {
+                    currentStep = 3;
+                    renderCreateStep(3);
+                }
             } else {
                 // Otros errores: mostrar alerta en el modal
                 const footer = document.getElementById('modalFooter');
                 const alertDiv = document.createElement('div');
                 alertDiv.className = 'alert alert-danger mt-3 mb-0';
-                alertDiv.textContent = data.message || 'Ocurrió un error. Por favor, inténtalo nuevamente.';
+                alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle"></i> ' + (data.message || 'Ocurrió un error. Por favor, inténtalo nuevamente.');
                 footer.insertBefore(alertDiv, footer.firstChild);
                 setTimeout(() => alertDiv.remove(), 5000);
             }
         }).catch(err => {
+            // Reset button state
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+
             const footer = document.getElementById('modalFooter');
             const alertDiv = document.createElement('div');
             alertDiv.className = 'alert alert-danger mt-3 mb-0';
-            alertDiv.textContent = 'Error de conexión. Por favor, inténtalo nuevamente.';
+            alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Error de conexión. Por favor, inténtalo nuevamente.';
             footer.insertBefore(alertDiv, footer.firstChild);
             setTimeout(() => alertDiv.remove(), 5000);
         });
     });
+    // Reset multi-step when modal is hidden
+    document.getElementById('discountModal').addEventListener('hidden.bs.modal', function () {
+        currentStep = 1;
+        formData = {};
+    });
+
     // Botones de nuevo descuento
     document.getElementById('btnNewDiscount')?.addEventListener('click', () => openModal('new', null));
     document.getElementById('btnNewDiscountEmpty')?.addEventListener('click', () => openModal('new', null));
