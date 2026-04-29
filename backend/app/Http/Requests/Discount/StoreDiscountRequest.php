@@ -12,6 +12,15 @@ class StoreDiscountRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        if ($this->has('applicable_ids') && is_string($this->applicable_ids)) {
+            $this->merge([
+                'applicable_ids' => json_decode($this->applicable_ids, true) ?? [],
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -34,7 +43,7 @@ class StoreDiscountRequest extends FormRequest
             'max_uses' => 'nullable|integer|min:1',
             'valid_from' => 'required|date',
             'valid_to' => 'required|date|after:valid_from',
-            'active' => 'boolean',
+            'active' => 'nullable|in:0,1,true,false',
             'applies_to' => 'required|in:all,categories,products',
             'applicable_ids' => [
                 'nullable',

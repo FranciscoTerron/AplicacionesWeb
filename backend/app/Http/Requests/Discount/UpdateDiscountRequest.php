@@ -12,6 +12,15 @@ class UpdateDiscountRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        if ($this->has('applicable_ids') && is_string($this->applicable_ids)) {
+            $this->merge([
+                'applicable_ids' => json_decode($this->applicable_ids, true) ?? [],
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         $discountId = $this->route('discount'); // ID del descuento en actualización

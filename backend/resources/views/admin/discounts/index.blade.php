@@ -540,6 +540,18 @@
             formEl.setAttribute('method', 'POST');
             formEl.setAttribute('action', '/admin/discounts/' + discount.id);
 
+            // Add hidden _method input for PUT
+            let methodInput = document.querySelector('input[name="_method"]');
+            if (!methodInput) {
+                methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'PUT';
+                formEl.appendChild(methodInput);
+            } else {
+                methodInput.value = 'PUT';
+            }
+
         } else if (action === 'new') {
             // Multi-step create modal
             currentStep = 1;
