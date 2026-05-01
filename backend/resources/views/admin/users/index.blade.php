@@ -160,6 +160,11 @@
                     <input type="password" name="password" class="form-control" placeholder="Mínimo 8 caracteres">
                     <div class="form-text">Si no completas este campo, la contraseña actual se mantendrá.</div>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Confirmar nueva contraseña</label>
+                    <input type="password" name="password_confirmation" class="form-control" placeholder="Repite la nueva contraseña">
+                    <div class="form-text">Solo si cambias la contraseña arriba.</div>
+                </div>
                 <input type="hidden" name="_method" value="PUT">
             `;
             footerEl.innerHTML = `
