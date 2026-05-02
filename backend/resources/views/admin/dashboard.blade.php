@@ -6,36 +6,8 @@
 <p class="page-subtitle">Resumen general del sistema</p>
 @endsection
 
-@section('styles')
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.section-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--dark);
-    margin-bottom: 1rem;
-}
-
-.top-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-}
-
-@media (min-width: 768px) {
-    .top-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-}
-@endsection
-
 @section('content')
-<div class="stats-grid">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     @component('admin.components.stat-card', [
         'label' => 'Ventas Totales',
         'value' => '$245,680',
@@ -63,9 +35,17 @@
     ])
     @endcomponent
 
+    @component('admin.components.stat-card', [
+        'label' => 'Productos',
+        'value' => '30',
+        'variant' => 'default',
+        'trend' => '+28.3%',
+        'trendUp' => true
+    ])
+    @endcomponent
 </div>
 
-<h2 class="section-title">Órdenes Recientes</h2>
+<h2 class="text-lg font-semibold text-dark mb-4">Órdenes Recientes</h2>
 @component('admin.components.data-table', [
     'columns' => [
         ['key' => 'id', 'label' => 'ID'],
@@ -84,9 +64,9 @@
 ])
 @endcomponent
 
-<div class="top-grid" style="margin-top: 1.5rem;">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
     <div>
-        <h2 class="section-title">Top 5 Productos</h2>
+        <h2 class="text-lg font-semibold text-dark mb-4">Top 5 Productos</h2>
         @component('admin.components.data-table', [
             'columns' => [
                 ['key' => 'producto', 'label' => 'Producto'],
@@ -105,7 +85,7 @@
     </div>
 
     <div>
-        <h2 class="section-title">Top 5 Clientes</h2>
+        <h2 class="text-lg font-semibold text-dark mb-4">Top 5 Clientes</h2>
         @component('admin.components.data-table', [
             'columns' => [
                 ['key' => 'cliente', 'label' => 'Cliente'],

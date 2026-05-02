@@ -3,95 +3,38 @@
 @section('title', 'Configuración - MA Piscinas')
 @section('page-title', 'Configuración')
 
-@section('styles')
-.settings-section {
-    background: var(--white);
-    border-radius: 0.5rem;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-
-.settings-section h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--dark);
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border);
-}
-
-.form-group {
-    margin-bottom: 1rem;
-}
-
-.form-group:last-child {
-    margin-bottom: 0;
-}
-
-.form-label {
-    display: block;
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--text);
-    margin-bottom: 0.5rem;
-}
-
-.form-input {
-    width: 100%;
-    padding: 0.625rem 0.875rem;
-    font-size: 0.9rem;
-    border: 1px solid var(--border);
-    border-radius: 0.375rem;
-    background: var(--white);
-    color: var(--text);
-    transition: border-color 0.2s;
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: var(--primary);
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-}
-@endsection
-
 @section('content')
-<div class="settings-section">
-    <h3>Información de la Tienda</h3>
-    <div class="form-row">
-        <div class="form-group">
-            <label class="form-label">Nombre de la Tienda</label>
-            <input type="text" class="form-input" value="MA Piscinas">
+<div class="bg-white rounded-lg p-6 mb-6 shadow-sm">
+    <h3 class="text-lg font-semibold text-dark mb-4 pb-3 border-b">Información de la Tienda</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-dark mb-2">Nombre de la Tienda</label>
+            <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" value="MA Piscinas">
         </div>
-        <div class="form-group">
-            <label class="form-label">Email de Contacto</label>
-            <input type="email" class="form-input" value="contacto@mapiscinas.com">
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-dark mb-2">Email de Contacto</label>
+            <input type="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" value="contacto@mapiscinas.com">
         </div>
     </div>
-    <div class="form-group">
-        <label class="form-label">Descripción</label>
-        <input type="text" class="form-input" value="E-commerce de piscinas e insumos de mantenimiento">
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-dark mb-2">Descripción</label>
+        <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" value="E-commerce de piscinas e insumos de mantenimiento">
     </div>
 </div>
 
-<div class="settings-section">
-    <h3>Configuración de Pedidos</h3>
-    <div class="form-row">
-        <div class="form-group">
-            <label class="form-label">Estado por Defecto</label>
-            <select class="form-input">
+<div class="bg-white rounded-lg p-6 mb-6 shadow-sm">
+    <h3 class="text-lg font-semibold text-dark mb-4 pb-3 border-b">Configuración de Pedidos</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-dark mb-2">Estado por Defecto</label>
+            <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
                 <option>Pendiente</option>
                 <option selected>Procesando</option>
             </select>
         </div>
-        <div class="form-group">
-            <label class="form-label">Moneda</label>
-            <select class="form-input">
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-dark mb-2">Moneda</label>
+            <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white">
                 <option selected>ARS (Peso Argentino)</option>
                 <option>USD (Dólar)</option>
             </select>
@@ -99,16 +42,16 @@
     </div>
 </div>
 
-<div class="settings-section">
-    <h3>Integraciones</h3>
-    <div class="form-row">
-        <div class="form-group">
-            <label class="form-label">Mercado Pago - Client ID</label>
-            <input type="text" class="form-input" placeholder="Ingrese el Client ID">
+<div class="bg-white rounded-lg p-6 mb-6 shadow-sm">
+    <h3 class="text-lg font-semibold text-dark mb-4 pb-3 border-b">Integraciones</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-dark mb-2">Mercado Pago - Client ID</label>
+            <input type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="Ingrese el Client ID">
         </div>
-        <div class="form-group">
-            <label class="form-label">Mercado Pago - Client Secret</label>
-            <input type="password" class="form-input" placeholder="••••••••">
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-dark mb-2">Mercado Pago - Client Secret</label>
+            <input type="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="••••••••">
         </div>
     </div>
 </div>

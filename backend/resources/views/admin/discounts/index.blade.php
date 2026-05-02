@@ -4,182 +4,16 @@
 @section('page-title', 'Descuentos')
 @section('page-subtitle', 'Gestión de descuentos y promociones del sistema')
 
-@section('styles')
-<style>
-    .modal-backdrop.show { opacity: 0.5; }
-    .empty-state { text-align: center; padding: 2rem; color: #6c757d; }
-
-    .discount-details h6 {
-        font-size: 0.9rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-    }
-
-    .discount-details .row {
-        margin-bottom: 1rem;
-    }
-
-    .discount-details .progress {
-        background-color: #e9ecef;
-    }
-
-    .discount-details code {
-        background-color: #f8f9fa;
-        padding: 0.2rem 0.4rem;
-        border-radius: 0.25rem;
-        font-size: 0.85em;
-    }
-
-    .discount-details .text-muted {
-        font-size: 0.85em;
-    }
-
-    /* Multi-step form styles */
-    .step-progress {
-        margin-bottom: 1.5rem;
-    }
-
-    .step-progress .progress {
-        height: 6px;
-        background-color: #e9ecef;
-        border-radius: 3px;
-    }
-
-    .step-progress .progress-bar {
-        background: linear-gradient(90deg, #0d6efd, #6610f2);
-        border-radius: 3px;
-    }
-
-    .step-indicator {
-        flex: 1;
-        text-align: center;
-        position: relative;
-    }
-
-    .step-indicator:not(:last-child)::after {
-        content: '';
-        position: absolute;
-        top: 15px;
-        left: 50%;
-        width: calc(100% - 30px);
-        height: 2px;
-        background: #e9ecef;
-        z-index: 1;
-    }
-
-    .step-indicator.completed:not(:last-child)::after {
-        background: #198754;
-    }
-
-    .step-circle {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background: #e9ecef;
-        color: #6c757d;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 0.5rem;
-        font-weight: 600;
-        font-size: 0.85rem;
-        position: relative;
-        z-index: 2;
-    }
-
-    .step-indicator.active .step-circle {
-        background: #0d6efd;
-        color: white;
-    }
-
-    .step-indicator.completed .step-circle {
-        background: #198754;
-        color: white;
-    }
-
-    .step-label {
-        font-size: 0.75rem;
-        color: #6c757d;
-        font-weight: 500;
-    }
-
-    .step-indicator.active .step-label {
-        color: #0d6efd;
-        font-weight: 600;
-    }
-
-    .step-indicator.completed .step-label {
-        color: #198754;
-    }
-
-    .summary-card {
-        background: #f8f9fa;
-        border-color: #dee2e6 !important;
-    }
-
-    .summary-card h6 {
-        color: #495057;
-        font-size: 0.9rem;
-        margin-bottom: 0.75rem;
-    }
-
-    .applies-to-details {
-        transition: all 0.3s ease;
-    }
-
-    /* Delete/Activate modal styles */
-    .deactivation-modal .discount-summary,
-    .activation-modal .discount-summary {
-        border-left: 4px solid #0d6efd !important;
-    }
-
-    .deactivation-modal .impact-alert {
-        border-left: 4px solid #dc3545;
-    }
-
-    .activation-modal .impact-alert {
-        border-left: 4px solid #198754;
-    }
-
-    .deactivation-modal .confirmation-section,
-    .activation-modal .confirmation-section {
-        border-left: 4px solid currentColor !important;
-    }
-
-    .deactivation-modal .confirmation-section {
-        border-color: #dc3545 !important;
-    }
-
-    .activation-modal .confirmation-section {
-        border-color: #198754 !important;
-    }
-
-    .discount-summary h6 {
-        color: #495057;
-        font-size: 0.9rem;
-        margin-bottom: 0.75rem;
-        border-bottom: 1px solid #dee2e6;
-        padding-bottom: 0.25rem;
-    }
-
-    .impact-alert ul li {
-        margin-bottom: 0.25rem;
-    }
-
-    .impact-alert ul li:last-child {
-        margin-bottom: 0;
-    }
-</style>
-@endsection
-
 @section('content')
 @php
     $currentUser = Auth::user();
     $currentUserRole = $currentUser?->role ?? 'editor';
 @endphp
 
-<div class="page-header d-flex justify-content-between align-items-center mb-4">
-    <h1>Descuentos</h1>
+<div class="flex justify-between items-center mb-4">
+    <div>
+        <h1>Descuentos</h1>
+    </div>
     @if($currentUser && $currentUserRole == 'admin')
         <button type="button" class="btn btn-primary" id="btnNewDiscount">
             <i class="bi bi-plus-circle"></i> Nuevo Descuento
@@ -221,7 +55,7 @@
                 @include('admin.discounts.partials._discount_row', ['discount' => $discount, 'isAdmin' => $isAdmin, 'isActive' => $isActive])
             @empty
                 <tr>
-                    <td colspan="8" class="empty-state">
+                    <td colspan="8" class="text-center py-5 text-muted">
                         <i class="bi bi-percent display-6"></i>
                         <p class="lead mt-2">No hay descuentos registrados</p>
                         @if($currentUserRole == 'admin')
@@ -261,7 +95,6 @@
 </div>
 
 @endsection
-
 @section('scripts')
 <script>
     const modal = new bootstrap.Modal(document.getElementById('discountModal'));

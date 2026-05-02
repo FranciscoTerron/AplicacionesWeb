@@ -4,20 +4,13 @@
 @section('page-title', 'Clientes')
 @section('page-subtitle', 'Gestión de clientes del sistema')
 
-@section('styles')
-<style>
-    .modal-backdrop.show { opacity: 0.5; }
-    .empty-state { text-align: center; padding: 2rem; color: #6c757d; }
-</style>
-@endsection
-
 @section('content')
 @php
     $currentUser = Auth::user();
     $currentUserRole = $currentUser?->role ?? 'editor';
 @endphp
 
-<div class="page-header d-flex justify-content-between align-items-center mb-4">
+<div class="flex justify-between items-center mb-4">
     <h1>Clientes</h1>
     @if($currentUserRole == 'admin')
         <button type="button" class="btn btn-primary" id="btnNewClient">
@@ -129,7 +122,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" class="empty-state">
+                    <td colspan="5" class="text-center py-5 text-muted">
                         <i class="bi bi-people display-6"></i>
                         <p class="lead mt-2">No hay clientes registrados</p>
                         @if($currentUserRole == 'admin')
