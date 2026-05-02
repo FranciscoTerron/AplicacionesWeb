@@ -84,7 +84,7 @@ trait CrudActionsTrait
             abort(404, 'Registro no encontrado.');
         }
         $model = new $modelClass;
-        $model->forceFill($data);
+        $model->setRawAttributes($data, true);
         $model->exists = true;
 
         return $model;

@@ -281,6 +281,12 @@
         const footerEl = document.getElementById('modalFooter');
         const formEl = document.getElementById('modalForm');
 
+        // Remove any previous method override hidden input added by another modal action
+        const existingMethodInput = formEl.querySelector('input[name="_method"]');
+        if (existingMethodInput) {
+            existingMethodInput.remove();
+        }
+
         if (action === 'show') {
             titleEl.textContent = `Detalles del Descuento: ${escapeHtml(discount.code)}`;
 
@@ -1022,8 +1028,8 @@
             }
         }
 
-        // Handle unchecked checkbox
-        if (!formDataObj.has('active')) {
+        // Handle unchecked checkbox only when creating a new discount.
+        if (!formDataObj.has('active') && currentAction === 'new') {
             formData.active = false;
         }
     }
@@ -1107,6 +1113,10 @@
     }
 
     function renderEditStep1() {
+        // Check if there are validation errors for code field
+        const hasCodeError = document.querySelector('.invalid-feedback') &&
+                            document.querySelector('[name="code"]')?.classList.contains('is-invalid');
+
         return `
             <div class="step-content">
                 <div class="alert alert-info">
@@ -1116,8 +1126,8 @@
 
                 <div class="mb-3">
                     <label class="form-label">Código</label>
-                    <input type="text" class="form-control bg-light" value="${escapeHtml(formData.code)}" readonly>
-                    <div class="form-text text-muted">El código no se puede modificar.</div>
+                    <input type="text" name="code" class="form-control${hasCodeError ? '' : ' bg-light'}" value="${escapeHtml(formData.code)}"${hasCodeError ? '' : ' readonly'}>
+                    <div class="form-text text-muted">${hasCodeError ? 'Corrige el código duplicado.' : 'El código no se puede modificar.'}</div>
                 </div>
 
                 <div class="mb-3">
@@ -1215,13 +1225,10 @@
                 </div>
 
                 <div class="mb-3">
-                    <div class="form-check">
-                        <input type="checkbox" name="active" class="form-check-input" id="editActiveCheck" ${formData.active ? 'checked' : ''}>
-                        <label class="form-check-label" for="editActiveCheck">
-                            Descuento activo
-                        </label>
-                    </div>
-                    <div class="form-text">Activa o desactiva el descuento inmediatamente.</div>
+                    <label class="form-label">Estado</label>
+                    <input type="text" class="form-control bg-light" value="${formData.active ? 'Activo' : 'Inactivo'}" readonly>
+                    <input type="hidden" name="active" value="${formData.active ? '1' : '0'}">
+                    <div class="form-text">El estado se mantiene tal como estaba al abrir el editor.</div>
                 </div>
             </div>
         `;
@@ -1397,8 +1404,8 @@
     document.getElementById('modalForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
-        // Only submit on final step
-        if (currentStep < totalSteps) {
+        // Only intercept multi-step flows for new/edit actions
+        if ((currentAction === 'new' || currentAction === 'edit') && currentStep < totalSteps) {
             if (currentAction === 'new') {
                 nextStep();
             } else if (currentAction === 'edit') {
@@ -1421,7 +1428,6 @@
             }
         });
 
-        const method = form.querySelector('input[name="_method"]')?.value || 'POST';
         const url = form.action;
 
         // Limpiar errores previos
@@ -1432,11 +1438,11 @@
         const submitBtn = form.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creando...';
+        submitBtn.innerHTML = `<i class="bi bi-hourglass-split"></i> ${currentAction === 'new' ? 'Creando...' : 'Actualizando...'}`;
 
         // Enviar request
         fetch(url, {
-            method: method,
+            method: 'POST',
             body: formDataObj,
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
@@ -1463,9 +1469,8 @@
                     window.location.href = data.redirect || window.location.href;
                 }, 1500);
             } else if (r.status === 422) {
-                // Errores de validación: mostrar inline en el modal
                 Object.keys(data.errors || {}).forEach(field => {
-                    const input = form.querySelector(`[name="${field}"]`);
+                    const input = document.querySelector(`[name="${field}"]`);
                     if (input) {
                         input.classList.add('is-invalid');
                         const errorDiv = document.createElement('div');
@@ -1474,21 +1479,39 @@
                             ? data.errors[field][0]
                             : data.errors[field];
                         input.parentNode.appendChild(errorDiv);
+                    } else {
+                        // Field not found in current form
                     }
                 });
 
                 // If validation errors, go back to appropriate step
                 let renderFunction = currentAction === 'new' ? renderCreateStep : renderEditStep;
-                if (data.errors.name || data.errors.description) {
+                if (data.errors.code || data.errors.name || data.errors.description || data.errors.discount_type) {
                     currentStep = 1;
                     renderFunction(1);
-                } else if (data.errors.value || data.errors.max_uses) {
+                } else if (data.errors.value || data.errors.max_uses || data.errors.applies_to || data.errors.applicable_ids) {
                     currentStep = 2;
                     renderFunction(2);
                 } else if (data.errors.valid_from || data.errors.valid_to || data.errors.active) {
                     currentStep = 3;
                     renderFunction(3);
                 }
+
+                // After re-rendering the step, apply validation errors
+                setTimeout(() => {
+                    Object.keys(data.errors || {}).forEach(field => {
+                        const input = document.querySelector(`[name="${field}"]`);
+                        if (input) {
+                            input.classList.add('is-invalid');
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'invalid-feedback';
+                            errorDiv.textContent = Array.isArray(data.errors[field])
+                                ? data.errors[field][0]
+                                : data.errors[field];
+                            input.parentNode.appendChild(errorDiv);
+                        }
+                    });
+                }, 100);
             } else {
                 // Otros errores: mostrar alerta en el modal
                 const footer = document.getElementById('modalFooter');

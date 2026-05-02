@@ -123,48 +123,11 @@ class DiscountController extends Controller
         return redirect()->route('admin.discounts.index');
     }
 
-    public function store(Request $request): RedirectResponse|JsonResponse
+    public function store(StoreDiscountRequest $request): RedirectResponse|JsonResponse
     {
         $this->authorizeRequest('create');
 
-        // Manual validation instead of FormRequest
-        $rules = [
-            'code' => 'required|string|max:50',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'discount_type' => 'required|in:percentage,fixed',
-            'value' => 'required|numeric|min:0',
-            'max_uses' => 'nullable|integer|min:1',
-            'valid_from' => 'required|date',
-            'valid_to' => 'required|date|after:valid_from',
-            'active' => 'nullable|in:0,1,true,false',
-            'applies_to' => 'required|in:all,categories,products',
-            'applicable_ids' => 'nullable|string',
-        ];
-
-        $validated = $request->validate($rules);
-
-        // Convert applicable_ids from JSON string to array
-        if (isset($validated['applicable_ids']) && is_string($validated['applicable_ids'])) {
-            $validated['applicable_ids'] = json_decode($validated['applicable_ids'], true) ?? [];
-        }
-
-        // Additional validation for applicable_ids
-        if ($validated['applies_to'] !== 'all' && empty($validated['applicable_ids'])) {
-            return $request->ajax()
-                ? response()->json(['errors' => ['applicable_ids' => ['Debes seleccionar al menos un ítem aplicable cuando applies_to no es "all".']]], 422)
-                : back()->withErrors(['applicable_ids' => 'Debes seleccionar al menos un ítem aplicable cuando applies_to no es "all".'])->withInput();
-        }
-
-        // Check for duplicate code
-        $existing = $this->firestore->query('discounts', ['code' => strtoupper($validated['code'])], 1);
-        if (count($existing) > 0) {
-            $error = 'Ya existe un descuento con ese código.';
-
-            return $request->ajax()
-                ? response()->json(['errors' => ['code' => [$error]]], 422)
-                : back()->withErrors(['code' => $error])->withInput();
-        }
+        $validated = $request->validated();
 
         // Convert active to boolean
         $validated['active'] = filter_var($validated['active'], FILTER_VALIDATE_BOOLEAN);
@@ -187,49 +150,12 @@ class DiscountController extends Controller
         return redirect()->route($this->getRedirectRoute())->with('success', $message);
     }
 
-    public function update(Request $request, string $id): RedirectResponse|JsonResponse
+    public function update(UpdateDiscountRequest $request, string $id): RedirectResponse|JsonResponse
     {
         $model = $this->getModelInstance($id);
         $this->authorizeRequest('update', $model);
 
-        // Manual validation instead of FormRequest
-        $rules = [
-            'code' => 'required|string|max:50',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'discount_type' => 'required|in:percentage,fixed',
-            'value' => 'required|numeric|min:0',
-            'max_uses' => 'nullable|integer|min:1',
-            'valid_from' => 'required|date',
-            'valid_to' => 'required|date|after:valid_from',
-            'active' => 'nullable|in:0,1,true,false',
-            'applies_to' => 'required|in:all,categories,products',
-            'applicable_ids' => 'nullable|string', // Accept as string, we'll convert later
-        ];
-
-        $validated = $request->validate($rules);
-
-        // Convert applicable_ids from JSON string to array
-        if (isset($validated['applicable_ids']) && is_string($validated['applicable_ids'])) {
-            $validated['applicable_ids'] = json_decode($validated['applicable_ids'], true) ?? [];
-        }
-
-        // Additional validation for applicable_ids
-        if ($validated['applies_to'] !== 'all' && empty($validated['applicable_ids'])) {
-            return $request->ajax()
-                ? response()->json(['errors' => ['applicable_ids' => ['Debes seleccionar al menos un ítem aplicable cuando applies_to no es "all".']]], 422)
-                : back()->withErrors(['applicable_ids' => 'Debes seleccionar al menos un ítem aplicable cuando applies_to no es "all".'])->withInput();
-        }
-
-        // Check for duplicate code (excluding current discount)
-        $existing = $this->firestore->query('discounts', ['code' => strtoupper($validated['code'])], 1);
-        if (count($existing) > 0 && ($existing[0]['id'] ?? '') !== $id) {
-            $error = 'Ya existe un descuento con ese código.';
-
-            return $request->ajax()
-                ? response()->json(['errors' => ['code' => [$error]]], 422)
-                : back()->withErrors(['code' => $error])->withInput();
-        }
+        $validated = $request->validated();
 
         // Convert active to boolean
         $validated['active'] = filter_var($validated['active'], FILTER_VALIDATE_BOOLEAN);
