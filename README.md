@@ -78,8 +78,9 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | CRUD Categorías | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
 | CRUD Subcategorías | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
 | CRUD Productos | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
-| CRUD Descuentos | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
-| **CRUD Usuarios** | ✅ | **Completo y funcional**: CRUD 100% operativo en Firestore. Modal único dinámico, validación AJAX inline (422), bloqueo de usuarios inactivos, paginación cursor-based, búsqueda y filtros, auditoría (created_by/updated_by). Tests: 13 (27 assertions). PHPStan: 0 errores. |
+| **CRUD Descuentos** | ✅ | **Completo y funcional**|
+| **CRUD Usuarios** | ✅ | **Completo y funcional** |
+| **CRUD Clientes** | ✅ | **Completo y funcional** |
 | Configuración Firestore | ✅ | FirestoreService implementado, reglas y desplegados en Firebase |
 | Login Administrativos | ⚠️ | AuthController con Firebase implementado; FirestoreUserProvider bloquea usuarios inactivos |
 | Panel Administrativo | ⚠️ | Estructura base con sidebar, ruteo y vistas Blade |
