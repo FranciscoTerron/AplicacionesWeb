@@ -33,5 +33,6 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::resource('discounts', DiscountController::class)->names('admin.discounts');
     Route::post('discounts/{discount}/activate', [DiscountController::class, 'activate'])->name('admin.discounts.activate');
     Route::resource('clients', ClientController::class)->names('admin.clients');
+    Route::post('clients/{client}/activate', [ClientController::class, 'activate'])->name('admin.clients.activate');
     Route::resource('orders', OrderController::class)->names('admin.orders');
 });

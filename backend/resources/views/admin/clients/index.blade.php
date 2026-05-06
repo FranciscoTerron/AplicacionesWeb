@@ -26,24 +26,7 @@
 <!-- Search and Filters -->
 <div class="card mb-3">
     <div class="card-body">
-        <form method="GET" action="{{ route('admin.clients.index') }}" class="row g-3">
-            <div class="col-md-8">
-                <input type="text" name="search" class="form-control" placeholder="Buscar por nombre o email..." value="{{ $search ?? '' }}">
-            </div>
-            <div class="col-md-2">
-                <select name="status" class="form-select">
-                    <option value="">Todos los estados</option>
-                    <option value="active" {{ ($statusFilter ?? '') == 'active' ? 'selected' : '' }}>Activo</option>
-                    <option value="inactive" {{ ($statusFilter ?? '') == 'inactive' ? 'selected' : '' }}>Inactivo</option>
-                </select>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-                @if($search || $statusFilter)
-                    <a href="{{ route('admin.clients.index') }}" class="btn btn-outline-secondary w-100 mt-1">Limpiar</a>
-                @endif
-            </div>
-        </form>
+        @include('admin.clients.partials._search_form')
     </div>
 </div>
 
@@ -64,62 +47,7 @@
                     $isAdmin = $currentUserRole == 'admin';
                     $isActive = $client['active'] ?? true;
                 @endphp
-                <tr class="{{ !$isActive ? 'table-light' : '' }}">
-                    <td>{{ $client['name'] ?? 'N/A' }}</td>
-                    <td>{{ $client['email'] ?? 'N/A' }}</td>
-                    <td>{{ $client['phone'] ?? '—' }}</td>
-                    <td>
-                        @if($isActive)
-                            <span class="badge bg-success">Activo</span>
-                        @else
-                            <span class="badge bg-danger">Inactivo</span>
-                        @endif
-                    </td>
-                    <td>
-                        <!-- Ver -->
-                        <button type="button" class="btn btn-sm btn-outline-primary" 
-                            onclick="openModal('show', {{ json_encode($client) }})" 
-                            title="Ver detalles">
-                            <i class="bi bi-eye">Ver Detalles</i>
-                        </button>
-                        
-                        <!-- Editar -->
-                        @if($isAdmin)
-                            <button type="button" class="btn btn-sm btn-outline-secondary" 
-                                onclick="openModal('edit', {{ json_encode($client) }})" 
-                                title="Editar">
-                                <i class="bi bi-pencil">Editar</i>
-                            </button>
-                        @else
-                            <button type="button" class="btn btn-sm btn-outline-secondary" disabled 
-                                title="Solo los administradores pueden editar clientes">
-                                <i class="bi bi-pencil">Editar</i>
-                            </button>
-                        @endif
-                        
-                        <!-- Desactivar/Activar -->
-                        @if($isAdmin)
-                            @if($isActive)
-                                <button type="button" class="btn btn-sm btn-outline-danger" 
-                                    onclick="openModal('deactivate', {{ json_encode($client) }})" 
-                                    title="Desactivar cliente">
-                                    <i class="bi bi-lock">Desactivar</i>
-                                </button>
-                            @else
-                                <button type="button" class="btn btn-sm btn-outline-success" 
-                                    onclick="openModal('activate', {{ json_encode($client) }})" 
-                                    title="Activar cliente">
-                                    <i class="bi bi-unlock">Activar</i>
-                                </button>
-                            @endif
-                        @else
-                            <button type="button" class="btn btn-sm btn-outline-danger" disabled 
-                                title="Solo los administradores pueden cambiar el estado">
-                                <i class="bi bi-lock">Desactivar</i>
-                            </button>
-                        @endif
-                    </td>
-                </tr>
+                @include('admin.clients.partials._client_row', ['client' => $client, 'isAdmin' => $isAdmin, 'isActive' => $isActive])
             @empty
                 <tr>
                     <td colspan="5" class="text-center py-5 text-muted">
@@ -137,30 +65,7 @@
     </table>
 </div>
 
-<!-- Pagination -->
-@if(isset($hasMore) && ($hasMore || ($page ?? 1) > 1))
-<div class="d-flex justify-content-between align-items-center mt-3">
-    <div>
-        @if(($page ?? 1) > 1)
-            <a href="{{ route('admin.clients.index', array_merge(['page' => ($page ?? 1) - 1, 'after' => request('after_prev')], array_filter(['search' => $search ?? '', 'status' => $statusFilter ?? '']))) }}" 
-               class="btn btn-outline-primary btn-sm">
-               <i class="bi bi-chevron-left"></i> Anterior
-            </a>
-        @endif
-    </div>
-    <div>
-        <span class="text-muted">Página {{ $page ?? 1 }}</span>
-    </div>
-    <div>
-        @if($hasMore ?? false)
-            <a href="{{ route('admin.clients.index', array_merge(['page' => ($page ?? 1) + 1, 'after' => $lastDocumentId ?? ''], array_filter(['search' => $search ?? '', 'status' => $statusFilter ?? '']))) }}" 
-               class="btn btn-outline-primary btn-sm">
-               Siguiente <i class="bi bi-chevron-right"></i>
-            </a>
-        @endif
-    </div>
-</div>
-@endif
+@include('admin.clients.partials._pagination')
 
 <!-- Modal Único Dinámico -->
 <div class="modal fade" id="clientModal" tabindex="-1" aria-hidden="true">
@@ -212,38 +117,17 @@
                 <p><strong>Nombre:</strong> ${escapeHtml(client.name)}</p>
                 <p><strong>Email:</strong> ${escapeHtml(client.email)}</p>
                 <p><strong>Teléfono:</strong> ${escapeHtml(client.phone || '—')}</p>
-                <p><strong>Estado:</strong> ${client.active ? 
-                    '<span class="badge bg-success">Activo</span>' : 
+                <p><strong>Dirección:</strong> ${escapeHtml(client.address || '—')}</p>
+                <p><strong>Ciudad:</strong> ${escapeHtml(client.city || '—')}</p>
+                <p><strong>Notas:</strong> ${escapeHtml(client.notes || '—')}</p>
+                <p><strong>Estado:</strong> ${client.active ?
+                    '<span class="badge bg-success">Activo</span>' :
                     '<span class="badge bg-danger">Inactivo</span>'}</p>
             `;
             footerEl.innerHTML = `
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             `;
             formEl.setAttribute('method', 'GET');
-
-        } else if (action === 'edit') {
-            titleEl.textContent = 'Editar Cliente';
-            bodyEl.innerHTML = `
-                <div class="mb-3">
-                    <label class="form-label">Nombre</label>
-                    <input type="text" name="name" class="form-control" value="${escapeHtml(client.name)}" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control" value="${escapeHtml(client.email)}" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Teléfono</label>
-                    <input type="text" name="phone" class="form-control" value="${escapeHtml(client.phone || '')}">
-                </div>
-                <input type="hidden" name="_method" value="PUT">
-            `;
-            footerEl.innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-            `;
-            formEl.setAttribute('method', 'POST');
-            formEl.setAttribute('action', '/admin/clients/' + client.id);
 
         } else if (action === 'new') {
             titleEl.textContent = 'Nuevo Cliente';
@@ -260,6 +144,23 @@
                     <label class="form-label">Teléfono</label>
                     <input type="text" name="phone" class="form-control">
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Dirección</label>
+                    <input type="text" name="address" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ciudad</label>
+                    <input type="text" name="city" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notas</label>
+                    <textarea name="notes" class="form-control" rows="3"></textarea>
+                </div>
+                <input type="hidden" name="active" value="0">
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="active" class="form-check-input" id="activeCheck" value="1" checked>
+                    <label class="form-check-label" for="activeCheck">Activo</label>
+                </div>
             `;
             footerEl.innerHTML = `
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -268,12 +169,53 @@
             formEl.setAttribute('method', 'POST');
             formEl.setAttribute('action', '/admin/clients');
 
+        } else if (action === 'edit') {
+            titleEl.textContent = 'Editar Cliente';
+            bodyEl.innerHTML = `
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" name="name" class="form-control" value="${escapeHtml(client.name)}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" value="${escapeHtml(client.email)}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Teléfono</label>
+                    <input type="text" name="phone" class="form-control" value="${escapeHtml(client.phone || '')}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Dirección</label>
+                    <input type="text" name="address" class="form-control" value="${escapeHtml(client.address || '')}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ciudad</label>
+                    <input type="text" name="city" class="form-control" value="${escapeHtml(client.city || '')}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Notas</label>
+                    <textarea name="notes" class="form-control" rows="3">${escapeHtml(client.notes || '')}</textarea>
+                </div>
+                <input type="hidden" name="active" value="0">
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="active" class="form-check-input" id="activeCheckEdit" value="1" ${client.active ? 'checked' : ''}>
+                    <label class="form-check-label" for="activeCheckEdit">Activo</label>
+                </div>
+                <input type="hidden" name="_method" value="PUT">
+            `;
+            footerEl.innerHTML = `
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            `;
+            formEl.setAttribute('method', 'POST');
+            formEl.setAttribute('action', '/admin/clients/' + client.id);
+
         } else if (action === 'deactivate') {
             titleEl.textContent = 'Desactivar Cliente';
             bodyEl.innerHTML = `
                 <div class="text-center">
-                    <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-                         style="width: 60px; height: 60px;">
+                    <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                          style="width: 60px; height: 60px;">
                         <i class="bi bi-lock display-6 text-danger"></i>
                     </div>
                     <p class="mt-3">¿Estás seguro de desactivar al cliente <strong>${escapeHtml(client.name)}</strong>?</p>
@@ -292,18 +234,17 @@
             titleEl.textContent = 'Activar Cliente';
             bodyEl.innerHTML = `
                 <div class="text-center">
-                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-                         style="width: 60px; height: 60px;">
+                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                          style="width: 60px; height: 60px;">
                         <i class="bi bi-unlock display-6 text-success"></i>
                     </div>
                     <p class="mt-3">¿Estás seguro de activar al cliente <strong>${escapeHtml(client.name)}</strong>?</p>
                     <p class="text-muted mb-0">El cliente volverá a estar disponible en el sistema.</p>
                 </div>
-                <input type="hidden" name="_method" value="POST">
             `;
             footerEl.innerHTML = `
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" formmethod="post" class="btn btn-success">Activar Cliente</button>
+                <button type="submit" class="btn btn-success">Activar Cliente</button>
             `;
             formEl.setAttribute('method', 'POST');
             formEl.setAttribute('action', '/admin/clients/' + client.id + '/activate');
@@ -340,7 +281,6 @@
             }
         }).then(async (r) => {
             const data = await r.json();
-
             if (r.ok || r.status === 302) {
                 window.location.href = data.redirect || window.location.href;
             } else if (r.status === 422) {

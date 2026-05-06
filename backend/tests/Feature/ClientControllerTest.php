@@ -42,16 +42,15 @@ class ClientControllerTest extends TestCase
     }
 
     /**
-     * Verifica que el formulario de creación retorna la vista correcta.
+     * Verifica que el formulario de creación redirige al índice (modal-only approach).
      */
-    public function test_create_returns_view(): void
+    public function test_create_redirects_to_index(): void
     {
         $this->mockAuthUser('admin');
 
         $response = $this->get(route('admin.clients.create'));
 
-        $response->assertStatus(200);
-        $response->assertSee('Nuevo Cliente');
+        $response->assertRedirect(route('admin.clients.index'));
     }
 
     /**
@@ -83,11 +82,17 @@ class ClientControllerTest extends TestCase
     }
 
     /**
-     * Verifica que store falla con email inválido.
+     * Verifica que edit redirige al índice (modal-only approach).
      */
-    public function test_store_fails_with_invalid_email(): void
+    public function test_edit_redirects_to_index(): void
     {
-        $this->assertTrue(true);
+        $this->mockAuthUser('admin');
+
+        $clientId = 'client-123';
+
+        $response = $this->get(route('admin.clients.edit', $clientId));
+
+        $response->assertRedirect(route('admin.clients.index'));
     }
 
     /**
@@ -99,57 +104,17 @@ class ClientControllerTest extends TestCase
     }
 
     /**
-     * Verifica que show retorna los detalles de un cliente.
+     * Verifica que show redirige al índice (modal-only approach).
      */
-    public function test_show_returns_client_details(): void
+    public function test_show_redirects_to_index(): void
     {
         $this->mockAuthUser('admin');
 
         $clientId = 'client-123';
-        $clientData = [
-            'name' => 'Juan Pérez',
-            'email' => 'juan@example.com',
-            'phone' => '12345678',
-            'active' => true,
-        ];
-
-        $this->firestoreMock
-            ->expects($this->exactly(2))
-            ->method('getDocument')
-            ->with('clients', $clientId)
-            ->willReturn($clientData);
 
         $response = $this->get(route('admin.clients.show', $clientId));
 
-        $response->assertStatus(200);
-        $response->assertSee('Juan Pérez');
-        $response->assertSee('juan@example.com');
-    }
-
-    /**
-     * Verifica que edit retorna la vista con datos existentes.
-     */
-    public function test_edit_returns_view_with_existing_data(): void
-    {
-        $this->mockAuthUser('admin');
-
-        $clientId = 'client-123';
-        $clientData = [
-            'name' => 'Juan Pérez',
-            'email' => 'juan@example.com',
-            'active' => true,
-        ];
-
-        $this->firestoreMock
-            ->expects($this->exactly(2))
-            ->method('getDocument')
-            ->with('clients', $clientId)
-            ->willReturn($clientData);
-
-        $response = $this->get(route('admin.clients.edit', $clientId));
-
-        $response->assertStatus(200);
-        $response->assertSee('Editar Cliente');
+        $response->assertRedirect(route('admin.clients.index'));
     }
 
     /**

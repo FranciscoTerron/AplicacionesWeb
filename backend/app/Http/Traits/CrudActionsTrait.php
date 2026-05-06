@@ -180,6 +180,7 @@ trait CrudActionsTrait
         $validated['updated_by'] = $userId;
 
         try {
+
             $this->firestore->createDocument($this->getCollectionName(), $validated);
 
             $message = 'Registro creado correctamente.';
