@@ -75,7 +75,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 
 | Item | Estado | Observaciones |
 |------|--------|---------------|
-| CRUD Categorías | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
+| **CRUD Categorías** | ✅ | **Completo y funcional** |
 | CRUD Subcategorías | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
 | CRUD Productos | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
 | **CRUD Descuentos** | ✅ | **Completo y funcional**|
