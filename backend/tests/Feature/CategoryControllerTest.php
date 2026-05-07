@@ -42,16 +42,15 @@ class CategoryControllerTest extends TestCase
     }
 
     /**
-     * Verifica que el formulario de creación retorna la vista correcta.
+     * Verifica que el formulario de creación redirige al índice (modal-only approach).
      */
-    public function test_create_returns_view(): void
+    public function test_create_redirects_to_index(): void
     {
         $this->mockAuthUser('admin');
 
         $response = $this->get(route('admin.categories.create'));
 
-        $response->assertStatus(200);
-        $response->assertSee('Nueva Categoría');
+        $response->assertRedirect(route('admin.categories.index'));
     }
 
     /**
@@ -90,56 +89,31 @@ class CategoryControllerTest extends TestCase
     }
 
     /**
-     * Verifica que show retorna los detalles de una categoría.
+     * Verifica que show redirige al índice (modal-only approach).
      */
-    public function test_show_returns_category_details(): void
+    public function test_show_redirects_to_index(): void
     {
         $this->mockAuthUser('admin');
 
         $categoryId = 'cat-123';
-        $categoryData = [
-            'name' => 'Piscinas',
-            'description' => 'Categoría de piscinas',
-            'active' => true,
-        ];
-
-        $this->firestoreMock
-            ->expects($this->exactly(2))
-            ->method('getDocument')
-            ->with('categories', $categoryId)
-            ->willReturn($categoryData);
 
         $response = $this->get(route('admin.categories.show', $categoryId));
 
-        $response->assertStatus(200);
-        $response->assertSee('Piscinas');
+        $response->assertRedirect(route('admin.categories.index'));
     }
 
     /**
-     * Verifica que edit retorna la vista con datos existentes.
+     * Verifica que edit redirige al índice (modal-only approach).
      */
-    public function test_edit_returns_view_with_existing_data(): void
+    public function test_edit_redirects_to_index(): void
     {
         $this->mockAuthUser('admin');
 
         $categoryId = 'cat-123';
-        $categoryData = [
-            'name' => 'Piscinas',
-            'description' => 'Descripción original',
-            'active' => true,
-        ];
-
-        $this->firestoreMock
-            ->expects($this->exactly(2))
-            ->method('getDocument')
-            ->with('categories', $categoryId)
-            ->willReturn($categoryData);
 
         $response = $this->get(route('admin.categories.edit', $categoryId));
 
-        $response->assertStatus(200);
-        $response->assertSee('Editar Categoría');
-        $response->assertSee('Piscinas');
+        $response->assertRedirect(route('admin.categories.index'));
     }
 
     /**

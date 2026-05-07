@@ -26,6 +26,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     })->name('admin.settings');
 
     Route::resource('categories', CategoryController::class)->names('admin.categories');
+    Route::post('categories/{category}/activate', [CategoryController::class, 'activate'])->name('admin.categories.activate');
     Route::resource('subcategories', SubcategoryController::class)->names('admin.subcategories');
     Route::resource('products', ProductController::class)->names('admin.products');
     Route::resource('users', UserController::class)->names('admin.users');

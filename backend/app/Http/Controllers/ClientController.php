@@ -8,7 +8,6 @@ use App\Http\Requests\Client\UpdateClientRequest;
 use App\Http\Traits\CrudActionsTrait;
 use App\Models\Client;
 use App\Services\FirestoreService;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -93,7 +92,7 @@ class ClientController extends Controller
         ]);
     }
 
-    public function store(): \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+    public function store(): RedirectResponse|JsonResponse
     {
         $this->authorizeRequest('viewAny', $this->getModelClass());
 
@@ -140,7 +139,7 @@ class ClientController extends Controller
         }
     }
 
-    public function update(string $id): \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+    public function update(string $id): RedirectResponse|JsonResponse
     {
         $model = $this->getModelInstance($id);
         $this->authorizeRequest('update', $model);
