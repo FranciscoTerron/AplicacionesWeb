@@ -15,10 +15,9 @@ class StoreCategoryRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        // Generate slug from name
         $this->merge([
-            'slug' => Str::slug($this->name),
             'active' => filter_var($this->active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+            'slug' => Str::slug($this->name),
         ]);
     }
 

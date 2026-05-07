@@ -184,8 +184,6 @@ class CategoryController extends Controller
 
     public function activate(Request $request, string $id): RedirectResponse|JsonResponse
     {
-        \Log::info('CATEGORY ACTIVATE - Method called for ID: '.$id.', AJAX: '.($request->ajax() ? 'true' : 'false'));
-        \Log::info('CATEGORY ACTIVATE - User role: '.(auth()->user() ? auth()->user()->role : 'no user'));
         $model = $this->getModelInstance($id);
         $this->authorizeRequest('update', $model);
 
