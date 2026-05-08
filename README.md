@@ -76,13 +76,13 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Item | Estado | Observaciones |
 |------|--------|---------------|
 | **CRUD Categorías** | ✅ | **Completo y funcional** |
-| CRUD Subcategorías | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
+| **CRUD Subcategorías** | ✅ | **Completo y funcional** |
 | CRUD Productos | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
 | **CRUD Descuentos** | ✅ | **Completo y funcional**|
 | **CRUD Usuarios** | ✅ | **Completo y funcional** |
 | **CRUD Clientes** | ✅ | **Completo y funcional** |
 | Configuración Firestore | ✅ | FirestoreService implementado, reglas y desplegados en Firebase |
-| Login Administrativos | ⚠️ | AuthController con Firebase implementado; FirestoreUserProvider bloquea usuarios inactivos |
+| Login Administrativos | ✅ | AuthController con Firebase implementado; FirestoreUserProvider bloquea usuarios inactivos |
 | Panel Administrativo | ⚠️ | Estructura base con sidebar, ruteo y vistas Blade |
 | Dashboard con estadísticas | ⏳ | Pendiente implementación |
 | Ruteo configurado | ✅ | Web routes definidas para admin y auth |
