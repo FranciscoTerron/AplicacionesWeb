@@ -16,7 +16,7 @@ abstract class TestCase extends BaseTestCase
     {
         $user = Mockery::mock(User::class);
 
-        // Attributes array that will be shared between getAttribute and setAttribute
+        // Atributos que serán compartidos entre getAttribute y setAttribute
         $attributes = [
             'id' => '1',
             'role' => $role,
@@ -30,7 +30,7 @@ abstract class TestCase extends BaseTestCase
 
         $user->shouldReceive('getAuthIdentifier')->andReturn('1');
         $user->shouldReceive('id')->andReturn('1');
-        $user->shouldReceive('role')->andReturn($role); // Handle direct property access
+        $user->shouldReceive('role')->andReturn($role);
 
         $user->shouldReceive('getAttribute')
             ->andReturnUsing(function ($key) use (&$attributes) {
@@ -46,9 +46,13 @@ abstract class TestCase extends BaseTestCase
 
         $user->shouldReceive('any')->andReturnSelf();
 
+        // Mock del Facade Auth
         Auth::shouldReceive('user')->andReturn($user);
         Auth::shouldReceive('check')->andReturn(true);
         Auth::shouldReceive('id')->andReturn('1');
         Auth::shouldReceive('guest')->andReturn(false);
+
+        // Inyectar en el contenedor para que auth() helper lo use
+        $this->app->instance('auth', $user);
     }
 }

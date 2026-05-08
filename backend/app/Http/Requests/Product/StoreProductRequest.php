@@ -94,6 +94,8 @@ class StoreProductRequest extends FormRequest
                 $subcategory = app(FirestoreService::class)->getDocument('subcategories', $subcategoryId);
                 if (! $subcategory) {
                     $validator->errors()->add('subcategory_id', 'La subcategoría seleccionada no existe.');
+                } elseif ($categoryId && ($subcategory['category_id'] ?? null) !== $categoryId) {
+                    $validator->errors()->add('subcategory_id', 'La subcategoría no pertenece a la categoría seleccionada.');
                 }
             }
         });

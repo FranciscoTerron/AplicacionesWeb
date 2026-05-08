@@ -111,14 +111,16 @@ class ProductController extends Controller
         });
 
         $subcategoriesResult = $this->firestore->listDocuments('subcategories', 100);
-        $subcategories = collect($subcategoriesResult['documents'] ?? [])->map(function ($subcategory) {
-            if (! isset($subcategory['id']) && isset($subcategory['_document_path'])) {
-                $parts = explode('/', $subcategory['_document_path']);
-                $subcategory['id'] = end($parts);
-            }
+        $subcategories = collect($subcategoriesResult['documents'] ?? [])
+            ->where('active', true)
+            ->map(function ($subcategory) {
+                if (! isset($subcategory['id']) && isset($subcategory['_document_path'])) {
+                    $parts = explode('/', $subcategory['_document_path']);
+                    $subcategory['id'] = end($parts);
+                }
 
-            return $subcategory;
-        });
+                return $subcategory;
+            });
 
         return ViewFacade::make("{$this->getViewFolder()}.index", [
             'products' => $items,
@@ -190,11 +192,6 @@ class ProductController extends Controller
         $validated['updated_by'] = auth()->id();
 
         try {
-            $existing = $this->firestore->getDocument($this->getCollectionName(), $id);
-            if (! $existing) {
-                return redirect()->route($this->getRedirectRoute())->with('error', 'Producto no encontrado.');
-            }
-
             $this->firestore->updateDocument($this->getCollectionName(), $id, $validated);
 
             $message = 'Producto actualizado correctamente.';
