@@ -77,7 +77,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 |------|--------|---------------|
 | **CRUD Categorías** | ✅ | **Completo y funcional** |
 | **CRUD Subcategorías** | ✅ | **Completo y funcional** |
-| CRUD Productos | ⚠️ | Índice, ver, crear, editar con vistas; guardar, actualizar, eliminar pendientes |
+| **CRUD Productos** | ✅ | **Completo y funcional**|
 | **CRUD Descuentos** | ✅ | **Completo y funcional**|
 | **CRUD Usuarios** | ✅ | **Completo y funcional** |
 | **CRUD Clientes** | ✅ | **Completo y funcional** |
@@ -87,7 +87,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Dashboard con estadísticas | ⏳ | Pendiente implementación |
 | Ruteo configurado | ✅ | Web routes definidas para admin y auth |
 
-**Conclusión**: CRUD Usuarios 100% funcional con UX optimizada (modal único, AJAX inline) y código robusto (tests + PHPStan). Faltan métodos de escritura en CRUDs restantes.
+**Conclusión**: CRUD Usuarios 100% funcional con UX optimizada (modal único, AJAX inline) y código robusto (tests + PHPStan).
 
 ---
 
