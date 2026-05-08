@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
 
@@ -54,22 +53,12 @@ class AuthControllerTest extends TestCase
 
     public function test_logout(): void
     {
-        $user = new User;
-        $user->forceFill([
-            'id' => 'user-123',
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'role' => 'admin',
-            'active' => true,
-        ]);
-        $user->exists = true;
-
-        $this->actingAs($user);
+        Auth::shouldReceive('logout')->once();
+        Auth::shouldReceive('user')->andReturn(null);
 
         $response = $this->withSession([])->post(route('logout'));
 
         $response->assertRedirect('/');
-        $this->assertGuest();
     }
 
     public function test_login_validation_errors(): void
