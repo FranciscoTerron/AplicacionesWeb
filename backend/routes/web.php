@@ -30,6 +30,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::resource('subcategories', SubcategoryController::class)->names('admin.subcategories');
     Route::post('subcategories/{subcategory}/activate', [SubcategoryController::class, 'activate'])->name('admin.subcategories.activate');
     Route::resource('products', ProductController::class)->names('admin.products');
+    Route::post('products/{product}/activate', [ProductController::class, 'activate'])->name('admin.products.activate');
     Route::resource('users', UserController::class)->names('admin.users');
     Route::post('users/{user}/activate', [UserController::class, 'activate'])->name('admin.users.activate');
     Route::resource('discounts', DiscountController::class)->names('admin.discounts');
