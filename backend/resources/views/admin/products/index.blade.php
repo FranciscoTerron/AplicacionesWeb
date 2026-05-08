@@ -98,15 +98,29 @@
 
 @section('scripts')
 <script>
-    const modal = new bootstrap.Modal(document.getElementById('productModal'));
+    // Wait for DOM and Bootstrap to be ready
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof bootstrap === 'undefined') {
+            console.error('Bootstrap not loaded!');
+            return;
+        }
+    });
+
+    let modal = null;
     let currentAction = '';
     let currentProduct = null;
 
-    // Cargar categorías y subcategorías desde PHP
-    const categories = @json($categories->toArray());
-    let allSubcategories = @json($subcategories->toArray());
-
     function openModal(action, product) {
+        // Initialize modal if not already done
+        if (!modal) {
+            const modalElement = document.getElementById('productModal');
+            if (!modalElement) {
+                console.error('Modal element not found!');
+                return;
+            }
+            modal = new bootstrap.Modal(modalElement);
+        }
+
         currentAction = action;
         currentProduct = product;
         const titleEl = document.getElementById('modalTitle');
@@ -117,7 +131,6 @@
         if (action === 'show') {
             titleEl.textContent = 'Detalles del Producto';
             bodyEl.innerHTML = `
-                {{-- Sección de imagen pendiente de implementación --}}
                 <div class="text-center mb-3">
                     <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
                          style="width: 80px; height: 80px;">
@@ -126,8 +139,8 @@
                 </div>
                 <p><strong>Nombre:</strong> ${escapeHtml(product.name)}</p>
                 <p><strong>Descripción:</strong> ${escapeHtml(product.description || '—')}</p>
-                <p><strong>Categoría:</strong> ${escapeHtml(categories.find(c => c.id === product.category_id)?.name || 'N/A')}</p>
-                <p><strong>Subcategoría:</strong> ${escapeHtml(allSubcategories.find(s => s.id === product.subcategory_id)?.name || '—')}</p>
+                <p><strong>Categoría:</strong> ${getCategoryName(product.category_id)}</p>
+                <p><strong>Subcategoría:</strong> ${getSubcategoryName(product.subcategory_id)}</p>
                 <p><strong>SKU:</strong> ${escapeHtml(product.sku)}</p>
                 <p><strong>Precio:</strong> $${Number(product.price).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
                 <p><strong>Stock:</strong> ${product.stock}</p>
@@ -146,23 +159,145 @@
 
         } else if (action === 'new') {
             titleEl.textContent = 'Nuevo Producto';
-            loadFormFields({}, true);
+            bodyEl.innerHTML = `
+                <div class="mb-3">
+                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Categoría <span class="text-danger">*</span></label>
+                    <select name="category_id" class="form-select" id="categorySelect" required>
+                        <option value="">Selecciona una categoría</option>
+                        ${generateCategoryOptions()}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Subcategoría (opcional)</label>
+                    <select name="subcategory_id" class="form-select" id="subcategorySelect">
+                        <option value="">Sin subcategoría</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">SKU <span class="text-danger">*</span></label>
+                    <input type="text" name="sku" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Precio <span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" name="price" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Costo (opcional)</label>
+                    <input type="number" step="0.01" name="cost" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Stock <span class="text-danger">*</span></label>
+                    <input type="number" name="stock" class="form-control" value="0" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Stock Mínimo <span class="text-danger">*</span></label>
+                    <input type="number" name="min_stock" class="form-control" value="0" required>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="featured" class="form-check-input" id="featuredCheck" value="1">
+                    <label class="form-check-label" for="featuredCheck">Destacado</label>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Estado</label>
+                    <select name="active" class="form-select">
+                        <option value="1" selected>Activo</option>
+                        <option value="0">Inactivo</option>
+                    </select>
+                </div>
+            `;
             footerEl.innerHTML = `
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary" id="btnSubmit">Crear Producto</button>
+                <button type="submit" class="btn btn-primary">Crear Producto</button>
             `;
             formEl.setAttribute('method', 'POST');
-            formEl.setAttribute('action', '{{ route('admin.products.store') }}');
+            formEl.setAttribute('action', '/admin/products');
 
         } else if (action === 'edit') {
             titleEl.textContent = 'Editar Producto';
-            loadFormFields(product, false);
+            bodyEl.innerHTML = `
+                <div class="mb-3">
+                    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                    <input type="text" name="name" class="form-control" value="${escapeHtml(product.name)}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea name="description" class="form-control" rows="3">${escapeHtml(product.description || '')}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Categoría <span class="text-danger">*</span></label>
+                    <select name="category_id" class="form-select" id="categorySelectEdit" required>
+                        <option value="">Selecciona una categoría</option>
+                        ${generateCategoryOptions(product.category_id)}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Subcategoría (opcional)</label>
+                    <select name="subcategory_id" class="form-select" id="subcategorySelectEdit">
+                        <option value="">Sin subcategoría</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">SKU <span class="text-danger">*</span></label>
+                    <input type="text" name="sku" class="form-control" value="${escapeHtml(product.sku)}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Precio <span class="text-danger">*</span></label>
+                    <input type="number" step="0.01" name="price" class="form-control" value="${product.price}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Costo (opcional)</label>
+                    <input type="number" step="0.01" name="cost" class="form-control" value="${product.cost || ''}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Stock <span class="text-danger">*</span></label>
+                    <input type="number" name="stock" class="form-control" value="${product.stock}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Stock Mínimo <span class="text-danger">*</span></label>
+                    <input type="number" name="min_stock" class="form-control" value="${product.min_stock}" required>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" name="featured" class="form-check-input" id="featuredCheckEdit" value="1" ${product.featured ? 'checked' : ''}>
+                    <label class="form-check-label" for="featuredCheckEdit">Destacado</label>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Estado</label>
+                    <select name="active" class="form-select">
+                        <option value="1" ${product.active ? 'selected' : ''}>Activo</option>
+                        <option value="0" ${!product.active ? 'selected' : ''}>Inactivo</option>
+                    </select>
+                </div>
+                <input type="hidden" name="_method" value="PUT">
+            `;
             footerEl.innerHTML = `
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary" id="btnSubmit">Guardar Cambios</button>
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
             `;
             formEl.setAttribute('method', 'POST');
             formEl.setAttribute('action', '/admin/products/' + product.id);
+
+            // Populate subcategories after render
+            setTimeout(() => {
+                const subcatSelect = document.getElementById('subcategorySelectEdit');
+                if (subcatSelect) {
+                    const filtered = allSubcategories.filter(s => s.category_id === product.category_id && s.active);
+                    filtered.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = s.name;
+                        if (product.subcategory_id === s.id) opt.selected = true;
+                        subcatSelect.appendChild(opt);
+                    });
+                }
+            }, 0);
 
         } else if (action === 'deactivate') {
             titleEl.textContent = 'Desactivar Producto';
@@ -207,103 +342,44 @@
         modal.show();
     }
 
-    function loadFormFields(product, isNew) {
-        const bodyEl = document.getElementById('modalBody');
-
-        const selectedCategory = product.category_id || '{{ old('category_id', '') }}';
-        const selectedSubcategory = product.subcategory_id || '{{ old('subcategory_id', '') }}';
-
-        // Filtrar subcategorías por categoría seleccionada
-        const filteredSubcategories = selectedCategory
-            ? allSubcategories.filter(s => s.category_id === selectedCategory)
-            : [];
-
-        bodyEl.innerHTML = `
-            <div class="mb-3">
-                <label class="form-label">Nombre <span class="text-danger">*</span></label>
-                <input type="text" name="name" class="form-control" value="${escapeHtml(product.name || '')}" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Descripción</label>
-                <textarea name="description" class="form-control" rows="3">${escapeHtml(product.description || '')}</textarea>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Categoría <span class="text-danger">*</span></label>
-                <select name="category_id" class="form-select" id="categorySelect" required>
-                    <option value="">Selecciona una categoría</option>
-                    ${categories.map(cat => `<option value="${cat.id}" ${selectedCategory === cat.id ? 'selected' : ''}>${escapeHtml(cat.name)}</option>`).join('')}
-                </select>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Subcategoría (opcional)</label>
-                <select name="subcategory_id" class="form-select" id="subcategorySelect">
-                    <option value="">Sin subcategoría</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">SKU <span class="text-danger">*</span></label>
-                <input type="text" name="sku" class="form-control" value="${escapeHtml(product.sku || '')}" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Precio <span class="text-danger">*</span></label>
-                <input type="number" step="0.01" name="price" class="form-control" value="${product.price || ''}" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Costo (opcional)</label>
-                <input type="number" step="0.01" name="cost" class="form-control" value="${product.cost || ''}">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Stock <span class="text-danger">*</span></label>
-                <input type="number" name="stock" class="form-control" value="${product.stock ?? 0}" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Stock Mínimo <span class="text-danger">*</span></label>
-                <input type="number" name="min_stock" class="form-control" value="${product.min_stock ?? 0}" required>
-            </div>
-            {{-- Campo Imagen Principal (pendiente) --}}
-            {{-- <div class="mb-3">
-                <label class="form-label">URL Imagen Principal</label>
-                <input type="text" name="main_image" class="form-control" placeholder="https://..." value="${product.main_image || ''}">
-            </div> --}}
-            {{-- Campo Galería Imágenes (pendiente) --}}
-            {{-- <div class="mb-3">
-                <label class="form-label">Galería de Imágenes (URLs, una por línea)</label>
-                <textarea name="images" class="form-control" rows="3" placeholder="https://...&#10;https://...">${(product.images || []).join('\n')}</textarea>
-            </div> --}}
-            <div class="mb-3 form-check">
-                <input type="checkbox" name="featured" class="form-check-input" id="featuredCheck" value="1" ${product.featured ? 'checked' : ''}>
-                <label class="form-check-label" for="featuredCheck">Destacado</label>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Estado</label>
-                <select name="active" class="form-select">
-                    <option value="1" ${(product.active ?? true) ? 'selected' : ''}>Activo</option>
-                    <option value="0" ${!(product.active ?? true) ? 'selected' : ''}>Inactivo</option>
-                </select>
-            </div>
-            <input type="hidden" name="_method" value="PUT">
-        `;
-
-        // Llenar subcategorías después de renderizar
-        setTimeout(() => {
-            const subcatSelect = document.getElementById('subcategorySelect');
-            if (subcatSelect) {
-                filteredSubcategories.forEach(sc => {
-                    const opt = document.createElement('option');
-                    opt.value = sc.id;
-                    opt.textContent = sc.name;
-                    if (selectedSubcategory === sc.id) opt.selected = true;
-                    subcatSelect.appendChild(opt);
-                });
-            }
-        }, 0);
-    }
-
     function escapeHtml(text) {
-        if (!text) return '';
+        if (!text && text !== 0) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    function getCategoryName(categoryId) {
+        @if($categories && $categories->count() > 0)
+            @foreach($categories as $category)
+                if (categoryId === '{{ $category['id'] }}') {
+                    return '{{ addslashes($category['name']) }}';
+                }
+            @endforeach
+        @endif
+        return 'N/A';
+    }
+
+    function getSubcategoryName(subcategoryId) {
+        if (!subcategoryId) return '—';
+        @if($subcategories && $subcategories->count() > 0)
+            @foreach($subcategories as $subcategory)
+                if (subcategoryId === '{{ $subcategory['id'] }}') {
+                    return '{{ addslashes($subcategory['name']) }}';
+                }
+            @endforeach
+        @endif
+        return '—';
+    }
+
+    function generateCategoryOptions(selectedId = null) {
+        let options = '';
+        @if($categories && $categories->count() > 0)
+            @foreach($categories as $category)
+                options += `<option value="{{ $category['id'] }}" ${selectedId === '{{ $category['id'] }}' ? 'selected' : ''}>{{ addslashes($category['name']) }}</option>`;
+            @endforeach
+        @endif
+        return options;
     }
 
     // Manejo AJAX del formulario (errores inline)
@@ -365,22 +441,51 @@
     document.getElementById('categorySelect')?.addEventListener('change', function() {
         const categoryId = this.value;
         const subcatSelect = document.getElementById('subcategorySelect');
-        subcatSelect.innerHTML = '<option value="">Sin subcategoría</option>';
-
-        if (categoryId) {
-            allSubcategories
-                .filter(s => s.category_id === categoryId && s.active)
-                .forEach(s => {
-                    const opt = document.createElement('option');
-                    opt.value = s.id;
-                    opt.textContent = s.name;
-                    subcatSelect.appendChild(opt);
-                });
+        if (subcatSelect) {
+            subcatSelect.innerHTML = '<option value="">Sin subcategoría</option>';
+            if (categoryId) {
+                allSubcategories
+                    .filter(s => s.category_id === categoryId && s.active)
+                    .forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = s.name;
+                        subcatSelect.appendChild(opt);
+                    });
+            }
         }
     });
 
-    // Botones de nuevo producto
-    document.getElementById('btnNewProduct')?.addEventListener('click', () => openModal('new', null));
-    document.getElementById('btnNewProductEmpty')?.addEventListener('click', () => openModal('new', null));
+    // Filtro para edit (si existe)
+    document.getElementById('categorySelectEdit')?.addEventListener('change', function() {
+        const categoryId = this.value;
+        const subcatSelect = document.getElementById('subcategorySelectEdit');
+        if (subcatSelect) {
+            subcatSelect.innerHTML = '<option value="">Sin subcategoría</option>';
+            if (categoryId) {
+                allSubcategories
+                    .filter(s => s.category_id === categoryId && s.active)
+                    .forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.id;
+                        opt.textContent = s.name;
+                        if (product && product.subcategory_id === s.id) opt.selected = true;
+                        subcatSelect.appendChild(opt);
+                    });
+            }
+        }
+    });
+
+    // Botones de nuevo producto - delegación de eventos
+    document.addEventListener('click', function(e) {
+        if (e.target && (e.target.id === 'btnNewProduct' || e.target.id === 'btnNewProductEmpty')) {
+            e.preventDefault();
+            openModal('new', null);
+        }
+    });
+
+    // Variables JS desde PHP
+    const categories = @json($categories->toArray());
+    let allSubcategories = @json($subcategories->toArray());
 </script>
 @endsection
