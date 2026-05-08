@@ -175,7 +175,7 @@
                         ${generateCategoryOptions()}
                     </select>
                 </div>
-                <div class="mb-3">
+                <div class="mb-3" id="subcategoryContainer" style="display: none;">
                     <label class="form-label">Subcategoría (opcional)</label>
                     <select name="subcategory_id" class="form-select" id="subcategorySelect">
                         <option value="">Sin subcategoría</option>
@@ -220,6 +220,8 @@
             formEl.setAttribute('method', 'POST');
             formEl.setAttribute('action', '/admin/products');
 
+            handleCategoryChangeNew();
+
         } else if (action === 'edit') {
             titleEl.textContent = 'Editar Producto';
             bodyEl.innerHTML = `
@@ -238,7 +240,7 @@
                         ${generateCategoryOptions(product.category_id)}
                     </select>
                 </div>
-                <div class="mb-3">
+                <div class="mb-3" id="subcategoryContainerEdit" style="display: none;">
                     <label class="form-label">Subcategoría (opcional)</label>
                     <select name="subcategory_id" class="form-select" id="subcategorySelectEdit">
                         <option value="">Sin subcategoría</option>
@@ -287,7 +289,8 @@
             // Populate subcategories after render
             setTimeout(() => {
                 const subcatSelect = document.getElementById('subcategorySelectEdit');
-                if (subcatSelect) {
+                const subcatContainer = document.getElementById('subcategoryContainerEdit');
+                if (subcatSelect && subcatContainer) {
                     const filtered = allSubcategories.filter(s => s.category_id === product.category_id && s.active);
                     filtered.forEach(s => {
                         const opt = document.createElement('option');
@@ -296,8 +299,15 @@
                         if (product.subcategory_id === s.id) opt.selected = true;
                         subcatSelect.appendChild(opt);
                     });
+                    if (filtered.length > 0) {
+                        subcatContainer.style.display = 'block';
+                    } else {
+                        subcatContainer.style.display = 'none';
+                    }
                 }
             }, 0);
+
+            handleCategoryChangeEdit();
 
         } else if (action === 'deactivate') {
             titleEl.textContent = 'Desactivar Producto';
@@ -386,7 +396,33 @@
     document.getElementById('modalForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const form = e.target;
+
+        // Remove subcategory name if container is hidden
+        const subcatContainerNew = document.getElementById('subcategoryContainer');
+        if (subcatContainerNew && subcatContainerNew.style.display === 'none') {
+            const subcatSelect = document.getElementById('subcategorySelect');
+            if (subcatSelect) subcatSelect.removeAttribute('name');
+        }
+        const subcatContainerEdit = document.getElementById('subcategoryContainerEdit');
+        if (subcatContainerEdit && subcatContainerEdit.style.display === 'none') {
+            const subcatSelect = document.getElementById('subcategorySelectEdit');
+            if (subcatSelect) subcatSelect.removeAttribute('name');
+        }
+
         const formData = new FormData(form);
+        const categoryId = formData.get('category_id');
+        const subcategoryId = formData.get('subcategory_id');
+
+        // Validar que la subcategoría corresponda a la categoría
+        if (subcategoryId && subcategoryId !== "") {
+            const validSubcategories = allSubcategories.filter(s => s.category_id === categoryId && s.active);
+            const isValid = validSubcategories.some(s => s.id === subcategoryId);
+            if (!isValid) {
+                alert('La subcategoría seleccionada no corresponde a la categoría elegida.');
+                return;
+            }
+        }
+
         const method = form.querySelector('input[name="_method"]')?.value || 'POST';
         const url = form.action;
 
@@ -437,55 +473,83 @@
         });
     });
 
-    // Filtro dinámico de subcategorías
-    document.getElementById('categorySelect')?.addEventListener('change', function() {
-        const categoryId = this.value;
-        const subcatSelect = document.getElementById('subcategorySelect');
-        if (subcatSelect) {
-            subcatSelect.innerHTML = '<option value="">Sin subcategoría</option>';
-            if (categoryId) {
-                allSubcategories
-                    .filter(s => s.category_id === categoryId && s.active)
-                    .forEach(s => {
-                        const opt = document.createElement('option');
-                        opt.value = s.id;
-                        opt.textContent = s.name;
-                        subcatSelect.appendChild(opt);
-                    });
-            }
-        }
-    });
-
-    // Filtro para edit (si existe)
-    document.getElementById('categorySelectEdit')?.addEventListener('change', function() {
-        const categoryId = this.value;
-        const subcatSelect = document.getElementById('subcategorySelectEdit');
-        if (subcatSelect) {
-            subcatSelect.innerHTML = '<option value="">Sin subcategoría</option>';
-            if (categoryId) {
-                allSubcategories
-                    .filter(s => s.category_id === categoryId && s.active)
-                    .forEach(s => {
-                        const opt = document.createElement('option');
-                        opt.value = s.id;
-                        opt.textContent = s.name;
-                        if (product && product.subcategory_id === s.id) opt.selected = true;
-                        subcatSelect.appendChild(opt);
-                    });
-            }
-        }
-    });
-
-    // Botones de nuevo producto - delegación de eventos
-    document.addEventListener('click', function(e) {
-        if (e.target && (e.target.id === 'btnNewProduct' || e.target.id === 'btnNewProductEmpty')) {
-            e.preventDefault();
-            openModal('new', null);
-        }
-    });
-
     // Variables JS desde PHP
     const categories = @json($categories->toArray());
     let allSubcategories = @json($subcategories->toArray());
+
+    function handleCategoryChangeNew() {
+        const categorySelect = document.getElementById('categorySelect');
+        if (categorySelect) {
+            categorySelect.addEventListener('change', function() {
+                const categoryId = this.value;
+                const subcatSelect = document.getElementById('subcategorySelect');
+                const subcatContainer = document.getElementById('subcategoryContainer');
+                if (subcatSelect && subcatContainer) {
+                    subcatSelect.innerHTML = '<option value="">Sin subcategoría</option>';
+                    if (categoryId) {
+                        const filtered = allSubcategories.filter(s => s.category_id === categoryId && s.active);
+                        filtered.forEach(s => {
+                            const opt = document.createElement('option');
+                            opt.value = s.id;
+                            opt.textContent = s.name;
+                            subcatSelect.appendChild(opt);
+                        });
+                        if (filtered.length > 0) {
+                            subcatContainer.style.display = 'block';
+                        } else {
+                            subcatContainer.style.display = 'none';
+                        }
+                    } else {
+                        subcatContainer.style.display = 'none';
+                    }
+                }
+            });
+        }
+    }
+
+    function handleCategoryChangeEdit() {
+        const categorySelect = document.getElementById('categorySelectEdit');
+        if (categorySelect) {
+            categorySelect.addEventListener('change', function() {
+                const categoryId = this.value;
+                const subcatSelect = document.getElementById('subcategorySelectEdit');
+                const subcatContainer = document.getElementById('subcategoryContainerEdit');
+                if (subcatSelect && subcatContainer) {
+                    subcatSelect.innerHTML = '<option value="">Sin subcategoría</option>';
+                    if (categoryId) {
+                        const filtered = allSubcategories.filter(s => s.category_id === categoryId && s.active);
+                        filtered.forEach(s => {
+                            const opt = document.createElement('option');
+                            opt.value = s.id;
+                            opt.textContent = s.name;
+                            subcatSelect.appendChild(opt);
+                        });
+                        if (filtered.length > 0) {
+                            subcatContainer.style.display = 'block';
+                        } else {
+                            subcatContainer.style.display = 'none';
+                        }
+                        // Reset subcategory if not valid for new category
+                        const currentSubcat = subcatSelect.value;
+                        if (currentSubcat && !filtered.some(s => s.id === currentSubcat)) {
+                            subcatSelect.value = '';
+                        }
+                    } else {
+                        subcatContainer.style.display = 'none';
+                    }
+                }
+            });
+        }
+    }
+
+    // Botones de nuevo producto
+    document.getElementById('btnNewProduct')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        openModal('new', null);
+    });
+    document.getElementById('btnNewProductEmpty')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        openModal('new', null);
+    });
 </script>
 @endsection
