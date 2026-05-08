@@ -23,29 +23,37 @@ class SubcategoryControllerTest extends TestCase
     {
         $this->mockAuthUser('admin');
 
-        $this->firestoreMock->method('listDocuments')->willReturn([
-            'documents' => [
-                ['name' => 'Cloro Líquido', 'categoryId' => 'Piscinas', 'active' => true],
-            ],
-            'nextPageToken' => null,
-        ]);
+        // Mock both listDocuments calls (subcategories first, then categories)
+        $this->firestoreMock->expects($this->exactly(2))
+            ->method('listDocuments')
+            ->willReturnOnConsecutiveCalls(
+                // First call: subcategories
+                [
+                    'documents' => [
+                        ['id' => 'sub1', 'name' => 'Cloro Líquido', 'category_id' => 'cat1', 'active' => true],
+                    ],
+                    'hasMore' => false,
+                ],
+                // Second call: categories
+                [
+                    'documents' => [
+                        ['id' => 'cat1', 'name' => 'Piscinas', 'active' => true],
+                    ],
+                ]
+            );
 
         $response = $this->get(route('admin.subcategories.index'));
 
         $response->assertStatus(200);
     }
 
-    public function test_create_returns_view_with_categories(): void
+    public function test_create_redirects_to_index(): void
     {
         $this->mockAuthUser('admin');
 
-        $this->firestoreMock->method('listDocuments')
-            ->willReturn(['documents' => [['name' => 'Piscinas']]]);
-
         $response = $this->get(route('admin.subcategories.create'));
 
-        $response->assertStatus(200);
-        $response->assertSee('Nueva Subcategoría');
+        $response->assertRedirect(route('admin.subcategories.index'));
     }
 
     public function test_store_creates_subcategory_with_valid_data(): void
@@ -64,46 +72,26 @@ class SubcategoryControllerTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function test_show_returns_subcategory_details(): void
+    public function test_show_redirects_to_index(): void
     {
         $this->mockAuthUser('admin');
 
         $subcategoryId = 'subcat-123';
-        $subcategoryData = [
-            'name' => 'Cloro Líquido',
-            'categoryId' => 'Piscinas',
-            'active' => true,
-        ];
-
-        $this->firestoreMock
-            ->expects($this->exactly(2))
-            ->method('getDocument')
-            ->willReturn($subcategoryData);
 
         $response = $this->get(route('admin.subcategories.show', $subcategoryId));
 
-        $response->assertStatus(200);
+        $response->assertRedirect(route('admin.subcategories.index'));
     }
 
-    public function test_edit_returns_view_with_existing_data(): void
+    public function test_edit_redirects_to_index(): void
     {
         $this->mockAuthUser('admin');
 
         $subcategoryId = 'subcat-123';
-        $subcategoryData = [
-            'name' => 'Cloro Líquido',
-            'categoryId' => 'Piscinas',
-            'active' => true,
-        ];
-
-        $this->firestoreMock
-            ->expects($this->exactly(2))
-            ->method('getDocument')
-            ->willReturn($subcategoryData);
 
         $response = $this->get(route('admin.subcategories.edit', $subcategoryId));
 
-        $response->assertStatus(200);
+        $response->assertRedirect(route('admin.subcategories.index'));
     }
 
     public function test_update_modifies_existing_subcategory(): void
@@ -113,18 +101,44 @@ class SubcategoryControllerTest extends TestCase
         $subcategoryId = 'subcat-123';
         $updateData = [
             'name' => 'Cloro Granulado',
-            'categoryId' => 'Piscinas',
+            'category_id' => 'Piscinas',
             'active' => true,
         ];
 
-        $this->firestoreMock
-            ->expects($this->exactly(2))
-            ->method('getDocument')
-            ->willReturn(['name' => 'Cloro Líquido']);
+        $existing = [
+            'id' => $subcategoryId,
+            'name' => 'Cloro Líquido',
+            'slug' => 'cloro-liquido',
+            'category_id' => 'Piscinas',
+            'active' => true,
+        ];
 
-        $this->firestoreMock
-            ->expects($this->once())
-            ->method('updateDocument');
+        $this->firestoreMock->expects($this->exactly(4))
+            ->method('getDocument')
+            ->willReturnMap([
+                [
+                    'subcategories',
+                    $subcategoryId,
+                    $existing,
+                ],
+                [
+                    'categories',
+                    'Piscinas',
+                    [
+                        'id' => 'Piscinas',
+                        'name' => 'Piscinas',
+                        'active' => true,
+                    ],
+                ],
+            ]);
+
+        $this->firestoreMock->expects($this->exactly(2))
+            ->method('query')
+            ->willReturn([]);
+
+        $this->firestoreMock->expects($this->once())
+            ->method('updateDocument')
+            ->with('subcategories', $subcategoryId, $this->anything());
 
         $response = $this->put(route('admin.subcategories.update', $subcategoryId), $updateData);
 

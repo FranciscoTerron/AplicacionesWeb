@@ -4,12 +4,22 @@ namespace App\Http\Requests\Subcategory;
 
 use App\Services\FirestoreService;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class UpdateSubcategoryRequest extends FormRequest
 {
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        // Generate slug from name
+        $this->merge([
+            'slug' => Str::slug($this->name),
+            'active' => filter_var($this->active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+        ]);
     }
 
     public function rules(): array
@@ -24,13 +34,26 @@ class UpdateSubcategoryRequest extends FormRequest
                 function ($attribute, $value, $fail) use ($subcategoryId) {
                     $fs = app(FirestoreService::class);
                     $existing = $fs->query('subcategories', ['name' => strtolower($value)], 1);
-                    // Si existe otro con mismo nombre y no es esta misma subcategoría → error
+                    // Si existe otra subcategoría con mismo nombre y no es esta misma → error
                     if (count($existing) > 0 && ($existing[0]['id'] ?? '') !== $subcategoryId) {
                         $fail('Ya existe una subcategoría con ese nombre.');
                     }
                 },
             ],
-            'description' => 'nullable|string|max:500',
+            'slug' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) use ($subcategoryId) {
+                    $fs = app(FirestoreService::class);
+                    $existing = $fs->query('subcategories', ['slug' => $value], 1);
+                    // Si existe otra subcategoría con mismo slug y no es esta misma → error
+                    if (count($existing) > 0 && ($existing[0]['id'] ?? '') !== $subcategoryId) {
+                        $fail('Ya existe una subcategoría con ese slug.');
+                    }
+                },
+            ],
+            'description' => 'nullable|string|max:1000',
             'category_id' => 'required|string',
             'active' => 'nullable|boolean',
         ];
@@ -41,8 +64,11 @@ class UpdateSubcategoryRequest extends FormRequest
         return [
             'name.required' => 'El nombre es obligatorio.',
             'name.max' => 'El nombre no puede tener más de 255 caracteres.',
-            'description.max' => 'La descripción no puede tener más de 500 caracteres.',
+            'slug.required' => 'El slug es obligatorio.',
+            'slug.max' => 'El slug no puede tener más de 255 caracteres.',
+            'description.max' => 'La descripción no puede tener más de 1000 caracteres.',
             'category_id.required' => 'La categoría es obligatoria.',
+            'active.boolean' => 'El estado activo debe ser verdadero o falso.',
         ];
     }
 
