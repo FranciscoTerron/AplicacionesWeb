@@ -3,34 +3,37 @@ $navItems = [
     'main' => [
         'title' => 'Principal',
         'items' => [
-            ['route' => 'admin.dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard'],
+            ['route' => 'admin.dashboard', 'label' => 'Dashboard', 'icon' => 'dashboard', 'roles' => ['admin', 'editor']],
         ]
     ],
     'commerce' => [
         'title' => 'Comercio',
         'items' => [
-            ['route' => 'admin.products.index', 'label' => 'Productos', 'icon' => 'products'],
-            ['route' => 'admin.categories.index', 'label' => 'Categorías', 'icon' => 'categories'],
-            ['route' => 'admin.subcategories.index', 'label' => 'Subcategorías', 'icon' => 'categories'],
-            ['route' => 'admin.discounts.index', 'label' => 'Descuentos', 'icon' => 'discounts'],
+            ['route' => 'admin.products.index', 'label' => 'Productos', 'icon' => 'products', 'roles' => ['admin', 'editor']],
+            ['route' => 'admin.categories.index', 'label' => 'Categorías', 'icon' => 'categories', 'roles' => ['admin', 'editor']],
+            ['route' => 'admin.subcategories.index', 'label' => 'Subcategorías', 'icon' => 'categories', 'roles' => ['admin', 'editor']],
+            ['route' => 'admin.discounts.index', 'label' => 'Descuentos', 'icon' => 'discounts', 'roles' => ['admin', 'editor']],
         ]
     ],
     'management' => [
         'title' => 'Gestión',
         'items' => [
-            ['route' => 'admin.users.index', 'label' => 'Usuarios', 'icon' => 'users'],
-            ['route' => 'admin.clients.index', 'label' => 'Clientes', 'icon' => 'customers'],
-            ['route' => 'admin.orders.index', 'label' => 'Pedidos', 'icon' => 'orders'],
-            ['route' => 'admin.shipments.index', 'label' => 'Envíos', 'icon' => 'orders'],
+            ['route' => 'admin.orders.index', 'label' => 'Pedidos', 'icon' => 'orders', 'roles' => ['admin', 'editor']],
+            ['route' => 'admin.shipments.index', 'label' => 'Envíos', 'icon' => 'orders', 'roles' => ['admin', 'editor']],
+            ['route' => 'admin.clients.index', 'label' => 'Clientes', 'icon' => 'customers', 'roles' => ['admin', 'editor']],
+            ['route' => 'admin.users.index', 'label' => 'Usuarios', 'icon' => 'users', 'roles' => ['admin']],
         ]
     ],
     'system' => [
         'title' => 'Sistema',
         'items' => [
-            ['route' => 'admin.settings', 'label' => 'Configuración', 'icon' => 'settings'],
+            ['route' => 'admin.settings', 'label' => 'Configuración', 'icon' => 'settings', 'roles' => ['admin', 'editor']],
         ]
     ]
 ];
+
+$currentRole = Auth::user()->role ?? 'editor';
+$currentRoute = Route::currentRouteName();
 
 $iconPaths = [
     'dashboard' => '<path d="M3 3v18h18V3H3zm16 16H5V5h14v14z"/><path d="M7 12h2v5H7zm4-3h2v8h-2zm4-3h2v11h-2z"/>',
@@ -42,8 +45,6 @@ $iconPaths = [
     'customers' => '<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>',
     'settings' => '<path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>',
 ];
-
-$currentRoute = Route::currentRouteName();
 @endphp
 
 <aside class="sidebar">
@@ -55,15 +56,18 @@ $currentRoute = Route::currentRouteName();
 
     <nav class="sidebar-nav">
         @foreach($navItems as $section)
-            <div class="nav-section">
-                <div class="nav-section-title">{{ $section['title'] }}</div>
-                @foreach($section['items'] as $item)
-                    @php
-                        $isActive = $currentRoute === $item['route'] || (str_starts_with($currentRoute, $item['route']) && $item['route'] !== 'admin.dashboard');
-                    @endphp
-
-                    {{-- Condición para ocultar Usuarios si no es admin --}}
-                    @if(!($item['route'] === 'admin.users.index' && (Auth::user()->role ?? '') !== 'admin'))
+            @php
+                $filteredItems = array_filter($section['items'], function ($item) use ($currentRole) {
+                    return in_array($currentRole, $item['roles']);
+                });
+            @endphp
+            @if(count($filteredItems) > 0)
+                <div class="nav-section">
+                    <div class="nav-section-title">{{ $section['title'] }}</div>
+                    @foreach($filteredItems as $item)
+                        @php
+                            $isActive = $currentRoute === $item['route'] || (str_starts_with($currentRoute, $item['route']) && $item['route'] !== 'admin.dashboard');
+                        @endphp
                         <a href="{{ route($item['route']) }}" class="nav-link {{ $isActive ? 'active' : '' }}">
                             <span class="nav-icon">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -72,9 +76,9 @@ $currentRoute = Route::currentRouteName();
                             </span>
                             {{ $item['label'] }}
                         </a>
-                    @endif
-                @endforeach
-            </div>
+                    @endforeach
+                </div>
+            @endif
         @endforeach
     </nav>
 

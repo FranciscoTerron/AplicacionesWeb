@@ -187,11 +187,6 @@ class CategoryController extends Controller
         $model = $this->getModelInstance($id);
         $this->authorizeRequest('update', $model);
 
-        // Only admins can activate categories
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only administrators can activate categories.');
-        }
-
         try {
             $data = [
                 'active' => true,

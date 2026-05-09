@@ -24,11 +24,6 @@
                 title="Editar">
                 <i class="bi bi-pencil">Editar</i>
             </button>
-        @else
-            <button type="button" class="btn btn-sm btn-outline-secondary" disabled
-                title="Solo los administradores pueden editar clientes">
-                <i class="bi bi-pencil">Editar</i>
-            </button>
         @endif
 
         <!-- Bloquear/Desbloquear -->
@@ -46,11 +41,6 @@
                     <i class="bi bi-unlock">Desbloquear</i>
                 </button>
             @endif
-        @else
-            <button type="button" class="btn btn-sm btn-outline-danger" disabled
-                title="Solo los administradores pueden cambiar el estado">
-                <i class="bi bi-lock">Bloquear</i>
-            </button>
         @endif
     </td>
 </tr>

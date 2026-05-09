@@ -207,11 +207,6 @@ class SubcategoryController extends Controller
         $model = $this->getModelInstance($id);
         $this->authorizeRequest('update', $model);
 
-        // Only admins can activate subcategories
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only administrators can activate subcategories.');
-        }
-
         try {
             $data = [
                 'active' => true,

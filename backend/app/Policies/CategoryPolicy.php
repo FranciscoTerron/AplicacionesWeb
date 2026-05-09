@@ -27,29 +27,29 @@ class CategoryPolicy
 
     /**
      * Determine whether the user can create models.
-     * Solo Admin puede crear categorías
+     * Admin y Editor pueden crear categorías
      */
     public function create(User $user): bool
     {
-        return $user->role === 'admin';
+        return in_array($user->role, ['admin', 'editor']);
     }
 
     /**
      * Determine whether the user can update the model.
-     * Solo Admin puede editar categorías
+     * Admin y Editor pueden editar categorías
      */
     public function update(User $user, Category $category): bool
     {
-        return $user->role === 'admin';
+        return in_array($user->role, ['admin', 'editor']);
     }
 
     /**
      * Determine whether the user can delete the model.
-     * Solo Admin puede eliminar (baja lógica) categorías
+     * Admin y Editor pueden eliminar (baja lógica) categorías
      */
     public function delete(User $user, Category $category): bool
     {
-        return $user->role === 'admin';
+        return in_array($user->role, ['admin', 'editor']);
     }
 
     // restore y forceDelete no se usan (baja lógica via update active=false)

@@ -8,19 +8,16 @@
 @php
     $currentUser = Auth::user();
     $currentUserRole = $currentUser?->role ?? 'editor';
+    $isAdmin = $currentUserRole === 'admin';
 @endphp
 
 <div class="flex justify-between items-center mb-4">
     <div>
         <h1>Descuentos</h1>
     </div>
-    @if($currentUser && $currentUserRole == 'admin')
+    @if($isAdmin)
         <button type="button" class="btn btn-primary" id="btnNewDiscount">
             <i class="bi bi-plus-circle"></i> Nuevo Descuento
-        </button>
-    @else
-        <button type="button" class="btn btn-outline-danger btn-sm" disabled title="Solo los administradores pueden crear descuentos">
-            Nuevo Descuento
         </button>
     @endif
 </div>
@@ -43,13 +40,12 @@
                 <th>Válido Desde</th>
                 <th>Válido Hasta</th>
                 <th>Estado</th>
-                <th>Acciones</th>
+                <th class="text-end">Acciones</th>
             </tr>
         </thead>
         <tbody>
             @forelse($items as $discount)
                 @php
-                    $isAdmin = $currentUserRole == 'admin';
                     $isActive = $discount['active'] ?? true;
                 @endphp
                 @include('admin.discounts.partials._discount_row', ['discount' => $discount, 'isAdmin' => $isAdmin, 'isActive' => $isActive])
@@ -58,7 +54,7 @@
                     <td colspan="8" class="text-center py-5 text-muted">
                         <i class="bi bi-percent display-6"></i>
                         <p class="lead mt-2">No hay descuentos registrados</p>
-                        @if($currentUserRole == 'admin')
+                        @if($isAdmin)
                             <button type="button" class="btn btn-primary mt-2" id="btnNewDiscountEmpty">
                                 <i class="bi bi-plus-circle"></i> Crear primer descuento
                             </button>

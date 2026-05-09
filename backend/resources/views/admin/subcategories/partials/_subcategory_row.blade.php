@@ -28,7 +28,7 @@
         </button>
 
         <!-- Editar -->
-        @if($isAdmin)
+        @if($canManage ?? $isAdmin)
             <button type="button" class="btn btn-sm btn-outline-secondary"
                 onclick="openModal('edit', {{ json_encode($subcategory) }})"
                 title="Editar">
@@ -42,7 +42,7 @@
         @endif
 
         <!-- Desactivar/Activar -->
-        @if($isAdmin)
+        @if($canManage ?? $isAdmin)
             @if($isActive)
                 <button type="button" class="btn btn-sm btn-outline-danger"
                     onclick="openModal('deactivate', {{ json_encode($subcategory) }})"

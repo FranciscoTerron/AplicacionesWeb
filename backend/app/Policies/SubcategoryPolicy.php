@@ -25,29 +25,29 @@ class SubcategoryPolicy
 
     /**
      * Determine whether the user can create models.
-     * Solo Admin puede crear subcategorías
+     * Admin y Editor pueden crear subcategorías
      */
     public function create(User $user): bool
     {
-        return $user->role === 'admin';
+        return in_array($user->role, ['admin', 'editor']);
     }
 
     /**
      * Determine whether the user can update the model.
-     * Solo Admin puede editar subcategorías
+     * Admin y Editor pueden editar subcategorías
      */
     public function update(User $user, Subcategory $subcategory): bool
     {
-        return $user->role === 'admin';
+        return in_array($user->role, ['admin', 'editor']);
     }
 
     /**
      * Determine whether the user can delete the model.
-     * Solo Admin puede eliminar (baja lógica) subcategorías
+     * Admin y Editor pueden eliminar (baja lógica) subcategorías
      */
     public function delete(User $user, Subcategory $subcategory): bool
     {
-        return $user->role === 'admin';
+        return in_array($user->role, ['admin', 'editor']);
     }
 
     public function restore(User $user, Subcategory $subcategory): bool

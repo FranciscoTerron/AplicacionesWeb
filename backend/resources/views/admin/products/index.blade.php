@@ -12,15 +12,9 @@
 @section('content')
 <div class="flex justify-between items-center mb-4">
     <h1>Productos</h1>
-    @if(in_array($currentUserRole, ['admin', 'editor']))
-        <button type="button" class="btn btn-primary" id="btnNewProduct">
-            <i class="bi bi-plus-circle"></i> Nuevo Producto
-        </button>
-    @else
-        <button type="button" class="btn btn-outline-danger btn-sm" disabled title="No tienes permisos para crear productos">
-            Nuevo Producto
-        </button>
-    @endif
+    <button type="button" class="btn btn-primary" id="btnNewProduct">
+        <i class="bi bi-plus-circle"></i> Nuevo Producto
+    </button>
 </div>
 
 <!-- Search and Filters -->

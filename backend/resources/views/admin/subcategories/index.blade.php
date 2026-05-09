@@ -14,15 +14,9 @@
     <div>
         <h1>Subcategorías</h1>
     </div>
-    @if($currentUser && $currentUserRole == 'admin')
-        <button type="button" class="btn btn-primary" id="btnNewSubcategory">
-            <i class="bi bi-plus-circle"></i> Nueva Subcategoría
-        </button>
-    @else
-        <button type="button" class="btn btn-outline-danger btn-sm" disabled title="Solo los administradores pueden crear subcategorías">
-            Nueva Subcategoría
-        </button>
-    @endif
+    <button type="button" class="btn btn-primary" id="btnNewSubcategory">
+        <i class="bi bi-plus-circle"></i> Nueva Subcategoría
+    </button>
 </div>
 
 <!-- Search and Filters -->
@@ -48,9 +42,10 @@
             @forelse($subcategories as $subcategory)
                 @php
                     $isAdmin = $currentUserRole == 'admin';
+                    $canManage = in_array($currentUserRole, ['admin', 'editor']);
                     $isActive = $subcategory['active'] ?? true;
                 @endphp
-                @include('admin.subcategories.partials._subcategory_row', ['subcategory' => $subcategory, 'categories' => $categories, 'isAdmin' => $isAdmin, 'isActive' => $isActive])
+                @include('admin.subcategories.partials._subcategory_row', ['subcategory' => $subcategory, 'categories' => $categories, 'isAdmin' => $isAdmin, 'canManage' => $canManage, 'isActive' => $isActive])
             @empty
                 <tr>
                     <td colspan="6" class="text-center py-5 text-muted">

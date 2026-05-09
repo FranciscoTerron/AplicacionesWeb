@@ -43,11 +43,6 @@
                 title="Editar descuento">
                 <i class="bi bi-pencil"></i> Editar
             </button>
-        @else
-            <button type="button" class="btn btn-sm btn-outline-secondary" disabled
-                title="Solo los administradores pueden editar descuentos">
-                <i class="bi bi-pencil"></i> Editar
-            </button>
         @endif
 
         <!-- Desactivar/Reactivar -->
@@ -65,11 +60,6 @@
                     <i class="bi bi-unlock"></i> Activar
                 </button>
             @endif
-        @else
-            <button type="button" class="btn btn-sm btn-outline-danger" disabled
-                title="Solo los administradores pueden gestionar descuentos">
-                <i class="bi bi-lock"></i> Gestionar
-            </button>
         @endif
     </td>
 </tr>

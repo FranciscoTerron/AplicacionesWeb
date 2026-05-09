@@ -8,6 +8,8 @@
 @php
     $currentUser = Auth::user();
     $isAdmin = ($currentUser?->role ?? '') === 'admin';
+    $isEditor = ($currentUser?->role ?? '') === 'editor';
+    $canViewOrders = $isAdmin || $isEditor;
     $paymentStatuses = [
         'pending' => 'Pendiente',
         'paid' => 'Pagado',
@@ -121,6 +123,40 @@
                                         <i class="bi bi-x-circle"></i>
                                     </button>
                                 </form>
+                            @endif
+                            @if($isEditor)
+                                <button type="button" class="btn btn-sm btn-outline-info" title="Cambiar estado" data-bs-toggle="modal" data-bs-target="#statusModal{{ $orderId }}">
+                                    <i class="bi bi-arrow-repeat"></i>
+                                </button>
+                                <!-- Modal para cambiar estado del pedido -->
+                                <div class="modal fade" id="statusModal{{ $orderId }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Cambiar estado del pedido</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form method="POST" action="{{ route('admin.orders.status', $orderId) }}">
+                                                @csrf
+                                                <div class="modal-body">
+                                                    <p class="mb-3">Pedido: <code>{{ $orderId }}</code> — Cliente: {{ $order['client_name'] ?? $order['clientId'] ?? '—' }}</p>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Estado actual: <strong>{{ $statusLabel }}</strong></label>
+                                                        <select name="status" class="form-select" required>
+                                                            @foreach($statuses as $key => $label)
+                                                                <option value="{{ $key }}" {{ $key === $statusKey ? 'selected' : '' }}>{{ $label }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-primary">Actualizar estado</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             @endif
                         @endif
                     </td>

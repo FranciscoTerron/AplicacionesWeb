@@ -193,11 +193,6 @@ class ClientController extends Controller
         $model = $this->getModelInstance($id);
         $this->authorizeRequest('update', $model);
 
-        // Only admins can activate clients
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only administrators can activate clients.');
-        }
-
         try {
             $data = [
                 'active' => true,

@@ -14,15 +14,9 @@
     <div>
         <h1>Categorías</h1>
     </div>
-    @if($currentUser && $currentUserRole == 'admin')
-        <button type="button" class="btn btn-primary" id="btnNewCategory">
-            <i class="bi bi-plus-circle"></i> Nueva Categoría
-        </button>
-    @else
-        <button type="button" class="btn btn-outline-danger btn-sm" disabled title="Solo los administradores pueden crear categorías">
-            Nueva Categoría
-        </button>
-    @endif
+    <button type="button" class="btn btn-primary" id="btnNewCategory">
+        <i class="bi bi-plus-circle"></i> Nueva Categoría
+    </button>
 </div>
 
 <!-- Search and Filters -->
@@ -47,9 +41,10 @@
             @forelse($categories as $category)
                 @php
                     $isAdmin = $currentUserRole == 'admin';
+                    $canManage = in_array($currentUserRole, ['admin', 'editor']);
                     $isActive = $category['active'] ?? true;
                 @endphp
-                @include('admin.categories.partials._category_row', ['category' => $category, 'isAdmin' => $isAdmin, 'isActive' => $isActive])
+                @include('admin.categories.partials._category_row', ['category' => $category, 'isAdmin' => $isAdmin, 'canManage' => $canManage, 'isActive' => $isActive])
             @empty
                 <tr>
                     <td colspan="5" class="text-center py-5 text-muted">
