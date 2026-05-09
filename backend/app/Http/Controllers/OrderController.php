@@ -65,7 +65,7 @@ class OrderController extends Controller
 
     protected function getExtraCreateData(): array
     {
-        $result = $this->firestore->listDocuments('clients', 100);
+        $result = $this->firestore->listDocuments('clients', 100, null, 'name');
         $clients = collect($result['documents'] ?? []);
 
         $productsResult = $this->firestore->listDocuments('products', 100);
@@ -93,7 +93,7 @@ class OrderController extends Controller
         $statusFilter = request()->get('status');
         $paymentFilter = request()->get('payment_status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 50, $startAfter);
+        $result = $this->firestore->listDocuments($this->getCollectionName(), 50, $startAfter, 'created_at');
         $items = collect($result['documents']);
 
         if ($search) {

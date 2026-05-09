@@ -54,7 +54,7 @@ class ShipmentController extends Controller
 
     protected function getExtraCreateData(): array
     {
-        $ordersResult = $this->firestore->listDocuments('orders', 100);
+        $ordersResult = $this->firestore->listDocuments('orders', 100, null, 'created_at');
         $orders = collect($ordersResult['documents'] ?? []);
 
         return [
@@ -77,7 +77,7 @@ class ShipmentController extends Controller
         $search = request()->get('search');
         $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 50, $startAfter);
+        $result = $this->firestore->listDocuments($this->getCollectionName(), 50, $startAfter, 'created_at');
         $items = collect($result['documents']);
 
         if ($search) {

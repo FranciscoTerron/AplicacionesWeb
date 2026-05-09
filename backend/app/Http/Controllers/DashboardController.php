@@ -14,8 +14,8 @@ class DashboardController extends Controller
     {
         $products = $this->fetch('products');
         $clients = $this->fetch('clients');
-        $orders = $this->fetch('orders');
-        $shipments = $this->fetch('shipments');
+        $orders = $this->fetch('orders', 'created_at');
+        $shipments = $this->fetch('shipments', 'created_at');
 
         $activeProducts = $products->where('active', true)->count();
         $activeClients = $clients->where('active', true)->count();
@@ -57,9 +57,9 @@ class DashboardController extends Controller
     /**
      * @return Collection<int, array<string, mixed>>
      */
-    private function fetch(string $collection): Collection
+    private function fetch(string $collection, string $orderBy = 'name'): Collection
     {
-        $result = $this->firestore->listDocuments($collection, 200);
+        $result = $this->firestore->listDocuments($collection, 200, null, $orderBy);
 
         return collect($result['documents'] ?? []);
     }
