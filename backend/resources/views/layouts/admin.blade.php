@@ -6,7 +6,7 @@
     <title>@yield('title', 'MA Piscinas - Admin')</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Tailwind CSS (sin preflight) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -18,27 +18,33 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --primary: #0077B6;
-            --primary-light: #00B4D8;
-            --accent: #00ADB5;
-            --dark: #023E8A;
+            --primary: #0284c7;
+            --primary-dark: #075985;
+            --primary-light: #38bdf8;
+            --accent: #06b6d4;
+            --dark: #0f172a;
             --white: #FFFFFF;
-            --bg-light: #F8F9FA;
-            --bg-sidebar: #0f172a;
-            --text: #212529;
-            --text-muted: #6b7280;
-            --danger: #DC3545;
+            --bg-light: #f8fafc;
+            --bg-sidebar: #1e293b;
+            --bg-topbar: #1e293b;
+            --shadow-card: 0 1px 2px rgba(15,23,42,0.04), 0 1px 3px rgba(15,23,42,0.06);
+            --radius-card: 12px;
+            --text: #0f172a;
+            --text-soft: #334155;
+            --text-muted: #64748b;
+            --danger: #dc2626;
             --success: #10b981;
             --warning: #f59e0b;
-            --border: #e5e7eb;
-            --sidebar-width: 260px;
+            --border: #e2e8f0;
+            --sidebar-width: 250px;
         }
 
         body {
-            font-family: 'Outfit', sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             background: var(--bg-light);
             color: var(--text);
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
 
         .layout {
@@ -62,20 +68,36 @@
         }
 
         .sidebar-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            height: 64px;
+            display: flex;
+            align-items: center;
         }
 
         .sidebar-logo {
-            font-size: 1.25rem;
-            font-weight: 600;
+            font-size: 1.05rem;
+            font-weight: 700;
             color: var(--white);
             text-decoration: none;
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            letter-spacing: -0.01em;
+        }
+
+        .sidebar-logo::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            box-shadow: 0 0 10px rgba(56,189,248,0.6);
         }
 
         .sidebar-logo span {
             color: var(--primary-light);
+            font-weight: 500;
         }
 
         .sidebar-nav {
@@ -84,83 +106,96 @@
         }
 
         .nav-section {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
 
         .nav-section-title {
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.08em;
             color: rgba(255,255,255,0.4);
             padding: 0 1.5rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
         }
 
         .nav-link {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 1.5rem;
-            color: rgba(255,255,255,0.7);
+            gap: 0.65rem;
+            padding: 0.55rem 1.5rem 0.55rem calc(1.5rem - 2px);
+            margin: 0 0.5rem;
+            border-radius: 6px;
+            color: rgba(255,255,255,0.72);
             text-decoration: none;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-            border-left: 3px solid transparent;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.15s;
+            border-left: 2px solid transparent;
         }
 
         .nav-link:hover {
-            background: rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.06);
             color: var(--white);
         }
 
         .nav-link.active {
-            background: rgba(0, 119, 182, 0.2);
+            background: rgba(56,189,248,0.18);
             color: var(--primary-light);
             border-left-color: var(--primary-light);
         }
 
         .nav-icon {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
+            opacity: 0.85;
         }
 
         .sidebar-footer {
-            padding: 1rem 1.5rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
         }
 
         .user-info {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.65rem;
+            padding: 0.5rem;
+            border-radius: 8px;
         }
 
         .user-avatar {
-            width: 36px;
-            height: 36px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
-            background: var(--primary);
+            background: rgba(255,255,255,0.1);
+            color: var(--white);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             font-weight: 600;
         }
 
         .user-details {
             flex: 1;
+            min-width: 0;
         }
 
         .user-name {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
+            color: var(--white);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .user-role {
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             color: rgba(255,255,255,0.5);
         }
 
@@ -170,11 +205,13 @@
             color: rgba(255,255,255,0.5);
             cursor: pointer;
             padding: 0.5rem;
-            transition: color 0.2s;
+            border-radius: 6px;
+            transition: all 0.15s;
         }
 
         .logout-btn:hover {
-            color: var(--danger);
+            color: var(--white);
+            background: rgba(255,255,255,0.06);
         }
 
         /* Main Content */
@@ -185,27 +222,34 @@
         }
 
         .top-bar {
-            background: var(--white);
+            background: var(--bg-topbar);
+            color: var(--white);
             padding: 1rem 2rem;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
             z-index: 50;
+            min-height: 64px;
         }
 
         .page-title {
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 600;
-            color: var(--dark);
+            color: var(--white);
+            letter-spacing: -0.01em;
         }
 
         .page-subtitle {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-top: 0.25rem;
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.55);
+            margin-top: 0.15rem;
+        }
+
+        .top-bar .mobile-toggle {
+            color: var(--white);
         }
 
         .content {

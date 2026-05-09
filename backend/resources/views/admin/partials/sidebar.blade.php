@@ -21,6 +21,7 @@ $navItems = [
             ['route' => 'admin.users.index', 'label' => 'Usuarios', 'icon' => 'users'],
             ['route' => 'admin.clients.index', 'label' => 'Clientes', 'icon' => 'customers'],
             ['route' => 'admin.orders.index', 'label' => 'Pedidos', 'icon' => 'orders'],
+            ['route' => 'admin.shipments.index', 'label' => 'Envíos', 'icon' => 'orders'],
         ]
     ],
     'system' => [

@@ -224,6 +224,57 @@ class OrderControllerTest extends TestCase
     }
 
     /**
+     * Verifica que updateStatus cambia el estado del pedido.
+     */
+    public function test_update_status_changes_order_status(): void
+    {
+        $this->mockAuthUser('admin');
+
+        $orderId = 'order-123';
+
+        $this->firestoreMock
+            ->expects($this->once())
+            ->method('getDocument')
+            ->willReturn(['status' => 'pending']);
+
+        $this->firestoreMock
+            ->expects($this->once())
+            ->method('updateDocument')
+            ->with('orders', $orderId, $this->callback(function ($data) {
+                return ($data['status'] ?? null) === 'completed';
+            }));
+
+        $response = $this->post(route('admin.orders.status', $orderId), [
+            'status' => 'completed',
+        ]);
+
+        $response->assertRedirect(route('admin.orders.index'));
+        $response->assertSessionHas('success');
+    }
+
+    /**
+     * Verifica que el index acepta filtro por status.
+     */
+    public function test_index_filters_by_status(): void
+    {
+        $this->mockAuthUser('admin');
+
+        $this->firestoreMock->method('listDocuments')->willReturn([
+            'documents' => [
+                ['client_name' => 'PEDIDOPENDIENTE', 'status' => 'pending'],
+                ['client_name' => 'PEDIDOCOMPLETO', 'status' => 'completed'],
+            ],
+            'nextPageToken' => null,
+        ]);
+
+        $response = $this->get(route('admin.orders.index', ['status' => 'pending']));
+
+        $response->assertStatus(200);
+        $response->assertSee('PEDIDOPENDIENTE');
+        $response->assertDontSee('PEDIDOCOMPLETO');
+    }
+
+    /**
      * Mock de usuario autenticado con rol específico.
      */
     protected function mockAuthUser(string $role): void

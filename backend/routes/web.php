@@ -9,6 +9,7 @@ use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ShipmentController;
 use App\Http\Controllers\SubcategoryController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -34,6 +35,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::resource('subcategories', SubcategoryController::class)->names('admin.subcategories');
     Route::post('subcategories/{subcategory}/activate', [SubcategoryController::class, 'activate'])->name('admin.subcategories.activate');
     Route::resource('products', ProductController::class)->names('admin.products');
+    Route::post('products/{product}/activate', [ProductController::class, 'activate'])->name('admin.products.activate');
     Route::resource('users', UserController::class)->names('admin.users');
     Route::post('users/{user}/activate', [UserController::class, 'activate'])->name('admin.users.activate');
     Route::resource('discounts', DiscountController::class)->names('admin.discounts');
@@ -41,4 +43,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::resource('clients', ClientController::class)->names('admin.clients');
     Route::post('clients/{client}/activate', [ClientController::class, 'activate'])->name('admin.clients.activate');
     Route::resource('orders', OrderController::class)->names('admin.orders');
+    Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('admin.orders.status');
+    Route::resource('shipments', ShipmentController::class)->names('admin.shipments');
+    Route::post('shipments/{shipment}/activate', [ShipmentController::class, 'activate'])->name('admin.shipments.activate');
 });

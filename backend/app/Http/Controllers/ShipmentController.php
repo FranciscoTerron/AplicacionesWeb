@@ -3,17 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Domain\Errors\DomainError;
-use App\Http\Requests\Product\StoreProductRequest;
-use App\Http\Requests\Product\UpdateProductRequest;
+use App\Http\Requests\Shipment\StoreShipmentRequest;
+use App\Http\Requests\Shipment\UpdateShipmentRequest;
 use App\Http\Traits\CrudActionsTrait;
-use App\Models\Product;
+use App\Models\Shipment;
 use App\Services\FirestoreService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
-class ProductController extends Controller
+class ShipmentController extends Controller
 {
     use CrudActionsTrait;
 
@@ -24,45 +24,42 @@ class ProductController extends Controller
 
     protected function getCollectionName(): string
     {
-        return 'products';
+        return 'shipments';
     }
 
     protected function getRedirectRoute(): string
     {
-        return 'admin.products.index';
+        return 'admin.shipments.index';
     }
 
     protected function getViewFolder(): string
     {
-        return 'admin.products';
+        return 'admin.shipments';
     }
 
     protected function getStoreRequestClass(): string
     {
-        return StoreProductRequest::class;
+        return StoreShipmentRequest::class;
     }
 
     protected function getUpdateRequestClass(): string
     {
-        return UpdateProductRequest::class;
+        return UpdateShipmentRequest::class;
     }
 
     protected function getModelClass(): string
     {
-        return Product::class;
+        return Shipment::class;
     }
 
     protected function getExtraCreateData(): array
     {
-        $categoriesResult = $this->firestore->listDocuments('categories', 100);
-        $categories = collect($categoriesResult['documents'] ?? [])->where('active', true);
-
-        $subcategoriesResult = $this->firestore->listDocuments('subcategories', 100);
-        $subcategories = collect($subcategoriesResult['documents'] ?? []);
+        $ordersResult = $this->firestore->listDocuments('orders', 100);
+        $orders = collect($ordersResult['documents'] ?? []);
 
         return [
-            'categories' => $categories,
-            'subcategories' => $subcategories,
+            'orders' => $orders,
+            'statuses' => Shipment::statuses(),
         ];
     }
 
@@ -79,51 +76,28 @@ class ProductController extends Controller
         $startAfter = request()->get('after');
         $search = request()->get('search');
         $statusFilter = request()->get('status');
-        $categoryFilter = request()->get('category_id');
-        $subcategoryFilter = request()->get('subcategory_id');
 
         $result = $this->firestore->listDocuments($this->getCollectionName(), 50, $startAfter);
         $items = collect($result['documents']);
 
         if ($search) {
             $items = $items->filter(function ($item) use ($search) {
-                return stripos($item['name'] ?? '', $search) !== false
-                    || stripos($item['sku'] ?? '', $search) !== false
-                    || stripos($item['description'] ?? '', $search) !== false;
+                return stripos($item['tracking_code'] ?? '', $search) !== false
+                    || stripos($item['order_id'] ?? '', $search) !== false
+                    || stripos($item['carrier'] ?? '', $search) !== false
+                    || stripos($item['address'] ?? '', $search) !== false;
             });
         }
 
         if ($statusFilter) {
-            $items = $items->filter(function ($item) use ($statusFilter) {
-                $isActive = $item['active'] ?? true;
-
-                return ($statusFilter === 'active' && $isActive) ||
-                       ($statusFilter === 'inactive' && ! $isActive);
-            });
+            $items = $items->where('status', $statusFilter);
         }
-
-        if ($categoryFilter) {
-            $items = $items->where('category_id', $categoryFilter);
-        }
-
-        if ($subcategoryFilter) {
-            $items = $items->where('subcategory_id', $subcategoryFilter);
-        }
-
-        $categoriesResult = $this->firestore->listDocuments('categories', 100);
-        $categories = collect($categoriesResult['documents'] ?? [])->where('active', true);
-
-        $subcategoriesResult = $this->firestore->listDocuments('subcategories', 100);
-        $subcategories = collect($subcategoriesResult['documents'] ?? []);
 
         return view("{$this->getViewFolder()}.index", [
-            'products' => $items,
-            'categories' => $categories,
-            'subcategories' => $subcategories,
+            'shipments' => $items,
+            'statuses' => Shipment::statuses(),
             'search' => $search,
             'statusFilter' => $statusFilter,
-            'categoryFilter' => $categoryFilter,
-            'subcategoryFilter' => $subcategoryFilter,
             'hasMore' => $result['hasMore'] ?? false,
             'lastDocumentId' => $result['lastDocumentId'] ?? null,
             'page' => $page,
@@ -136,7 +110,7 @@ class ProductController extends Controller
         $this->authorizeRequest('update', $model);
 
         if (auth()->user()?->role !== 'admin') {
-            abort(403, 'Solo los administradores pueden activar productos.');
+            abort(403, 'Solo los administradores pueden activar envíos.');
         }
 
         try {
@@ -147,7 +121,7 @@ class ProductController extends Controller
             ];
             $this->firestore->updateDocument($this->getCollectionName(), $id, $data);
 
-            $message = 'Producto activado correctamente.';
+            $message = 'Envío reactivado correctamente.';
             if ($request->ajax()) {
                 return response()->json(['success' => $message, 'redirect' => route($this->getRedirectRoute())]);
             }
