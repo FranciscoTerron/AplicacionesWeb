@@ -211,17 +211,12 @@ class ProductController extends Controller
 
     /**
      * Activate (restore) a soft-deleted product.
-     * Only admins can perform this action.
+     * Admin y Editor pueden cambiar el estado.
      */
     public function activate(Request $request, string $id): RedirectResponse|JsonResponse
     {
         $model = $this->getModelInstance($id);
         $this->authorizeRequest('update', $model);
-
-        // Only admins can activate products
-        if (auth()->user()->role !== 'admin') {
-            abort(403, 'Only administrators can activate products.');
-        }
 
         try {
             $data = [

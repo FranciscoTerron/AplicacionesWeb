@@ -24,7 +24,7 @@
         </button>
 
         <!-- Editar -->
-        @if($isAdmin)
+        @if($canManage ?? $isAdmin)
             <button type="button" class="btn btn-sm btn-outline-secondary"
                 onclick="openModal('edit', {{ json_encode($product) }})"
                 title="Editar">
@@ -32,13 +32,13 @@
             </button>
         @else
             <button type="button" class="btn btn-outline-secondary btn-sm" disabled
-                title="Solo los administradores pueden editar productos">
+                title="No tienes permisos para editar productos">
                 <i class="bi bi-pencil">Editar</i>
             </button>
         @endif
 
         <!-- Desactivar/Activar -->
-        @if($isAdmin)
+        @if($canManage ?? $isAdmin)
             @if($isActive)
                 <button type="button" class="btn btn-sm btn-outline-danger"
                     onclick="openModal('deactivate', {{ json_encode($product) }})"
@@ -54,7 +54,7 @@
             @endif
         @else
             <button type="button" class="btn btn-sm btn-outline-danger" disabled
-                title="Solo los administradores pueden cambiar el estado">
+                title="No tienes permisos para cambiar el estado">
                 <i class="bi bi-lock">Desactivar</i>
             </button>
         @endif

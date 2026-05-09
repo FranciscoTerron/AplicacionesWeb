@@ -12,12 +12,12 @@
 @section('content')
 <div class="flex justify-between items-center mb-4">
     <h1>Productos</h1>
-    @if($currentUserRole == 'admin')
+    @if(in_array($currentUserRole, ['admin', 'editor']))
         <button type="button" class="btn btn-primary" id="btnNewProduct">
             <i class="bi bi-plus-circle"></i> Nuevo Producto
         </button>
     @else
-        <button type="button" class="btn btn-outline-danger btn-sm" disabled title="Solo los administradores pueden crear productos">
+        <button type="button" class="btn btn-outline-danger btn-sm" disabled title="No tienes permisos para crear productos">
             Nuevo Producto
         </button>
     @endif
@@ -46,11 +46,13 @@
             @forelse($products as $product)
                 @php
                     $isAdmin = $currentUserRole == 'admin';
+                    $canManage = in_array($currentUserRole, ['admin', 'editor']);
                     $isActive = $product['active'] ?? true;
                 @endphp
                 @include('admin.products.partials._product_row', [
                     'product' => $product,
                     'isAdmin' => $isAdmin,
+                    'canManage' => $canManage,
                     'isActive' => $isActive,
                     'categoryName' => ($categories->firstWhere('id', $product['category_id'] ?? '')['name'] ?? 'N/A')
                 ])
@@ -59,7 +61,7 @@
                     <td colspan="6" class="text-center py-5 text-muted">
                         <i class="bi bi-box display-6"></i>
                         <p class="lead mt-2">No hay productos registrados</p>
-                        @if($currentUserRole == 'admin')
+                        @if(in_array($currentUserRole, ['admin', 'editor']))
                             <button type="button" class="btn btn-primary mt-2" id="btnNewProductEmpty">
                                 <i class="bi bi-plus-circle"></i> Crear primer producto
                             </button>
