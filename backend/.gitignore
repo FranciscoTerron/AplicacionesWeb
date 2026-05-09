@@ -44,3 +44,4 @@ docker-compose.override.yml
 # Sistema
 .DS_Store
 Thumbs.db
+.vercel
