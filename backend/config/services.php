@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+        'allowed_domains' => array_filter(explode(',', (string) env('GOOGLE_ALLOWED_DOMAINS', ''))),
+        'admin_emails' => array_filter(explode(',', (string) env('GOOGLE_ADMIN_EMAILS', 'franciscoterrondg19@gmail.com'))),
+    ],
+
 ];
