@@ -3,12 +3,35 @@
 namespace Tests;
 
 use App\Models\User;
+use App\Services\FirestoreService;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Auth;
 use Mockery;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * Bind un FirestoreService mockeado por defecto para que los tests que
+     * tocan rutas con FirestoreService inyectado (HomeController, CatalogController,
+     * DashboardController, etc.) no rompan en CI donde no hay credenciales.
+     * Los tests que necesitan controlar el mock pueden sobreescribirlo con
+     * $this->app->instance(FirestoreService::class, $miMock) en su setUp().
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $defaultFirestore = $this->createMock(FirestoreService::class);
+        $defaultFirestore->method('listDocuments')->willReturn([
+            'documents' => [],
+            'hasMore' => false,
+            'lastDocumentId' => null,
+        ]);
+        $defaultFirestore->method('getDocument')->willReturn(null);
+        $defaultFirestore->method('query')->willReturn([]);
+        $this->app->instance(FirestoreService::class, $defaultFirestore);
+    }
+
     /**
      * Mock de usuario autenticado con rol específico.
      */
