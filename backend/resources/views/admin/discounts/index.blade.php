@@ -412,21 +412,6 @@
                         </div>
                     </div>
 
-                    <div class="impact-alert alert ${isExpired ? 'alert-warning' : 'alert-info'}">
-                        <h6 class="alert-heading mb-2"><i class="bi bi-info-circle"></i> Impacto de la reactivación:</h6>
-                        <ul class="mb-0">
-                            <li>Los clientes <strong>podrán volver a utilizar</strong> este descuento</li>
-                            <li>Los códigos de descuento <strong>volverán a funcionar</strong> inmediatamente</li>
-                            ${isExpired ?
-                                '<li class="text-warning"><strong>Atención:</strong> El descuento expiró, pero será reactivado de todas formas</li>' :
-                                '<li>El descuento estará disponible según su configuración de vigencia</li>'}
-                            <li>El descuento aparecerá como <strong>"Activo"</strong> en la lista</li>
-                            ${discount.max_uses && discount.used_count ?
-                                `<li>Usos restantes: <strong>${discount.max_uses - discount.used_count}</strong></li>` :
-                                ''}
-                        </ul>
-                    </div>
-
                     ${isExpired ? `
                         <div class="alert alert-warning">
                             <i class="bi bi-exclamation-triangle"></i>

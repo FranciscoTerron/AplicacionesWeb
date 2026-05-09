@@ -62,7 +62,7 @@
                 <button type="button" class="btn btn-sm btn-outline-success"
                     onclick="openModal('activate', {{ json_encode($discount) }})"
                     title="Reactivar descuento">
-                    <i class="bi bi-unlock"></i> Reactivar
+                    <i class="bi bi-unlock"></i> Activar
                 </button>
             @endif
         @else

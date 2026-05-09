@@ -20,7 +20,7 @@
         <button type="button" class="btn btn-sm btn-outline-primary"
             onclick="openModal('show', {{ json_encode($user) }})"
             title="Ver detalles">
-            <i class="bi bi-eye">Ver Detalles</i>
+            <i class="bi bi-eye">Ver</i>
         </button>
 
         <!-- Editar -->

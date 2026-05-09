@@ -6,7 +6,7 @@
         @if($isActive)
             <span class="badge bg-success">Activo</span>
         @else
-            <span class="badge bg-danger">Inactivo</span>
+            <span class="badge bg-danger">Bloqueado</span>
         @endif
     </td>
     <td>
@@ -14,7 +14,7 @@
         <button type="button" class="btn btn-sm btn-outline-primary"
             onclick="openModal('show', {{ json_encode($client) }})"
             title="Ver detalles">
-            <i class="bi bi-eye">Ver Detalles</i>
+            <i class="bi bi-eye">Ver</i>
         </button>
 
         <!-- Editar -->
@@ -31,25 +31,25 @@
             </button>
         @endif
 
-        <!-- Desactivar/Activar -->
+        <!-- Bloquear/Desbloquear -->
         @if($isAdmin)
             @if($isActive)
                 <button type="button" class="btn btn-sm btn-outline-danger"
                     onclick="openModal('deactivate', {{ json_encode($client) }})"
-                    title="Desactivar cliente">
-                    <i class="bi bi-lock">Desactivar</i>
+                    title="Bloquear cliente">
+                    <i class="bi bi-lock">Bloquear</i>
                 </button>
             @else
                 <button type="button" class="btn btn-sm btn-outline-success"
                     onclick="openModal('activate', {{ json_encode($client) }})"
-                    title="Activar cliente">
-                    <i class="bi bi-unlock">Activar</i>
+                    title="Desbloquear cliente">
+                    <i class="bi bi-unlock">Desbloquear</i>
                 </button>
             @endif
         @else
             <button type="button" class="btn btn-sm btn-outline-danger" disabled
                 title="Solo los administradores pueden cambiar el estado">
-                <i class="bi bi-lock">Desactivar</i>
+                <i class="bi bi-lock">Bloquear</i>
             </button>
         @endif
     </td>
