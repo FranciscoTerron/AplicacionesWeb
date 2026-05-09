@@ -84,7 +84,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Configuración Firestore | ✅ | FirestoreService implementado, reglas y desplegados en Firebase |
 | Login Administrativos | ✅ | AuthController con Firebase implementado; FirestoreUserProvider bloquea usuarios inactivos |
 | Panel Administrativo | ⚠️ | Estructura base con sidebar, ruteo y vistas Blade |
-| Dashboard con estadísticas | ⏳ | Pendiente implementación |
+| Dashboard con estadísticas | ✅ | **Completo y funcional** |
 | Ruteo configurado | ✅ | Web routes definidas para admin y auth |
 
 **Conclusión**: CRUD Usuarios 100% funcional con UX optimizada (modal único, AJAX inline) y código robusto (tests + PHPStan).

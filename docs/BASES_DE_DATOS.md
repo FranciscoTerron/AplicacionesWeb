@@ -4,6 +4,8 @@
 
 **Firestore** (Google Cloud Firestore) - Base de datos NoSQL orientada a documentos.
 
+**Nota sobre imágenes:** Cloudinary está planificado pero **no implementado aún**. Los campos de imagen (`image`, `main_image`, `images`) están definidos en los esquemas pero la integración con Cloudinary está pendiente.
+
 ## Estructura de Colecciones
 
 ### 1. Colección: `users`
@@ -56,10 +58,10 @@ Categorías principales de productos.
 **Esquema del documento:**
 ```javascript
 {
-  id: string
+  id: string (auto-generado por Firestore)
   name: string
-  description: string
-  image: string (URL Cloudinary)
+  description: string (opcional)
+  image: string (URL Cloudinary - pendiente implementación)
   order: integer
   active: boolean
   created_at: timestamp
@@ -69,16 +71,23 @@ Categorías principales de productos.
 }
 ```
 
-**Subcolección:** `categories/{categoryId}/subcategories/`
+**Índices:**
+- `active` (ASC), `order` (ASC)
 
-**Esquema subcategoría:**
+---
+
+### 3. Colección: `subcategories`
+
+Subcategorías de productos (colección independiente con referencia a categoría).
+
+**Esquema del documento:**
 ```javascript
 {
-  id: string
+  id: string (auto-generado por Firestore)
   category_id: string (referencia a categories)
   name: string
-  description: string
-  image: string (URL Cloudinary)
+  description: string (opcional)
+  image: string (URL Cloudinary - pendiente implementación)
   active: boolean
   created_at: timestamp
   updated_at: timestamp
@@ -88,21 +97,20 @@ Categorías principales de productos.
 ```
 
 **Índices:**
-- `categories`: `order` (ASC), `active` (ASC)
-- `subcategories`: `category_id` (ASC), `active` (ASC)
+- `category_id` (ASC), `active` (ASC)
 
 ---
 
-### 3. Colección: `products`
+### 4. Colección: `products`
 
 Catálogo de productos/piscinas.
 
 **Esquema del documento:**
 ```javascript
 {
-  id: string
+  id: string (auto-generado por Firestore)
   name: string
-  description: string
+  description: string (opcional)
   category_id: string (referencia)
   subcategory_id: string (referencia, opcional)
   sku: string (único)
@@ -110,8 +118,8 @@ Catálogo de productos/piscinas.
   cost: number (opcional)
   stock: integer
   min_stock: integer
-  main_image: string (URL Cloudinary)
-  images: array[string] (URLs Cloudinary, max 10)
+  main_image: string (URL Cloudinary - pendiente implementación)
+  images: array[string] (URLs Cloudinary - pendiente implementación, max 10)
   featured: boolean
   active: boolean
   dimensions: {
@@ -135,17 +143,17 @@ Catálogo de productos/piscinas.
 
 ---
 
-### 4. Colección: `discounts`
+### 5. Colección: `discounts`
 
 Códigos de descuento promocionales.
 
 **Esquema del documento:**
 ```javascript
 {
-  id: string
+  id: string (auto-generado por Firestore)
   code: string (único, mayúsculas)
   name: string
-  description: string
+  description: string (opcional)
   discount_type: enum['percentage', 'fixed']
   value: number
   max_uses: integer (null = infinito)
@@ -177,7 +185,7 @@ is_usable = active &&
 
 ---
 
-### 5. Colección: `orders`
+### 6. Colección: `orders`
 
 Pedidos/órdenes de compra realizadas por clientes.
 
@@ -191,7 +199,7 @@ Pedidos/órdenes de compra realizadas por clientes.
   total_amount: number
   payment_method: enum['cash', 'transfer', 'card', 'mercado_pago']
   payment_status: enum['pending', 'paid', 'overdue']
-  shipping_address: string
+  shipping_address: string (opcional)
   tracking_number: string (opcional)
   items: array[{
     product_id: string (referencia a products)
@@ -210,35 +218,29 @@ Pedidos/órdenes de compra realizadas por clientes.
 
 **Índices:**
 - `client_id` (ASC)
-- `user_id` (ASC)
 - `status` (ASC)
 - `payment_status` (ASC)
-- `created_at` (DESC) - para ordenar pedidos recientes
+- `created_at` (DESC)
 
 ---
 
-### 6. Colección: `shipments`
+### 7. Colección: `shipments`
 
-Información de envíos/logística para pedidos (pendiente de implementación).
+Información de envíos/logística para pedidos.
 
-**Esquema planificado:**
+**Esquema actual (implementado):**
 ```javascript
 {
   id: string (auto-generado por Firestore)
   order_id: string (referencia a orders)
-  carrier: string (empresa de transporte)
-  tracking_number: string
-  status: enum['preparing', 'shipped', 'in_transit', 'delivered', 'returned']
-  shipping_date: timestamp
-  estimated_delivery: timestamp
-  actual_delivery: timestamp (opcional)
-  shipping_cost: number
-  weight_kg: number
-  dimensions: {
-    length_cm: number
-    width_cm: number
-    height_cm: number
-  }
+  address: string
+  tracking_code: string (opcional)
+  carrier: string (opcional)
+  status: enum['preparing', 'in_transit', 'delivered', 'cancelled']
+  shipped_at: timestamp (opcional)
+  delivered_at: timestamp (opcional)
+  active: boolean
+  notes: string (opcional)
   created_at: timestamp
   updated_at: timestamp
   created_by: string
@@ -246,10 +248,35 @@ Información de envíos/logística para pedidos (pendiente de implementación).
 }
 ```
 
-**Índices planificados:**
+**Índices:**
 - `order_id` (ASC)
 - `status` (ASC)
-- `shipping_date` (DESC)
+- `active` (ASC)
+
+**Nota:** El esquema planificado original incluye `shipping_date`, `estimated_delivery`, `shipping_cost` y `dimensions` pero estos campos están pendientes de implementación.
+
+---
+
+### 8. Colección: `clients`
+
+Clientes del sistema (usuarios que realizan pedidos).
+
+**Esquema del documento:**
+```javascript
+{
+  id: string (auto-generado por Firestore)
+  name: string
+  email: string (opcional)
+  phone: string (opcional)
+  address: string (opcional)
+  city: string (opcional)
+  active: boolean
+  created_at: timestamp
+  updated_at: timestamp
+  created_by: string
+  updated_by: string
+}
+```
 
 ---
 
@@ -300,6 +327,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Colección: Clientes (lectura pública para e-commerce)
+    match /clients/{clientId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Colección: Pedidos (solo usuarios autenticados)
     match /orders/{orderId} {
       allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
@@ -316,7 +349,7 @@ service cloud.firestore {
 }
 ```
 
-*Nota: Las reglas permiten lecturas públicas para datos del e-commerce (categorías, subcategoria, productos, descuentos, clientes, pedidos, envios) mientras que los datos sensibles (usuarios) requieren autenticación. La administración requiere permisos de admin.*
+*Nota: Las reglas permiten lecturas públicas para datos del e-commerce (categorías, subcategorías, productos, descuentos, clientes) mientras que los datos sensibles (usuarios) requieren autenticación. La administración requiere permisos de admin.*
 
 ---
 
@@ -432,4 +465,4 @@ gcloud firestore import gs://[BUCKET_NAME]/backup-$(date +%Y%m%d)
 
 ---
 
-*Última actualización: 2026-04-25*
+*Última actualización: 2026-05-09*
