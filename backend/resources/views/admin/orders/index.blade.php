@@ -136,8 +136,9 @@
                                                 <h5 class="modal-title">Cambiar estado del pedido</h5>
                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                             </div>
-                                            <form method="POST" action="{{ route('admin.orders.status', $orderId) }}">
-                                                @csrf
+                                                 <form method="POST" action="{{ route('admin.orders.status', $orderId) }}">
+                                                     @csrf
+                                                     @method('PATCH')
                                                 <div class="modal-body">
                                                     <p class="mb-3">Pedido: <code>{{ $orderId }}</code> — Cliente: {{ $order['client_name'] ?? $order['clientId'] ?? '—' }}</p>
                                                     <div class="mb-3">

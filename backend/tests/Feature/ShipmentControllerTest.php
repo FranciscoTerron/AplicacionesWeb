@@ -20,7 +20,7 @@ class ShipmentControllerTest extends TestCase
 
     protected function mockAuthUser(string $role): void
     {
-        $user = new User(['role' => $role, 'id' => '1']);
+        $user = new User(['role' => $role, 'id' => '1', 'email' => 'admin@example.com']);
         $this->actingAs($user);
     }
 

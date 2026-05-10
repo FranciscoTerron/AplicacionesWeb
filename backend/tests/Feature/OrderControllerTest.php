@@ -17,6 +17,7 @@ class OrderControllerTest extends TestCase
     {
         parent::setUp();
         $this->withoutMiddleware();
+
         $this->firestoreMock = $this->createMock(FirestoreService::class);
         $this->app->instance(FirestoreService::class, $this->firestoreMock);
     }
@@ -244,7 +245,7 @@ class OrderControllerTest extends TestCase
                 return ($data['status'] ?? null) === 'completed';
             }));
 
-        $response = $this->post(route('admin.orders.status', $orderId), [
+        $response = $this->patch(route('admin.orders.status', $orderId), [
             'status' => 'completed',
         ]);
 
@@ -279,7 +280,7 @@ class OrderControllerTest extends TestCase
      */
     protected function mockAuthUser(string $role): void
     {
-        $user = new User(['role' => $role, 'id' => 1]);
+        $user = new User(['role' => $role, 'id' => '1', 'email' => 'admin@example.com']);
         $this->actingAs($user);
     }
 }

@@ -15,9 +15,11 @@
     <div>
         <h1>Envíos</h1>
     </div>
-    <a href="{{ route('admin.shipments.create') }}" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Nuevo Envío
-    </a>
+        @if($isAdmin)
+            <a href="{{ route('admin.shipments.create') }}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Nuevo Envío
+            </a>
+        @endif
 </div>
 
 <div class="card mb-3">
