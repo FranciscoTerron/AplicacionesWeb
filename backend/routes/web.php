@@ -79,6 +79,7 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
         Route::patch('clients/{client}', [ClientController::class, 'update'])->name('admin.clients.update');
         Route::delete('clients/{client}', [ClientController::class, 'destroy'])->name('admin.clients.destroy');
         Route::post('clients/{client}/activate', [ClientController::class, 'activate'])->name('admin.clients.activate');
+        Route::post('clients/{client}/deactivate', [ClientController::class, 'deactivate'])->name('admin.clients.deactivate');
 
         // Órdenes (excepto el cambio de estado que ya está arriba)
         Route::get('orders/create', [OrderController::class, 'create'])->name('admin.orders.create');

@@ -165,6 +165,11 @@ class ClientController extends Controller
         $validated['updated_at'] = now()->toISOString();
         $validated['updated_by'] = auth()->id();
 
+        // Si el campo 'active' no se proporcionó, mantener el valor existente
+        if (! $request->has('active')) {
+            unset($validated['active']);
+        }
+
         try {
             $existing = $this->firestore->getDocument($this->getCollectionName(), $id);
             if (! $existing) {
@@ -202,6 +207,34 @@ class ClientController extends Controller
             $this->firestore->updateDocument($this->getCollectionName(), $id, $data);
 
             $message = 'Client activated successfully.';
+            if ($request->ajax()) {
+                return response()->json(['success' => $message, 'redirect' => route($this->getRedirectRoute())]);
+            }
+
+            return redirect()->route($this->getRedirectRoute())->with('success', $message);
+        } catch (DomainError $e) {
+            if ($request->ajax()) {
+                return response()->json(['error' => $e->getUserMessage()], 422);
+            }
+
+            return back()->with('error', $e->getUserMessage());
+        }
+    }
+
+    public function deactivate(Request $request, string $id)
+    {
+        $model = $this->getModelInstance($id);
+        $this->authorizeRequest('update', $model);
+
+        try {
+            $data = [
+                'active' => false,
+                'updated_at' => now()->toISOString(),
+                'updated_by' => auth()->id(),
+            ];
+            $this->firestore->updateDocument($this->getCollectionName(), $id, $data);
+
+            $message = 'Client deactivated successfully.';
             if ($request->ajax()) {
                 return response()->json(['success' => $message, 'redirect' => route($this->getRedirectRoute())]);
             }

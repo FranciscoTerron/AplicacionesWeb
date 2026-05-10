@@ -13,9 +13,12 @@ class UpdateClientRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge([
-            'active' => filter_var($this->active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
-        ]);
+        // Only process 'active' if it was explicitly sent in the request
+        if ($this->has('active')) {
+            $this->merge([
+                'active' => filter_var($this->active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
+            ]);
+        }
     }
 
     public function rules(): array
