@@ -62,7 +62,7 @@ class SubcategoryController extends Controller
         $categoryFilter = request()->get('category');
         $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 20, $startAfter);
+        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter);
         $items = collect($result['documents']);
 
         // Apply search filter (name or slug)
@@ -205,7 +205,7 @@ class SubcategoryController extends Controller
     public function activate(Request $request, string $id): RedirectResponse|JsonResponse
     {
         $model = $this->getModelInstance($id);
-        $this->authorizeRequest('update', $model);
+        $this->authorizeRequest('activate', $model);
 
         try {
             $data = [

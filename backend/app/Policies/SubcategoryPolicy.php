@@ -50,6 +50,15 @@ class SubcategoryPolicy
         return in_array($user->role, ['admin', 'editor']);
     }
 
+    /**
+     * Determine whether the user can activate the model.
+     * Solo Admin puede reactivar subcategorías inactivas.
+     */
+    public function activate(User $user, Subcategory $subcategory): bool
+    {
+        return $user->role === 'admin';
+    }
+
     public function restore(User $user, Subcategory $subcategory): bool
     {
         return false;

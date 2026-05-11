@@ -67,6 +67,17 @@ abstract class TestCase extends BaseTestCase
                 return $user;
             });
 
+        // ArrayAccess: Blade y otras vistas usan $user['key'] o isset($user->key) que llama offsetExists/Get.
+        $user->shouldReceive('offsetExists')
+            ->andReturnUsing(function ($key) use (&$attributes) {
+                return array_key_exists($key, $attributes);
+            });
+
+        $user->shouldReceive('offsetGet')
+            ->andReturnUsing(function ($key) use (&$attributes) {
+                return $attributes[$key] ?? null;
+            });
+
         $user->shouldReceive('any')->andReturnSelf();
 
         // Mock del Facade Auth

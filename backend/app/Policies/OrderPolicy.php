@@ -33,6 +33,8 @@ class OrderPolicy
 
     /**
      * Admin y Editor pueden actualizar pedidos (cambiar estado).
+     * Editor SÍ puede cambiar el status (operación cotidiana: marcar pagada, en preparación, enviada).
+     * Por eso la ruta PATCH orders/{id}/status queda fuera del grupo middleware admin.
      */
     public function update(User $user, Order $order): bool
     {

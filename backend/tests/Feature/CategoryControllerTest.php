@@ -172,6 +172,51 @@ class CategoryControllerTest extends TestCase
     }
 
     /**
+     * Editor puede crear categorías (CategoryPolicy::create permite admin y editor).
+     */
+    public function test_editor_can_create_category(): void
+    {
+        $this->mockAuthUser('editor');
+
+        $this->firestoreMock
+            ->expects($this->once())
+            ->method('createDocument')
+            ->with('categories', $this->anything())
+            ->willReturn(['name' => 'Por Editor']);
+
+        $response = $this->post(route('admin.categories.store'), [
+            'name' => 'Por Editor',
+            'description' => 'Creada por un editor',
+            'active' => true,
+        ]);
+
+        $response->assertRedirect(route('admin.categories.index'));
+        $response->assertSessionHas('success');
+    }
+
+    /**
+     * Editor NO puede activar categorías (CategoryPolicy::activate solo admin).
+     */
+    public function test_editor_cannot_activate_category(): void
+    {
+        $this->mockAuthUser('editor');
+
+        $categoryId = 'cat-123';
+
+        $this->firestoreMock
+            ->method('getDocument')
+            ->willReturn(['name' => 'Piscinas', 'active' => false]);
+
+        $this->firestoreMock
+            ->expects($this->never())
+            ->method('updateDocument');
+
+        $response = $this->post(route('admin.categories.activate', $categoryId));
+
+        $response->assertStatus(403);
+    }
+
+    /**
      * Mock de usuario autenticado con rol específico.
      */
     protected function mockAuthUser(string $role): void

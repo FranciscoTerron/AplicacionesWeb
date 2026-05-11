@@ -36,8 +36,7 @@ class ProductPolicy
 
     /**
      * Determine whether the user can update the model.
-     * Admin y Editor pueden editar cualquier producto
-     * (incluye activar/desactivar cambiando el campo active)
+     * Admin y Editor pueden editar cualquier producto.
      */
     public function update(User $user, Product $product): bool
     {
@@ -51,6 +50,15 @@ class ProductPolicy
     public function delete(User $user, Product $product): bool
     {
         return in_array($user->role, ['admin', 'editor']);
+    }
+
+    /**
+     * Determine whether the user can activate the model.
+     * Solo Admin puede reactivar productos inactivos.
+     */
+    public function activate(User $user, Product $product): bool
+    {
+        return $user->role === 'admin';
     }
 
     // restore y forceDelete no se usan (baja lógica via update)

@@ -165,6 +165,28 @@ class SubcategoryControllerTest extends TestCase
         $response->assertRedirect(route('admin.subcategories.index'));
     }
 
+    /**
+     * Editor NO puede activar subcategorías (SubcategoryPolicy::activate solo admin).
+     */
+    public function test_editor_cannot_activate_subcategory(): void
+    {
+        $this->mockAuthUser('editor');
+
+        $subcategoryId = 'subcat-123';
+
+        $this->firestoreMock
+            ->method('getDocument')
+            ->willReturn(['name' => 'Cloro Líquido', 'active' => false]);
+
+        $this->firestoreMock
+            ->expects($this->never())
+            ->method('updateDocument');
+
+        $response = $this->post(route('admin.subcategories.activate', $subcategoryId));
+
+        $response->assertStatus(403);
+    }
+
     protected function mockAuthUser(string $role): void
     {
         $authUser = \Mockery::mock(User::class)->makePartial();

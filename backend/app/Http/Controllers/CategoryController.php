@@ -79,7 +79,7 @@ class CategoryController extends Controller
         $search = request()->get('search');
         $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 20, $startAfter);
+        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter);
         $items = collect($result['documents']);
 
         // Apply search filter (name or slug)
@@ -185,7 +185,7 @@ class CategoryController extends Controller
     public function activate(Request $request, string $id): RedirectResponse|JsonResponse
     {
         $model = $this->getModelInstance($id);
-        $this->authorizeRequest('update', $model);
+        $this->authorizeRequest('activate', $model);
 
         try {
             $data = [

@@ -64,7 +64,7 @@ class ProductController extends Controller
         $subcategoryFilter = request()->get('subcategory');
         $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 20, $startAfter);
+        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter);
         $items = collect($result['documents']);
 
         // Apply search filter (by name or description)
@@ -211,12 +211,12 @@ class ProductController extends Controller
 
     /**
      * Activate (restore) a soft-deleted product.
-     * Admin y Editor pueden cambiar el estado.
+     * Solo Admin puede reactivar (alineado con CategoryPolicy::activate).
      */
     public function activate(Request $request, string $id): RedirectResponse|JsonResponse
     {
         $model = $this->getModelInstance($id);
-        $this->authorizeRequest('update', $model);
+        $this->authorizeRequest('activate', $model);
 
         try {
             $data = [

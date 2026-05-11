@@ -52,6 +52,15 @@ class CategoryPolicy
         return in_array($user->role, ['admin', 'editor']);
     }
 
+    /**
+     * Determine whether the user can activate the model.
+     * Solo Admin puede reactivar categorías inactivas.
+     */
+    public function activate(User $user, Category $category): bool
+    {
+        return $user->role === 'admin';
+    }
+
     // restore y forceDelete no se usan (baja lógica via update active=false)
     public function restore(User $user, Category $category): bool
     {
