@@ -174,10 +174,6 @@
                     <li><a href="{{ route('home') }}#contacto">Contacto</a></li>
                 </ul>
             </nav>
-            <a href="{{ route('login') }}" class="nav-cta">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"/><path d="M4 22c0-4 4-7 8-7s8 3 8 7"/></svg>
-                Admin
-            </a>
         </div>
     </header>
 
@@ -216,7 +212,7 @@
                     <ul>
                         <li>info@mapiscinas.com</li>
                         <li>+54 11 5555-1234</li>
-                        <li>Buenos Aires, Argentina</li>
+                        <li>Gaiman Chubut, Argentina</li>
                     </ul>
                 </div>
             </div>

@@ -6,7 +6,8 @@
   "scripts": {
     "test": "cd backend && composer test",
     "dev": "cd backend && php artisan serve",
-    "dev:full": "cd backend && concurrently \"php artisan serve\" \"cd ../ && pnpm dev\""
+    "dev:full": "cd backend && concurrently \"php artisan serve\" \"cd ../ && pnpm dev\"",
+    "dev:web-admin": "cd backend && (sleep 2 && open http://127.0.0.1:8000/login) & php artisan serve"
   },
   "keywords": [],
   "author": "",
