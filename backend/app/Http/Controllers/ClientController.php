@@ -61,7 +61,7 @@ class ClientController extends Controller
         $search = request()->get('search');
         $statusFilter = request()->get('status'); // Changed to 'status' to match view
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 20, $startAfter);
+        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter);
         $items = collect($result['documents']);
 
         // Apply search filter (name or email)

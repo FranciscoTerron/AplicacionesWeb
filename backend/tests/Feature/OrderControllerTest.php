@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Http\Requests\Order\StoreOrderRequest;
 use App\Models\User;
 use App\Services\FirestoreService;
+use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
 
 class OrderControllerTest extends TestCase
@@ -42,22 +44,15 @@ class OrderControllerTest extends TestCase
     }
 
     /**
-     * Verifica que el formulario de creación contiene clientes y productos.
+     * El alta de pedidos vive en el modal del index, así que /create redirige.
      */
-    public function test_create_includes_clients_and_products(): void
+    public function test_create_redirects_to_index(): void
     {
         $this->mockAuthUser('admin');
 
-        $this->firestoreMock->method('listDocuments')
-            ->willReturn(['documents' => [
-                ['name' => 'Juan Pérez'],
-                ['name' => 'Cloro', 'price' => 1500],
-            ]]);
-
         $response = $this->get(route('admin.orders.create'));
 
-        $response->assertStatus(200);
-        $response->assertSee('Nuevo Pedido');
+        $response->assertRedirect(route('admin.orders.index'));
     }
 
     /**
@@ -88,82 +83,79 @@ class OrderControllerTest extends TestCase
     }
 
     /**
-     * Verifica que store falla sin cliente.
+     * Las reglas del StoreOrderRequest rechazan el alta sin clientId.
+     * (Se valida con el Validator en aislamiento porque withoutMiddleware()
+     * salta el ciclo del FormRequest en este suite.)
      */
     public function test_store_fails_without_client(): void
     {
-        $this->assertTrue(true);
-    }
-
-    /**
-     * Verifica que store falla sin items.
-     */
-    public function test_store_fails_without_items(): void
-    {
-        $this->assertTrue(true);
-    }
-
-    /**
-     * Verifica que store falla sin productos en items.
-     */
-    public function test_store_fails_without_product_in_items(): void
-    {
-        $this->assertTrue(true);
-    }
-
-    /**
-     * Verifica que show retorna los detalles de un pedido.
-     */
-    public function test_show_returns_order_details(): void
-    {
-        $this->mockAuthUser('admin');
-
-        $orderId = 'order-123';
-        $orderData = [
-            'clientId' => 'Juan Pérez',
-            'status' => 'pending',
-            'paymentStatus' => 'pending',
+        $rules = (new StoreOrderRequest)->rules();
+        $validator = Validator::make([
             'items' => [
                 ['productId' => 'Cloro', 'quantity' => 2, 'unitPrice' => 1500],
             ],
-        ];
+            'status' => 'pending',
+        ], $rules);
 
-        $this->firestoreMock
-            ->expects($this->exactly(2))
-            ->method('getDocument')
-            ->with('orders', $orderId)
-            ->willReturn($orderData);
-
-        $response = $this->get(route('admin.orders.show', $orderId));
-
-        $response->assertStatus(200);
-        $response->assertSee('Juan Pérez');
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('clientId', $validator->errors()->messages());
     }
 
     /**
-     * Verifica que edit retorna la vista con datos existentes.
+     * Las reglas rechazan el alta sin items.
      */
-    public function test_edit_returns_view_with_existing_data(): void
+    public function test_store_fails_without_items(): void
+    {
+        $rules = (new StoreOrderRequest)->rules();
+        $validator = Validator::make([
+            'clientId' => 'Juan Pérez',
+            'status' => 'pending',
+        ], $rules);
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('items', $validator->errors()->messages());
+    }
+
+    /**
+     * Las reglas rechazan items sin productId.
+     */
+    public function test_store_fails_without_product_in_items(): void
+    {
+        $rules = (new StoreOrderRequest)->rules();
+        $validator = Validator::make([
+            'clientId' => 'Juan Pérez',
+            'items' => [
+                ['quantity' => 2, 'unitPrice' => 1500],
+            ],
+            'status' => 'pending',
+        ], $rules);
+
+        $this->assertTrue($validator->fails());
+        $this->assertArrayHasKey('items.0.productId', $validator->errors()->messages());
+    }
+
+    /**
+     * Los detalles del pedido se muestran en el modal del index, así que /show redirige.
+     */
+    public function test_show_redirects_to_index(): void
     {
         $this->mockAuthUser('admin');
 
-        $orderId = 'order-123';
-        $orderData = [
-            'clientId' => 'Juan Pérez',
-            'status' => 'pending',
-            'paymentStatus' => 'pending',
-        ];
+        $response = $this->get(route('admin.orders.show', 'order-123'));
 
-        $this->firestoreMock
-            ->expects($this->exactly(2))
-            ->method('getDocument')
-            ->with('orders', $orderId)
-            ->willReturn($orderData);
+        $response->assertRedirect(route('admin.orders.index'));
+    }
 
-        $response = $this->get(route('admin.orders.edit', $orderId));
+    /**
+     * La edición vive en el modal del index, así que /edit redirige.
+     */
+    public function test_edit_redirects_to_index(): void
+    {
+        $this->mockAuthUser('admin');
 
-        $response->assertStatus(200);
-        $response->assertSee('Editar Pedido');
+        $response = $this->get(route('admin.orders.edit', 'order-123'));
+
+        $response->assertRedirect(route('admin.orders.index'));
     }
 
     /**
@@ -273,6 +265,35 @@ class OrderControllerTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('PEDIDOPENDIENTE');
         $response->assertDontSee('PEDIDOCOMPLETO');
+    }
+
+    /**
+     * Editor SÍ puede cambiar el status de una orden (OrderPolicy::update permite admin y editor).
+     */
+    public function test_editor_can_change_order_status(): void
+    {
+        $this->mockAuthUser('editor');
+
+        $orderId = 'order-123';
+
+        $this->firestoreMock
+            ->expects($this->once())
+            ->method('getDocument')
+            ->willReturn(['status' => 'pending']);
+
+        $this->firestoreMock
+            ->expects($this->once())
+            ->method('updateDocument')
+            ->with('orders', $orderId, $this->callback(function ($data) {
+                return ($data['status'] ?? null) === 'completed';
+            }));
+
+        $response = $this->patch(route('admin.orders.status', $orderId), [
+            'status' => 'completed',
+        ]);
+
+        $response->assertRedirect(route('admin.orders.index'));
+        $response->assertSessionHas('success');
     }
 
     /**

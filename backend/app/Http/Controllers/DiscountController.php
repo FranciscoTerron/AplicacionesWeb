@@ -64,7 +64,7 @@ class DiscountController extends Controller
         $typeFilter = request()->get('type');
         $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 20, $startAfter);
+        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter);
         $items = collect($result['documents']);
 
         // Apply search filter (by code or name)

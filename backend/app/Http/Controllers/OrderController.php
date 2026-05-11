@@ -13,6 +13,14 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
+/**
+ * Nota: Order NO tiene método activate().
+ * El estado de una orden se gestiona vía updateStatus() (ej: pendiente, pagada, enviada, cancelada).
+ * Una orden no se "desactiva" como Category/Product/Shipment.
+ *
+ * UI: Orders usa modal-only (igual que clients/users). Los métodos create/edit/show
+ * redirigen al index porque la interacción ocurre dentro del modal del listado.
+ */
 class OrderController extends Controller
 {
     use CrudActionsTrait;
@@ -20,6 +28,21 @@ class OrderController extends Controller
     public function __construct(FirestoreService $firestore)
     {
         $this->firestore = $firestore;
+    }
+
+    public function create(): RedirectResponse
+    {
+        return redirect()->route($this->getRedirectRoute());
+    }
+
+    public function edit(string $id): RedirectResponse
+    {
+        return redirect()->route($this->getRedirectRoute());
+    }
+
+    public function show(string $id): RedirectResponse
+    {
+        return redirect()->route($this->getRedirectRoute());
     }
 
     protected function getCollectionName(): string
@@ -93,7 +116,7 @@ class OrderController extends Controller
         $statusFilter = request()->get('status');
         $paymentFilter = request()->get('payment_status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 50, $startAfter, 'created_at');
+        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter, 'created_at');
         $items = collect($result['documents']);
 
         if ($search) {
@@ -114,8 +137,17 @@ class OrderController extends Controller
             });
         }
 
+        // Datos para el modal "new" (selects de cliente/producto, sin paginar — máx. 100).
+        $clientsResult = $this->firestore->listDocuments('clients', 100, null, 'name');
+        $clients = collect($clientsResult['documents'] ?? [])->where('active', true)->values();
+
+        $productsResult = $this->firestore->listDocuments('products', 100);
+        $products = collect($productsResult['documents'] ?? [])->where('active', true)->values();
+
         return view("{$this->getViewFolder()}.index", [
             'orders' => $items,
+            'clients' => $clients,
+            'products' => $products,
             'statuses' => self::statuses(),
             'search' => $search,
             'statusFilter' => $statusFilter,

@@ -31,7 +31,7 @@ class ProductControllerTest extends TestCase
         $this->firestoreMock
             ->method('listDocuments')
             ->willReturnMap([
-                ['products', 20, null, 'name', [
+                ['products', 10, null, 'name', [
                     'documents' => [
                         ['id' => 'prod-1', 'name' => 'Cloro 1L', 'price' => 1500, 'stock' => 10, 'active' => true],
                     ],

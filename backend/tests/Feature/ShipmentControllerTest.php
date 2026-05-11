@@ -67,19 +67,14 @@ class ShipmentControllerTest extends TestCase
         $response->assertDontSee('OTROTRACKING');
     }
 
-    public function test_create_returns_view(): void
+    public function test_create_redirects_to_index(): void
     {
+        // El alta de envíos vive en el modal del index, así que /create redirige.
         $this->mockAuthUser('admin');
-
-        $this->firestoreMock->method('listDocuments')->willReturn([
-            'documents' => [],
-            'nextPageToken' => null,
-        ]);
 
         $response = $this->get(route('admin.shipments.create'));
 
-        $response->assertStatus(200);
-        $response->assertSee('Nuevo Envío', false);
+        $response->assertRedirect(route('admin.shipments.index'));
     }
 
     public function test_store_creates_shipment_with_valid_data(): void
@@ -106,28 +101,14 @@ class ShipmentControllerTest extends TestCase
         $response->assertSessionHas('success');
     }
 
-    public function test_show_returns_shipment_details(): void
+    public function test_show_redirects_to_index(): void
     {
+        // Los detalles del envío se muestran en el modal del index, así que /show redirige.
         $this->mockAuthUser('admin');
 
-        $shipmentId = 'ship-123';
-        $shipmentData = [
-            'order_id' => 'ord-1',
-            'tracking_code' => 'TRK999',
-            'status' => 'in_transit',
-            'address' => 'Calle Test',
-        ];
+        $response = $this->get(route('admin.shipments.show', 'ship-123'));
 
-        $this->firestoreMock
-            ->expects($this->exactly(2))
-            ->method('getDocument')
-            ->with('shipments', $shipmentId)
-            ->willReturn($shipmentData);
-
-        $response = $this->get(route('admin.shipments.show', $shipmentId));
-
-        $response->assertStatus(200);
-        $response->assertSee('TRK999');
+        $response->assertRedirect(route('admin.shipments.index'));
     }
 
     public function test_destroy_soft_deletes_shipment(): void

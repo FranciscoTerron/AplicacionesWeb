@@ -13,6 +13,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
+/**
+ * UI: Shipments usa modal-only (igual que clients/users/orders). Los métodos
+ * create/edit/show redirigen al index porque la interacción ocurre en el modal del listado.
+ */
 class ShipmentController extends Controller
 {
     use CrudActionsTrait;
@@ -20,6 +24,21 @@ class ShipmentController extends Controller
     public function __construct(FirestoreService $firestore)
     {
         $this->firestore = $firestore;
+    }
+
+    public function create(): RedirectResponse
+    {
+        return redirect()->route($this->getRedirectRoute());
+    }
+
+    public function edit(string $id): RedirectResponse
+    {
+        return redirect()->route($this->getRedirectRoute());
+    }
+
+    public function show(string $id): RedirectResponse
+    {
+        return redirect()->route($this->getRedirectRoute());
     }
 
     protected function getCollectionName(): string
@@ -77,7 +96,7 @@ class ShipmentController extends Controller
         $search = request()->get('search');
         $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 50, $startAfter, 'created_at');
+        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter, 'created_at');
         $items = collect($result['documents']);
 
         if ($search) {
@@ -93,8 +112,13 @@ class ShipmentController extends Controller
             $items = $items->where('status', $statusFilter);
         }
 
+        // Datos para el modal "new" (select de orden asociada, máx. 100).
+        $ordersResult = $this->firestore->listDocuments('orders', 100, null, 'created_at');
+        $orders = collect($ordersResult['documents'] ?? []);
+
         return view("{$this->getViewFolder()}.index", [
             'shipments' => $items,
+            'orders' => $orders,
             'statuses' => Shipment::statuses(),
             'search' => $search,
             'statusFilter' => $statusFilter,

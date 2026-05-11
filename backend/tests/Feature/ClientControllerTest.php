@@ -65,7 +65,7 @@ class ClientControllerTest extends TestCase
             'email' => 'juan@example.com',
             'phone' => '12345678',
             'address' => 'Calle Falsa 123',
-            'city' => 'Buenos Aires',
+            'city' => 'Gaiman',
             'active' => true,
         ];
 
