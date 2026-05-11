@@ -114,10 +114,6 @@
             titleEl.textContent = 'Detalles del Usuario';
             bodyEl.innerHTML = `
                 <div class="text-center mb-3">
-                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                         style="width: 80px; height: 80px;">
-                        <i class="bi bi-person display-6 text-muted"></i>
-                    </div>
                 </div>
                 <p><strong>Nombre:</strong> ${escapeHtml(user.name)}</p>
                 <p><strong>Email:</strong> ${escapeHtml(user.email)}</p>
@@ -208,10 +204,6 @@
             titleEl.textContent = 'Bloquear Usuario';
             bodyEl.innerHTML = `
                 <div class="text-center">
-                    <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                         style="width: 60px; height: 60px;">
-                        <i class="bi bi-lock display-6 text-danger"></i>
-                    </div>
                     <p class="mt-3">¿Estás seguro de bloquear al usuario <strong>${escapeHtml(user.name)}</strong>?</p>
                     <p class="text-muted mb-0">Esta acción evitará que el usuario acceda al sistema.</p>
                 </div>
@@ -228,10 +220,6 @@
             titleEl.textContent = 'Desbloquear Usuario';
             bodyEl.innerHTML = `
                 <div class="text-center">
-                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                         style="width: 60px; height: 60px;">
-                        <i class="bi bi-unlock display-6 text-success"></i>
-                    </div>
                     <p class="mt-3">¿Estás seguro de desbloquear al usuario <strong>${escapeHtml(user.name)}</strong>?</p>
                     <p class="text-muted mb-0">El usuario podrá acceder al sistema normalmente.</p>
                 </div>

@@ -106,10 +106,6 @@
             titleEl.textContent = 'Detalles de la Categoría';
             bodyEl.innerHTML = `
                 <div class="text-center mb-3">
-                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                          style="width: 80px; height: 80px;">
-                        <i class="bi bi-tag display-6 text-muted"></i>
-                    </div>
                 </div>
                 <p><strong>Nombre:</strong> ${escapeHtml(category.name)}</p>
                 <p><strong>Slug:</strong> <code>${escapeHtml(category.slug)}</code></p>
@@ -206,10 +202,6 @@
             titleEl.textContent = 'Desactivar Categoría';
             bodyEl.innerHTML = `
                 <div class="text-center">
-                    <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                          style="width: 60px; height: 60px;">
-                        <i class="bi bi-lock display-6 text-danger"></i>
-                    </div>
                     <p class="mt-3">¿Estás seguro de desactivar la categoría <strong>${escapeHtml(category.name)}</strong>?</p>
                     <p class="text-muted mb-0">La categoría no podrá ser utilizada en nuevos productos.</p>
                 </div>
@@ -226,10 +218,6 @@
             titleEl.textContent = 'Activar Categoría';
             bodyEl.innerHTML = `
                 <div class="text-center">
-                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                          style="width: 60px; height: 60px;">
-                        <i class="bi bi-unlock display-6 text-success"></i>
-                    </div>
                     <p class="mt-3">¿Estás seguro de activar la categoría <strong>${escapeHtml(category.name)}</strong>?</p>
                     <p class="text-muted mb-0">La categoría volverá a estar disponible en el sistema.</p>
                 </div>

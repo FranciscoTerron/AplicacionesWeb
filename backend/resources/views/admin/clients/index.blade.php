@@ -118,10 +118,6 @@
             titleEl.textContent = 'Detalles del Cliente';
             bodyEl.innerHTML = `
                 <div class="text-center mb-3">
-                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                         style="width: 80px; height: 80px;">
-                        <i class="bi bi-person display-6 text-muted"></i>
-                    </div>
                 </div>
                 <p><strong>Nombre:</strong> ${escapeHtml(client.name)}</p>
                 <p><strong>Email:</strong> ${escapeHtml(client.email)}</p>

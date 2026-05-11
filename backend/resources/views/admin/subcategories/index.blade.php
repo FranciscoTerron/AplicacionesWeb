@@ -126,10 +126,6 @@
             titleEl.textContent = 'Detalles de la Subcategoría';
             bodyEl.innerHTML = `
                 <div class="text-center mb-3">
-                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                          style="width: 80px; height: 80px;">
-                        <i class="bi bi-diagram-3 display-6 text-muted"></i>
-                    </div>
                 </div>
                 <p><strong>Nombre:</strong> ${escapeHtml(subcategory.name)}</p>
                 <p><strong>Slug:</strong> <code>${escapeHtml(subcategory.slug)}</code></p>
@@ -241,10 +237,6 @@
             titleEl.textContent = 'Desactivar Subcategoría';
             bodyEl.innerHTML = `
                 <div class="text-center">
-                    <div class="bg-danger bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                          style="width: 60px; height: 60px;">
-                        <i class="bi bi-lock display-6 text-danger"></i>
-                    </div>
                     <p class="mt-3">¿Estás seguro de desactivar la subcategoría <strong>${escapeHtml(subcategory.name)}</strong>?</p>
                     <p class="text-muted mb-0">La subcategoría no podrá ser utilizada en nuevos productos.</p>
                 </div>
@@ -261,10 +253,6 @@
             titleEl.textContent = 'Activar Subcategoría';
             bodyEl.innerHTML = `
                 <div class="text-center">
-                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
-                          style="width: 60px; height: 60px;">
-                        <i class="bi bi-unlock display-6 text-success"></i>
-                    </div>
                     <p class="mt-3">¿Estás seguro de activar la subcategoría <strong>${escapeHtml(subcategory.name)}</strong>?</p>
                     <p class="text-muted mb-0">La subcategoría volverá a estar disponible en el sistema.</p>
                 </div>
