@@ -58,11 +58,18 @@ class AuthController extends Controller
             ]);
         }
 
+        // Calculamos el redirect_uri según el host actual del request, así el flow
+        // funciona tanto en producción como en cualquier preview de Vercel sin tener
+        // que mantener una env var por entorno.
+        config(['services.google.redirect' => route('auth.google.callback')]);
+
         return Socialite::driver('google')->redirect();
     }
 
     public function handleGoogleCallback(Request $request)
     {
+        config(['services.google.redirect' => route('auth.google.callback')]);
+
         try {
             $googleUser = Socialite::driver('google')->user();
         } catch (\Throwable $e) {

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AdminMiddleware;
 use App\Providers\AppServiceProvider;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
@@ -11,6 +12,7 @@ use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Symfony\Component\HttpFoundation\Cookie;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -35,7 +37,21 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Si la cookie de sesión quedó cifrada con una APP_KEY anterior (típico tras
+        // rotar la key), Laravel tira DecryptException y devuelve 500. En lugar de
+        // eso, descartamos la cookie corrupta y devolvemos al usuario al / con un
+        // Set-Cookie de borrado: la próxima request ya genera sesión limpia.
+        $exceptions->renderable(function (DecryptException $e, $request) {
+            $sessionCookie = config('session.cookie');
+            $response = redirect($request->fullUrl());
+            foreach (array_keys($request->cookies->all()) as $name) {
+                if ($name === $sessionCookie || str_starts_with($name, 'XSRF-')) {
+                    $response->headers->setCookie(Cookie::create($name)->withValue(null)->withExpires(0));
+                }
+            }
+
+            return $response;
+        });
     })
     ->withProviders([
         AppServiceProvider::class,
