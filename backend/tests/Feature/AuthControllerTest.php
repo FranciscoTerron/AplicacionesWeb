@@ -27,12 +27,33 @@ class AuthControllerTest extends TestCase
             ->with(['email' => 'admin@example.com', 'password' => 'password'])
             ->andReturn(true);
 
+        $adminUser = (object) ['role' => 'admin'];
+        Auth::shouldReceive('user')->andReturn($adminUser);
+
         $response = $this->withSession([])->post(route('login'), [
             'email' => 'admin@example.com',
             'password' => 'password',
         ]);
 
         $response->assertRedirect('/admin');
+    }
+
+    public function test_login_as_cliente_redirects_to_home(): void
+    {
+        Auth::shouldReceive('attempt')
+            ->once()
+            ->with(['email' => 'cliente@example.com', 'password' => 'password'])
+            ->andReturn(true);
+
+        $clienteUser = (object) ['role' => 'cliente'];
+        Auth::shouldReceive('user')->andReturn($clienteUser);
+
+        $response = $this->withSession([])->post(route('login'), [
+            'email' => 'cliente@example.com',
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect('/');
     }
 
     public function test_login_with_inactive_user(): void

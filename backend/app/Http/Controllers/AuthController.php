@@ -29,6 +29,10 @@ class AuthController extends Controller
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
+            if (Auth::user()->role === 'cliente') {
+                return redirect()->intended('/');
+            }
+
             return redirect()->intended('/admin');
         }
 
@@ -100,8 +104,11 @@ class AuthController extends Controller
                 'updated_at' => now()->toISOString(),
             ]);
         } else {
+            // Primer login con Google: por defecto el usuario es cliente.
+            // Solo se promueve a admin si el email está en services.google.admin_emails.
+            // La promoción a editor se hace manualmente desde /admin/users por un admin.
             $adminEmails = array_map('strtolower', config('services.google.admin_emails', []));
-            $role = in_array($email, $adminEmails, true) ? 'admin' : 'editor';
+            $role = in_array($email, $adminEmails, true) ? 'admin' : 'cliente';
 
             $userData = $this->firestore->createDocument('users', [
                 'name' => $googleUser->getName() ?: $email,
@@ -121,13 +128,18 @@ class AuthController extends Controller
             'id' => (string) ($userData['id'] ?? ''),
             'name' => $userData['name'] ?? '',
             'email' => $userData['email'] ?? $email,
-            'role' => $userData['role'] ?? 'editor',
+            'role' => $userData['role'] ?? 'cliente',
             'active' => $userData['active'] ?? true,
         ]);
         $user->exists = true;
 
         Auth::login($user, true);
         $request->session()->regenerate();
+
+        // Cliente no entra al panel admin: lo mandamos al catálogo público.
+        if ($user->role === 'cliente') {
+            return redirect()->intended('/');
+        }
 
         return redirect()->intended('/admin');
     }
