@@ -14,7 +14,7 @@
 <div class="flex justify-between items-center mb-4">
     <h1>Clientes</h1>
     @if($isAdmin)
-        <button type="button" class="btn btn-primary" id="btnNewClient">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewClient">
             <i class="bi bi-plus-circle"></i> Nuevo Cliente
         </button>
     @endif
@@ -50,7 +50,7 @@
                         <i class="bi bi-people display-6"></i>
                         <p class="lead mt-2">No hay clientes registrados</p>
                         @if($isAdmin)
-                            <button type="button" class="btn btn-primary mt-2" id="btnNewClientEmpty">
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btnNewClientEmpty">
                                 <i class="bi bi-plus-circle"></i> Crear primer cliente
                             </button>
                         @endif

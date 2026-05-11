@@ -16,7 +16,7 @@
         <h1>Descuentos</h1>
     </div>
     @if($isAdmin)
-        <button type="button" class="btn btn-primary" id="btnNewDiscount">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewDiscount">
             <i class="bi bi-plus-circle"></i> Nuevo Descuento
         </button>
     @endif
@@ -55,7 +55,7 @@
                         <i class="bi bi-percent display-6"></i>
                         <p class="lead mt-2">No hay descuentos registrados</p>
                         @if($isAdmin)
-                            <button type="button" class="btn btn-primary mt-2" id="btnNewDiscountEmpty">
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btnNewDiscountEmpty">
                                 <i class="bi bi-plus-circle"></i> Crear primer descuento
                             </button>
                         @endif

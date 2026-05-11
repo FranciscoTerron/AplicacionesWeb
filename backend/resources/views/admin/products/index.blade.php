@@ -12,7 +12,7 @@
 @section('content')
 <div class="flex justify-between items-center mb-4">
     <h1>Productos</h1>
-    <button type="button" class="btn btn-primary" id="btnNewProduct">
+    <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewProduct">
         <i class="bi bi-plus-circle"></i> Nuevo Producto
     </button>
 </div>
@@ -56,7 +56,7 @@
                         <i class="bi bi-box display-6"></i>
                         <p class="lead mt-2">No hay productos registrados</p>
                         @if(in_array($currentUserRole, ['admin', 'editor']))
-                            <button type="button" class="btn btn-primary mt-2" id="btnNewProductEmpty">
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btnNewProductEmpty">
                                 <i class="bi bi-plus-circle"></i> Crear primer producto
                             </button>
                         @endif

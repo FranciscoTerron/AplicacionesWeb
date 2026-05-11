@@ -14,7 +14,7 @@
     <div>
         <h1>Categorías</h1>
     </div>
-    <button type="button" class="btn btn-primary" id="btnNewCategory">
+    <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewCategory">
         <i class="bi bi-plus-circle"></i> Nueva Categoría
     </button>
 </div>

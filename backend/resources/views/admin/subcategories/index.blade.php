@@ -14,7 +14,7 @@
     <div>
         <h1>Subcategorías</h1>
     </div>
-    <button type="button" class="btn btn-primary" id="btnNewSubcategory">
+    <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewSubcategory">
         <i class="bi bi-plus-circle"></i> Nueva Subcategoría
     </button>
 </div>
@@ -52,7 +52,7 @@
                         <i class="bi bi-diagram-3 display-6"></i>
                         <p class="lead mt-2">No hay subcategorías registradas</p>
                         @if($currentUserRole == 'admin')
-                            <button type="button" class="btn btn-primary mt-2" id="btnNewSubcategoryEmpty">
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btnNewSubcategoryEmpty">
                                 <i class="bi bi-plus-circle"></i> Crear primera subcategoría
                             </button>
                         @endif

@@ -15,11 +15,8 @@
 <div class="flex justify-between items-center mb-4">
     <h1>Usuarios</h1>
     @if($isAdmin)
-        <button type="button" class="btn btn-primary" id="btnNewUser">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewUser">
             <i class="bi bi-plus-circle"></i> Nuevo Usuario
-        </button>
-    @else
-        <button type="button" class="btn btn-outline-warning btn-sm disabled" title="Solo los administradores pueden gestionar usuarios" data-bs-toggle="tooltip"> 
         </button>
     @endif
 </div>
@@ -55,7 +52,7 @@
                         <i class="bi bi-people display-6"></i>
                         <p class="lead mt-2">No hay usuarios registrados</p>
                         @if($isAdmin)
-                            <button type="button" class="btn btn-primary mt-2" id="btnNewUserEmpty">
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btnNewUserEmpty">
                                 <i class="bi bi-plus-circle"></i> Crear primer usuario
                             </button>
                         @endif

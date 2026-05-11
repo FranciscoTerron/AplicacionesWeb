@@ -10,9 +10,9 @@
                 </select>
             </div>
             <div class="col-md-2 d-grid">
-                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Filtrar</button>
                 @if($search || $statusFilter)
-                    <a href="{{ route('admin.clients.index') }}" class="btn btn-outline-secondary w-100 mt-1">Limpiar</a>
+                    <a href="{{ route('admin.clients.index') }}" class="btn btn-sm btn-outline-secondary w-100 mt-1">Limpiar</a>
                 @endif
             </div>
         </form>
