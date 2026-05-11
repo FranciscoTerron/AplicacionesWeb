@@ -41,60 +41,69 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::resource('products', ProductController::class)->names('admin.products');
     Route::post('products/{product}/activate', [ProductController::class, 'activate'])->name('admin.products.activate');
 
-    // Rutas de solo lectura para editors (index y show)
+    // Index para editors y admins (solo lectura).
+    // IMPORTANTE: las rutas estáticas (/create, /algo-fijo) deben declararse ANTES que
+    // las dinámicas con {id}; si no, el segmento "create" se interpreta como id.
     Route::get('discounts', [DiscountController::class, 'index'])->name('admin.discounts.index');
-    Route::get('discounts/{discount}', [DiscountController::class, 'show'])->name('admin.discounts.show');
     Route::get('clients', [ClientController::class, 'index'])->name('admin.clients.index');
-    Route::get('clients/{client}', [ClientController::class, 'show'])->name('admin.clients.show');
     Route::get('orders', [OrderController::class, 'index'])->name('admin.orders.index');
-    Route::get('orders/create', [OrderController::class, 'create'])
-        ->middleware('admin')
-        ->name('admin.orders.create');
     Route::get('shipments', [ShipmentController::class, 'index'])->name('admin.shipments.index');
-    Route::get('shipments/create', [ShipmentController::class, 'create'])
-        ->middleware('admin')
-        ->name('admin.shipments.create');
-    Route::get('orders/{order}', [OrderController::class, 'show'])->name('admin.orders.show');
-    Route::get('shipments/{shipment}', [ShipmentController::class, 'show'])->name('admin.shipments.show');
 
-    // Ruta para cambiar estado de orden (accesible para editors y admins)
-    Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('admin.orders.status');
-
-    // Rutas solo accesibles para admins (crear, editar, activar, etc.)
+    // Rutas solo admin: create + acciones que mutan estado.
     Route::middleware(['admin'])->group(function () {
         // Descuentos
         Route::get('discounts/create', [DiscountController::class, 'create'])->name('admin.discounts.create');
         Route::post('discounts', [DiscountController::class, 'store'])->name('admin.discounts.store');
-        Route::get('discounts/{discount}/edit', [DiscountController::class, 'edit'])->name('admin.discounts.edit');
-        Route::put('discounts/{discount}', [DiscountController::class, 'update'])->name('admin.discounts.update');
-        Route::patch('discounts/{discount}', [DiscountController::class, 'update'])->name('admin.discounts.update');
-        Route::delete('discounts/{discount}', [DiscountController::class, 'destroy'])->name('admin.discounts.destroy');
-        Route::post('discounts/{discount}/activate', [DiscountController::class, 'activate'])->name('admin.discounts.activate');
 
         // Clientes
         Route::get('clients/create', [ClientController::class, 'create'])->name('admin.clients.create');
         Route::post('clients', [ClientController::class, 'store'])->name('admin.clients.store');
-        Route::get('clients/{client}/edit', [ClientController::class, 'edit'])->name('admin.clients.edit');
-        Route::put('clients/{client}', [ClientController::class, 'update'])->name('admin.clients.update');
-        Route::patch('clients/{client}', [ClientController::class, 'update'])->name('admin.clients.update');
-        Route::delete('clients/{client}', [ClientController::class, 'destroy'])->name('admin.clients.destroy');
-        Route::post('clients/{client}/activate', [ClientController::class, 'activate'])->name('admin.clients.activate');
-        Route::post('clients/{client}/deactivate', [ClientController::class, 'deactivate'])->name('admin.clients.deactivate');
 
-        // Órdenes (excepto el cambio de estado que ya está arriba)
+        // Órdenes
         Route::get('orders/create', [OrderController::class, 'create'])->name('admin.orders.create');
         Route::post('orders', [OrderController::class, 'store'])->name('admin.orders.store');
-        Route::get('orders/{order}/edit', [OrderController::class, 'edit'])->name('admin.orders.edit');
-        Route::put('orders/{order}', [OrderController::class, 'update'])->name('admin.orders.update');
-        Route::patch('orders/{order}', [OrderController::class, 'update'])->name('admin.orders.update');
-        Route::delete('orders/{order}', [OrderController::class, 'destroy'])->name('admin.orders.destroy');
 
         // Envíos
         Route::get('shipments/create', [ShipmentController::class, 'create'])->name('admin.shipments.create');
         Route::post('shipments', [ShipmentController::class, 'store'])->name('admin.shipments.store');
+    });
+
+    // Show para editors y admins (lectura con id dinámico). Va DESPUÉS de /create.
+    Route::get('discounts/{discount}', [DiscountController::class, 'show'])->name('admin.discounts.show');
+    Route::get('clients/{client}', [ClientController::class, 'show'])->name('admin.clients.show');
+    Route::get('orders/{order}', [OrderController::class, 'show'])->name('admin.orders.show');
+    Route::get('shipments/{shipment}', [ShipmentController::class, 'show'])->name('admin.shipments.show');
+
+    // Cambio de estado de orden (editor + admin, validado por OrderPolicy::update).
+    Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('admin.orders.status');
+
+    // Edición/baja/reactivación con id dinámico (solo admin).
+    Route::middleware(['admin'])->group(function () {
+        // Descuentos
+        Route::get('discounts/{discount}/edit', [DiscountController::class, 'edit'])->name('admin.discounts.edit');
+        Route::put('discounts/{discount}', [DiscountController::class, 'update'])->name('admin.discounts.update');
+        Route::patch('discounts/{discount}', [DiscountController::class, 'update']);
+        Route::delete('discounts/{discount}', [DiscountController::class, 'destroy'])->name('admin.discounts.destroy');
+        Route::post('discounts/{discount}/activate', [DiscountController::class, 'activate'])->name('admin.discounts.activate');
+
+        // Clientes
+        Route::get('clients/{client}/edit', [ClientController::class, 'edit'])->name('admin.clients.edit');
+        Route::put('clients/{client}', [ClientController::class, 'update'])->name('admin.clients.update');
+        Route::patch('clients/{client}', [ClientController::class, 'update']);
+        Route::delete('clients/{client}', [ClientController::class, 'destroy'])->name('admin.clients.destroy');
+        Route::post('clients/{client}/activate', [ClientController::class, 'activate'])->name('admin.clients.activate');
+        Route::post('clients/{client}/deactivate', [ClientController::class, 'deactivate'])->name('admin.clients.deactivate');
+
+        // Órdenes (sin activate; el ciclo de vida se maneja vía updateStatus arriba)
+        Route::get('orders/{order}/edit', [OrderController::class, 'edit'])->name('admin.orders.edit');
+        Route::put('orders/{order}', [OrderController::class, 'update'])->name('admin.orders.update');
+        Route::patch('orders/{order}', [OrderController::class, 'update']);
+        Route::delete('orders/{order}', [OrderController::class, 'destroy'])->name('admin.orders.destroy');
+
+        // Envíos
         Route::get('shipments/{shipment}/edit', [ShipmentController::class, 'edit'])->name('admin.shipments.edit');
         Route::put('shipments/{shipment}', [ShipmentController::class, 'update'])->name('admin.shipments.update');
-        Route::patch('shipments/{shipment}', [ShipmentController::class, 'update'])->name('admin.shipments.update');
+        Route::patch('shipments/{shipment}', [ShipmentController::class, 'update']);
         Route::delete('shipments/{shipment}', [ShipmentController::class, 'destroy'])->name('admin.shipments.destroy');
         Route::post('shipments/{shipment}/activate', [ShipmentController::class, 'activate'])->name('admin.shipments.activate');
     });

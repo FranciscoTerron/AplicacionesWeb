@@ -28,7 +28,7 @@ class UserController extends Controller
         $authUser = Auth::user();
 
         if (! $authUser || $authUser->role !== 'admin') {
-            return View::make('admin.users.unauthorized');
+            return $this->unauthorizedView();
         }
 
         $page = request()->get('page', 1);
@@ -37,7 +37,7 @@ class UserController extends Controller
         $roleFilter = request()->get('role');
         $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments('users', 20, $startAfter);
+        $result = $this->firestore->listDocuments('users', 10, $startAfter);
 
         // Apply filters in PHP (since Firestore has limited query capabilities)
         $users = collect($result['documents']);
@@ -76,7 +76,7 @@ class UserController extends Controller
         // Only admins can create users
         $authUser = Auth::user();
         if (! $authUser || $authUser->role !== 'admin') {
-            return View::make('admin.users.unauthorized');
+            return $this->unauthorizedView();
         }
 
         return redirect()->route('admin.users.index');
@@ -133,7 +133,7 @@ class UserController extends Controller
 
         // Allow if admin or editing own profile
         if (! $authUser || ($authUser->role !== 'admin' && $authUser->getAuthIdentifier() !== ($user['id'] ?? ''))) {
-            return View::make('admin.users.unauthorized');
+            return $this->unauthorizedView();
         }
 
         return redirect()->route('admin.users.index');
@@ -146,7 +146,7 @@ class UserController extends Controller
 
         // Allow if admin or updating own profile
         if (! $authUser || ($authUser->role !== 'admin' && $authUser->getAuthIdentifier() !== ($user['id'] ?? ''))) {
-            return View::make('admin.users.unauthorized');
+            return $this->unauthorizedView();
         }
 
         $validated = $request->validated();
@@ -195,7 +195,7 @@ class UserController extends Controller
                     ->with('error', 'No puedes bloquearte a ti mismo.');
             }
         } elseif (! $authUser || $authUser->getAuthIdentifier() !== $id) {
-            return View::make('admin.users.unauthorized');
+            return $this->unauthorizedView();
         }
 
         $this->firestore->updateDocument('users', $id, ['active' => false, 'updated_by' => Auth::id()]);
@@ -214,7 +214,7 @@ class UserController extends Controller
 
         // Only admins can activate users
         if (! $authUser || $authUser->role !== 'admin') {
-            return View::make('admin.users.unauthorized');
+            return $this->unauthorizedView();
         }
 
         $this->firestore->updateDocument('users', $id, ['active' => true, 'updated_by' => Auth::id()]);
@@ -224,5 +224,15 @@ class UserController extends Controller
         return $request->ajax()
             ? response()->json(['success' => $success, 'redirect' => route('admin.users.index')])
             : redirect()->route('admin.users.index')->with('success', $success);
+    }
+
+    private function unauthorizedView()
+    {
+        return View::make('components.unauthorized', [
+            'title' => 'Acceso Denegado',
+            'subtitle' => 'No tienes permisos para acceder a esta sección',
+            'message' => 'Tu cuenta no tiene los permisos necesarios para acceder a la gestión de usuarios.',
+            'contactMessage' => 'Por favor, contacta a un administrador del sistema para solicitar permisos de acceso.',
+        ]);
     }
 }
