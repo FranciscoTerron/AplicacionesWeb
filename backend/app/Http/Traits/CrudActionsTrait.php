@@ -153,10 +153,15 @@ trait CrudActionsTrait
         return view("{$this->getViewFolder()}.create", $data);
     }
 
-    public function store(FormRequest $request): RedirectResponse|JsonResponse
+    public function store(): RedirectResponse|JsonResponse
     {
         $this->authorizeRequest('create');
 
+        // Resolvemos el FormRequest concreto del controller (StoreOrderRequest, etc.)
+        // para que se ejecuten sus rules(); inyectar FormRequest base no las dispara.
+        $requestClass = $this->getStoreRequestClass();
+        /** @var FormRequest $request */
+        $request = app($requestClass);
         $validated = $request->validated();
 
         // Validación específica para subcategories (categoría debe existir y estar activa)
@@ -221,11 +226,14 @@ trait CrudActionsTrait
         return view("{$this->getViewFolder()}.edit", $data);
     }
 
-    public function update(FormRequest $request, string $id): RedirectResponse|JsonResponse
+    public function update(string $id): RedirectResponse|JsonResponse
     {
         $model = $this->getModelInstance($id);
         $this->authorizeRequest('update', $model);
 
+        $requestClass = $this->getUpdateRequestClass();
+        /** @var FormRequest $request */
+        $request = app($requestClass);
         $validated = $request->validated();
 
         // Validación específica para subcategories

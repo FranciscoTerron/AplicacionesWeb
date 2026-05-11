@@ -301,12 +301,24 @@ class FirestoreService
             return ['nullValue' => null];
         }
         if (is_array($value)) {
-            $arrayValues = [];
-            foreach ($value as $v) {
-                $arrayValues[] = $this->encodeValue($v);
+            // Distinguir arrays indexados (list) de asociativos (map): Firestore no acepta arrays anidados,
+            // pero sí arrays-de-maps. Antes mandábamos todo como arrayValue, lo que producía
+            // [{"productId":...}] → array de array → "Nested arrays are not allowed".
+            if (array_is_list($value)) {
+                $arrayValues = [];
+                foreach ($value as $v) {
+                    $arrayValues[] = $this->encodeValue($v);
+                }
+
+                return ['arrayValue' => ['values' => $arrayValues]];
             }
 
-            return ['arrayValue' => ['values' => $arrayValues]];
+            $fields = [];
+            foreach ($value as $k => $v) {
+                $fields[(string) $k] = $this->encodeValue($v);
+            }
+
+            return ['mapValue' => ['fields' => $fields]];
         }
 
         return ['stringValue' => (string) $value];
