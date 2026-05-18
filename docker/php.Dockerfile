@@ -7,12 +7,14 @@ RUN apk add --no-cache \
     zip \
     unzip \
     linux-headers \
+    libzip-dev \
+    zlib-dev \
     $PHPIZE_DEPS
 
-# Extensiones PHP
-RUN docker-php-ext-install pdo pcntl bcmath
+# Extensiones PHP nativas
+RUN docker-php-ext-install pdo pcntl bcmath zip
 
-# Composer
+# Composer (instalar dependencias sin verificar extensión gRPC)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 # Usuario para desarrollo (opcional, para permisos)

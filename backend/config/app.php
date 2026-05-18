@@ -123,4 +123,18 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Firestore Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Firestore project ID and credentials configuration.
+    |
+    */
+
+    'firestore_project_id' => env('FIRESTORE_PROJECT_ID'),
+    'firestore_credentials_json' => env('FIRESTORE_CREDENTIALS_JSON'),
+    'firebase_credentials_json' => env('FIREBASE_CREDENTIALS_JSON'),
+    'firestore_key_file' => env('FIRESTORE_KEY_FILE'),
+
 ];

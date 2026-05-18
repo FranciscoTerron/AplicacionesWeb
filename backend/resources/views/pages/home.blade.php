@@ -1,354 +1,412 @@
 @extends('layouts.app')
 
-@section('title', 'MA Piscinas — E-commerce de Piscinas e Insumos')
+@section('title', 'MA Piscinas — Tu piscina, nuestra pasión')
 
 @section('styles')
-/* ── HERO ─────────────────────────────────────── */
+/* ────── HERO ────── */
 .hero {
-    min-height: 100vh;
-    position: relative;
-    display: flex;
-    flex-direction: column;
+    padding: 6rem 0 5rem;
+    border-bottom: 1px solid var(--border);
+}
+.hero-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 4rem;
     align-items: center;
-    justify-content: center;
-    overflow: hidden;
 }
+@media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; gap: 2.5rem; } }
 
-/* Grilla de azulejos de pileta */
-.hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image:
-        linear-gradient(rgba(6,182,212,.06) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(6,182,212,.06) 1px, transparent 1px);
-    background-size: 60px 60px;
-    animation: gridDrift 25s linear infinite;
-}
-
-@keyframes gridDrift {
-    from { transform: translateY(0); }
-    to   { transform: translateY(60px); }
-}
-
-/* Glow central */
-.hero::after {
-    content: '';
-    position: absolute;
-    width: 80vw; height: 80vw;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(6,182,212,.18) 0%, transparent 68%);
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    animation: breathe 5s ease-in-out infinite;
-}
-
-@keyframes breathe {
-    0%,100% { opacity: .7; transform: translate(-50%,-50%) scale(1); }
-    50%      { opacity: 1;  transform: translate(-50%,-50%) scale(1.08); }
-}
-
-.hero-content {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    padding: 2rem;
-}
-
-.badge {
-    display: inline-block;
-    font-size: .65rem;
-    font-weight: 500;
-    letter-spacing: .45em;
-    text-transform: uppercase;
-    color: var(--cyan);
-    border: 1px solid rgba(6,182,212,.35);
-    padding: .5rem 1.6rem;
-    border-radius: 2rem;
-    margin-bottom: 2.5rem;
-    animation: fadeDown .8s ease both;
-}
-
-@keyframes fadeDown {
-    from { opacity: 0; transform: translateY(-16px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.hero-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(5.5rem, 16vw, 14rem);
-    font-weight: 700;
-    line-height: .88;
+.hero h1 {
+    font-size: clamp(2rem, 4.2vw, 3.2rem);
+    font-weight: 600; line-height: 1.15;
     letter-spacing: -.02em;
-    background: linear-gradient(135deg, #fff 0%, var(--light) 35%, var(--aqua) 65%, #0ea5e9 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    background-size: 200% 200%;
-    animation: shimmer 5s ease infinite, fadeUp 1s ease .2s both;
+    color: var(--text);
+    margin-bottom: 1.2rem;
+}
+.hero-lead {
+    font-size: 1rem; line-height: 1.7;
+    color: var(--text-soft); max-width: 480px; margin-bottom: 2rem;
 }
 
-@keyframes shimmer {
-    0%,100% { background-position: 0% 50%; }
-    50%      { background-position: 100% 50%; }
+.hero-search {
+    display: flex; gap: .4rem;
+    background: var(--surface);
+    padding: .35rem;
+    border-radius: 10px;
+    max-width: 480px;
+    margin-bottom: 1.5rem;
+}
+.hero-search input {
+    flex: 1;
+    border: 0; background: transparent;
+    padding: .65rem .9rem;
+    font-family: inherit; font-size: .92rem; color: var(--text);
+    outline: none;
+}
+.hero-search input::placeholder { color: var(--muted); }
+.hero-search button {
+    background: var(--text); color: #fff;
+    border: 0; border-radius: 7px;
+    padding: .65rem 1.1rem;
+    font-size: .88rem; font-weight: 500; cursor: pointer;
+    transition: background .15s;
+}
+.hero-search button:hover { background: var(--primary); }
+
+.hero-cta { display: flex; gap: .8rem; flex-wrap: wrap; }
+
+.hero-image {
+    aspect-ratio: 4 / 5;
+    border-radius: 12px;
+    background: url('https://images.unsplash.com/photo-1572331165267-854da2b10ccc?auto=format&fit=crop&w=900&q=80') center/cover;
 }
 
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(28px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.hero-sub {
-    font-size: clamp(.9rem, 2.2vw, 1.25rem);
-    font-weight: 300;
-    color: rgba(186,230,253,.65);
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    margin-top: 1.5rem;
-    animation: fadeUp 1s ease .4s both;
-}
-
-.scroll-hint {
-    position: absolute;
-    bottom: 2.5rem;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .5rem;
-    color: rgba(186,230,253,.35);
-    font-size: .6rem;
-    letter-spacing: .25em;
-    text-transform: uppercase;
-    animation: fadeUp 1s ease 1s both;
-}
-
-.scroll-line {
-    width: 1px; height: 55px;
-    background: linear-gradient(to bottom, transparent, var(--cyan));
-    animation: lineGrow 2s ease-in-out infinite;
-}
-
-@keyframes lineGrow {
-    0%,100% { opacity: .3; transform: scaleY(.5); transform-origin: top; }
-    50%      { opacity: 1;  transform: scaleY(1);  transform-origin: top; }
-}
-
-/* ── WAVES ────────────────────────────────────── */
-.wave-wrap { overflow: hidden; line-height: 0; margin-top: -1px; }
-.wave-wrap svg { display: block; width: 200%; }
-.w1 { animation: waveMove 9s  linear infinite; }
-.w2 { animation: waveMove 12s linear infinite reverse; opacity: .5; }
-.w3 { animation: waveMove 7s  linear infinite; opacity: .3; }
-
-@keyframes waveMove {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-50%); }
-}
-
-/* ── SECCIONES ─────────────────────────────────── */
-.section { max-width: 1080px; margin: 0 auto; padding: 6rem 2rem; }
-
-.label {
-    font-size: .62rem;
-    letter-spacing: .5em;
-    text-transform: uppercase;
-    color: var(--cyan);
-    font-weight: 500;
-    margin-bottom: .75rem;
-}
-
-.section-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(2.4rem, 5.5vw, 4rem);
-    font-weight: 600;
-    line-height: 1.1;
-    margin-bottom: 3rem;
-}
-
-/* ── PRODUCTOS ─────────────────────────────────── */
-.products {
+/* ────── BENEFICIOS ────── */
+.benefits { padding: 3rem 0; border-bottom: 1px solid var(--border); }
+.benefits-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.5px;
-    background: rgba(6,182,212,.1);
-    border: 1px solid rgba(6,182,212,.1);
-    margin-bottom: 7rem;
-}
-
-.product-card {
-    background: var(--navy);
-    padding: 2.5rem;
-    position: relative;
-    overflow: hidden;
-    transition: background .3s;
-}
-
-.product-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 3px; height: 0;
-    background: var(--cyan);
-    transition: height .4s ease;
-}
-
-.product-card:hover { background: rgba(6,182,212,.05); }
-.product-card:hover::before { height: 100%; }
-
-.product-icon { font-size: 2rem; margin-bottom: 1rem; display: block; }
-
-.product-name {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.6rem;
-    font-weight: 600;
-    margin-bottom: .6rem;
-}
-
-.product-desc {
-    font-size: .88rem;
-    color: rgba(186,230,253,.5);
-    line-height: 1.65;
-}
-
-/* ── EQUIPO ────────────────────────────────────── */
-.team-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 2rem;
 }
+.benefit { display: flex; align-items: flex-start; gap: .8rem; }
+.benefit-icon { color: var(--primary); flex-shrink: 0; margin-top: 2px; }
+.benefit-text strong { display: block; font-size: .92rem; color: var(--text); font-weight: 500; margin-bottom: .15rem; }
+.benefit-text span { font-size: .82rem; color: var(--muted); }
 
+/* ────── SECCIONES ────── */
+.section { padding: 5rem 0; }
+.section-head {
+    margin-bottom: 2.5rem;
+}
+.section-head .eyebrow {
+    font-size: .78rem; font-weight: 500;
+    color: var(--muted); margin-bottom: .35rem;
+}
+.section-head h2 {
+    font-size: clamp(1.5rem, 2.8vw, 2rem);
+    font-weight: 600; color: var(--text);
+    line-height: 1.2;
+    letter-spacing: -.015em;
+}
+.section-head .head-row {
+    display: flex; justify-content: space-between; align-items: end; gap: 2rem; flex-wrap: wrap;
+}
+.section-head .link {
+    color: var(--muted); font-size: .88rem;
+}
+.section-head .link:hover { color: var(--text); }
+
+/* ────── CATEGORÍAS ────── */
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+.cat-card {
+    aspect-ratio: 3 / 4;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex; align-items: end;
+    padding: 1.1rem;
+    color: var(--text);
+    transition: border-color .2s, transform .2s;
+}
+.cat-card:hover { border-color: var(--text); transform: translateY(-2px); }
+.cat-card .cat-name {
+    font-size: 1rem; font-weight: 500;
+}
+.cat-card .cat-arrow {
+    margin-left: auto; opacity: .5;
+}
+
+/* ────── PRODUCTOS ────── */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+.prod {
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+    transition: border-color .2s, transform .2s;
+    display: flex; flex-direction: column;
+}
+.prod:hover { border-color: var(--text); transform: translateY(-2px); }
+.prod-img {
+    aspect-ratio: 1 / 1;
+    background: var(--surface) center/cover;
+    border-bottom: 1px solid var(--border);
+}
+.prod-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; }
+.prod-name {
+    font-size: .92rem; font-weight: 500; color: var(--text);
+    margin-bottom: .2rem; line-height: 1.4;
+}
+.prod-sku { font-size: .72rem; color: var(--muted); margin-bottom: .8rem; }
+.prod-price {
+    font-size: 1.1rem; font-weight: 600; color: var(--text);
+    margin-top: auto;
+}
+
+/* ────── PROCESO ────── */
+.process { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.process-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2.5rem;
+}
+.process-step {}
+.process-num {
+    font-size: .8rem; color: var(--muted);
+    margin-bottom: .8rem;
+    letter-spacing: .05em;
+}
+.process-step h3 { font-size: 1rem; font-weight: 500; color: var(--text); margin-bottom: .35rem; }
+.process-step p { font-size: .88rem; color: var(--muted); line-height: 1.6; }
+
+/* ────── FAQ ────── */
+.faq-list { max-width: 720px; }
+.faq-item {
+    border-bottom: 1px solid var(--border);
+}
+.faq-item summary {
+    list-style: none;
+    padding: 1.2rem 0;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    font-weight: 500; color: var(--text);
+    font-size: .95rem;
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+    content: '+';
+    color: var(--muted); font-size: 1.2rem;
+    transition: transform .2s;
+}
+.faq-item[open] summary::after { content: '−'; }
+.faq-item .faq-body {
+    padding: 0 0 1.2rem;
+    color: var(--text-soft);
+    font-size: .9rem; line-height: 1.7;
+    max-width: 600px;
+}
+
+/* ────── EQUIPO ────── */
+.team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
 .team-card {
-    border: 1px solid rgba(6,182,212,.15);
-    overflow: hidden;
-    transition: border-color .3s, transform .3s;
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.5rem;
+    transition: border-color .2s;
 }
-
-.team-card:hover {
-    border-color: rgba(6,182,212,.5);
-    transform: translateY(-5px);
+.team-card:hover { border-color: var(--text); }
+.team-avatar {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--surface);
+    color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .88rem; font-weight: 500;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border);
 }
+.team-card h3 { font-size: .98rem; color: var(--text); margin-bottom: .15rem; font-weight: 500; }
+.team-card p { font-size: .8rem; color: var(--muted); }
 
-.team-top {
-    height: 150px;
-    background: linear-gradient(135deg, var(--deep-blue), rgba(6,182,212,.2));
-    position: relative;
-    overflow: hidden;
-}
-
-.team-top::before {
-    content: '';
-    position: absolute; inset: 0;
-    background-image:
-        linear-gradient(rgba(6,182,212,.13) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(6,182,212,.13) 1px, transparent 1px);
-    background-size: 22px 22px;
-}
-
-.avatar {
-    position: absolute;
-    bottom: -2rem; left: 2rem;
-    width: 4.5rem; height: 4.5rem;
+/* ────── WHATSAPP FLOTANTE ────── */
+.wa-float {
+    position: fixed;
+    bottom: 1.5rem; right: 1.5rem;
+    width: 52px; height: 52px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--pool), var(--cyan));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.4rem;
-    font-weight: 700;
+    background: #25D366;
+    box-shadow: 0 6px 20px rgba(37,211,102,.3);
+    display: flex; align-items: center; justify-content: center;
     color: #fff;
-    border: 3px solid var(--navy);
-    z-index: 2;
+    z-index: 99;
+    transition: transform .2s ease;
 }
-
-.team-body {
-    padding: 3rem 2rem 2rem;
-    background: var(--deep-blue);
-}
-
-.team-name {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.9rem;
-    font-weight: 600;
-    margin-bottom: .3rem;
-}
-
-.team-role {
-    font-size: .7rem;
-    letter-spacing: .32em;
-    text-transform: uppercase;
-    color: var(--cyan);
-    font-weight: 400;
-}
+.wa-float:hover { transform: scale(1.06); }
+.wa-float svg { width: 24px; height: 24px; }
 @endsection
 
 @section('content')
 
 {{-- HERO --}}
-<div class="hero">
-    <div class="hero-content">
-        <span class="badge">E-Commerce · Piscinas · Insumos</span>
-        <h1 class="hero-title">MA<br>Piscinas</h1>
-        <p class="hero-sub">Tu piscina, nuestra pasión</p>
-    </div>
-    <div class="scroll-hint">
-        <span>Explorar</span>
-        <div class="scroll-line"></div>
-    </div>
-</div>
+<section class="hero">
+    <div class="container hero-grid">
+        <div>
+            <h1>Tu piscina, nuestra pasión.</h1>
+            <p class="hero-lead">
+                Productos de calidad, asesoramiento experto y envío a todo el país.
+                Todo lo que tu piscina necesita en un solo lugar.
+            </p>
 
-{{-- ONDAS DE TRANSICIÓN --}}
-<div class="wave-wrap">
-    <svg viewBox="0 0 2880 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        <path class="w1" d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 C1680,80 1920,0 2160,40 C2400,80 2640,0 2880,40 L2880,80 L0,80 Z" fill="rgba(6,182,212,0.08)"/>
-        <path class="w2" d="M0,55 C280,15 560,75 840,55 C1120,35 1400,75 1680,55 C1960,35 2240,75 2520,55 C2700,40 2880,55 2880,55 L2880,80 L0,80 Z" fill="rgba(14,165,233,0.06)"/>
-        <path class="w3" d="M0,65 C200,35 400,80 600,65 C800,50 1000,80 1200,65 C1400,50 1600,80 1800,65 C2000,48 2200,70 2400,65 C2600,58 2880,65 2880,65 L2880,80 L0,80 Z" fill="rgba(6,182,212,0.04)"/>
-    </svg>
-</div>
+            <form action="{{ route('catalog.index') }}" method="GET" class="hero-search">
+                <input type="text" name="search" placeholder="Buscar productos...">
+                <button type="submit">Buscar</button>
+            </form>
 
-{{-- PRODUCTOS --}}
-<div class="section">
-    <p class="label">Nuestros Productos</p>
-    <h2 class="section-title">Todo lo que<br>tu piscina necesita</h2>
-    <div class="products">
-        <div class="product-card">
-            <span class="product-icon">🏊</span>
-            <h3 class="product-name">Piscinas</h3>
-            <p class="product-desc">Diseño y construcción de piscinas a medida para cada espacio y presupuesto.</p>
-        </div>
-        <div class="product-card">
-            <span class="product-icon">🧴</span>
-            <h3 class="product-name">Insumos</h3>
-            <p class="product-desc">Cloro, algicidas, balanceadores de pH y todo lo necesario para el agua perfecta.</p>
-        </div>
-        <div class="product-card">
-            <span class="product-icon">⚙️</span>
-            <h3 class="product-name">Equipamiento</h3>
-            <p class="product-desc">Bombas, filtros, skimmers y calefactores de las mejores marcas del mercado.</p>
-        </div>
-    </div>
-</div>
-
-{{-- EQUIPO — los datos vienen del HomeController --}}
-<div class="section" style="padding-top: 0">
-    <p class="label">El Equipo</p>
-    <h2 class="section-title">Quiénes somos</h2>
-    <div class="team-grid">
-        @foreach($integrantes as $integrante)
-        <div class="team-card">
-            <div class="team-top">
-                <div class="avatar">{{ $integrante['iniciales'] }}</div>
-            </div>
-            <div class="team-body">
-                <h3 class="team-name">{{ $integrante['nombre'] }}</h3>
-                <p class="team-role">Desarrollador · Aplicaciones Web</p>
+            <div class="hero-cta">
+                <a href="{{ route('catalog.index') }}" class="btn btn-dark">Ver catálogo</a>
+                <a href="#categorias" class="btn btn-outline">Categorías</a>
             </div>
         </div>
-        @endforeach
+        <div class="hero-image"></div>
     </div>
-</div>
+</section>
+
+{{-- BENEFICIOS --}}
+<section class="benefits">
+    <div class="container benefits-grid">
+        <div class="benefit">
+            <svg class="benefit-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h13l4 5v5h-2a2 2 0 1 1-4 0H9a2 2 0 1 1-4 0H3V7z"/></svg>
+            <div class="benefit-text"><strong>Envíos a todo el país</strong><span>24-72hs hábiles</span></div>
+        </div>
+        <div class="benefit">
+            <svg class="benefit-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 12l2 2 4-4M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/></svg>
+            <div class="benefit-text"><strong>Calidad garantizada</strong><span>Marcas seleccionadas</span></div>
+        </div>
+        <div class="benefit">
+            <svg class="benefit-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <div class="benefit-text"><strong>Asesoramiento</strong><span>Te ayudamos a elegir</span></div>
+        </div>
+        <div class="benefit">
+            <svg class="benefit-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12h4l3-9 6 18 3-9h4"/></svg>
+            <div class="benefit-text"><strong>Stock real</strong><span>Disponible para envío</span></div>
+        </div>
+    </div>
+</section>
+
+{{-- CATEGORÍAS --}}
+@if($categories->isNotEmpty())
+<section class="section" id="categorias">
+    <div class="container">
+        <div class="section-head">
+            <div class="head-row">
+                <div>
+                    <p class="eyebrow">Categorías</p>
+                    <h2>Encontrá lo que necesitás.</h2>
+                </div>
+                <a href="{{ route('catalog.index') }}" class="link">Ver catálogo →</a>
+            </div>
+        </div>
+
+        <div class="categories-grid">
+            @foreach($categories as $cat)
+                @php $cid = $cat['id'] ?? ''; @endphp
+                <a href="{{ $cid ? route('catalog.index', ['category' => $cid]) : route('catalog.index') }}" class="cat-card">
+                    <span class="cat-name">{{ $cat['name'] ?? '—' }}</span>
+                    <svg class="cat-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+                </a>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
+{{-- PRODUCTOS DESTACADOS --}}
+@if($featured->isNotEmpty())
+<section class="section" id="destacados" style="padding-top:1rem;">
+    <div class="container">
+        <div class="section-head">
+            <div class="head-row">
+                <div>
+                    <p class="eyebrow">Destacados</p>
+                    <h2>Lo más buscado.</h2>
+                </div>
+                <a href="{{ route('catalog.index') }}" class="link">Ver todos →</a>
+            </div>
+        </div>
+
+        <div class="products-grid">
+            @foreach($featured as $product)
+                @php
+                    $pid = $product['id'] ?? '';
+                    $img = $product['main_image'] ?? null;
+                @endphp
+                <a href="{{ $pid ? route('catalog.show', $pid) : '#' }}" class="prod">
+                    <div class="prod-img" @if($img) style="background-image:url('{{ $img }}');" @endif></div>
+                    <div class="prod-body">
+                        <h3 class="prod-name">{{ $product['name'] ?? '—' }}</h3>
+                        <p class="prod-sku">SKU · {{ $product['sku'] ?? '—' }}</p>
+                        <p class="prod-price">${{ number_format((float) ($product['price'] ?? 0), 2, ',', '.') }}</p>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
+{{-- CÓMO COMPRAR --}}
+<section class="section process">
+    <div class="container">
+        <div class="section-head">
+            <p class="eyebrow">Cómo comprar</p>
+            <h2>3 pasos.</h2>
+        </div>
+
+        <div class="process-grid">
+            <div class="process-step">
+                <p class="process-num">01</p>
+                <h3>Elegí tus productos</h3>
+                <p>Navegá el catálogo y filtrá por categoría.</p>
+            </div>
+            <div class="process-step">
+                <p class="process-num">02</p>
+                <h3>Confirmá la compra</h3>
+                <p>Coordinamos pago y envío. Te asesoramos.</p>
+            </div>
+            <div class="process-step">
+                <p class="process-num">03</p>
+                <h3>Recibí en 24-72hs</h3>
+                <p>Despachamos el mismo día.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- FAQ --}}
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <p class="eyebrow">Preguntas frecuentes</p>
+            <h2>¿Tenés dudas?</h2>
+        </div>
+
+        <div class="faq-list">
+            <details class="faq-item">
+                <summary>¿Cuánto tarda el envío?</summary>
+                <div class="faq-body">Despachamos el mismo día hábil si tu pedido entra antes de las 16hs. La entrega tarda entre 24 y 72 horas según tu localidad.</div>
+            </details>
+            <details class="faq-item">
+                <summary>¿Qué métodos de pago aceptan?</summary>
+                <div class="faq-body">Transferencia bancaria, efectivo, tarjeta de débito y crédito (también en cuotas).</div>
+            </details>
+            <details class="faq-item">
+                <summary>¿Hacen instalaciones?</summary>
+                <div class="faq-body">Sí, contamos con un equipo de instaladores en CABA y GBA. Para otras zonas trabajamos con profesionales locales.</div>
+            </details>
+            <details class="faq-item">
+                <summary>¿Tienen garantía los productos?</summary>
+                <div class="faq-body">Todos los productos tienen garantía oficial del fabricante.</div>
+            </details>
+            <details class="faq-item">
+                <summary>¿Puedo retirar en el local?</summary>
+                <div class="faq-body">Sí. Una vez confirmada la compra, te enviamos la dirección y horarios sin costo adicional.</div>
+            </details>
+        </div>
+    </div>
+</section>
+
+{{-- WHATSAPP --}}
+<a href="https://wa.me/5491155551234?text=Hola!%20Quiero%20consultar%20por%20productos%20de%20MA%20Piscinas" target="_blank" rel="noopener" class="wa-float" aria-label="WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.768.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
 
 @endsection

@@ -3,9 +3,19 @@
     "private": true,
     "type": "module",
     "scripts": {
+        "dev": "concurrently -k \"php artisan serve\" \"vite --host\"",
+        "dev:php": "php artisan serve",
+        "dev:vite": "vite",
         "build": "vite build",
-        "dev": "vite",
-        "start": "php artisan serve"
+        "start": "php artisan serve",
+        "test": "php artisan test",
+        "test:watch": "php artisan test --watch",
+        "lint": "pint",
+        "lint:fix": "pint --fix",
+        "stan": "phpstan analyse app --level=5",
+        "migrate": "php artisan migrate",
+        "seed": "php artisan db:seed",
+        "migrate:fresh": "php artisan migrate:fresh --seed"
     },
     "devDependencies": {
         "@tailwindcss/vite": "^4.0.0",

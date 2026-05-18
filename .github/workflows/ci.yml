@@ -22,13 +22,27 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
-          extensions: mbstring, bcmath, sqlite3
+          extensions: mbstring, bcmath, sqlite3, grpc
           coverage: none
 
       # 3. Instala dependencias (usa composer update para incluir nuevos paquetes)
       - name: Instalar dependencias
         working-directory: backend
         run: composer update --no-interaction --prefer-dist --no-scripts
+
+      # 4. Configurar entorno usando SQLite — necesario tanto para PHPStan
+      #    (Larastan bootea la app y rompe si DB_CONNECTION=firestore sin credenciales)
+      #    como para los tests.
+      - name: Configurar entorno
+        working-directory: backend
+        run: |
+          cp .env.example .env
+          echo "DB_CONNECTION=sqlite" >> .env
+          echo "DB_DATABASE=:memory:" >> .env
+
+      - name: Generar clave de aplicación
+        working-directory: backend
+        run: php artisan key:generate
 
       # ── CHECK 1: Estilo de código ────────────────────────────────
       # Pint verifica que el código siga las convenciones de Laravel.
@@ -45,17 +59,6 @@ jobs:
         run: ./vendor/bin/phpstan analyse --memory-limit=512M
 
       # ── CHECK 3: Tests ───────────────────────────────────────────
-      - name: Configurar entorno de testing
-        working-directory: backend
-        run: |
-          cp .env.example .env
-          echo "DB_CONNECTION=sqlite" >> .env
-          echo "DB_DATABASE=:memory:" >> .env
-
-      - name: Generar clave de aplicación
-        working-directory: backend
-        run: php artisan key:generate
-
       - name: Ejecutar tests (PHPUnit)
         working-directory: backend
         run: php artisan test

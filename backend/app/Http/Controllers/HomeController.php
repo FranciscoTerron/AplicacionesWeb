@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\FirestoreService;
+
 class HomeController extends Controller
 {
-    // Muestra la landing page principal
+    public function __construct(private readonly FirestoreService $firestore) {}
+
     public function index()
     {
         $integrantes = [
@@ -12,6 +15,24 @@ class HomeController extends Controller
             ['iniciales' => 'MS', 'nombre' => 'Mauro San Pedro'],
         ];
 
-        return view('pages.home', compact('integrantes'));
+        $productsResult = $this->firestore->listDocuments('products', 50);
+        $allProducts = collect($productsResult['documents'] ?? [])->where('active', true);
+
+        $featured = $allProducts->where('featured', true)->take(4)->values();
+        if ($featured->isEmpty()) {
+            $featured = $allProducts->take(4)->values();
+        }
+
+        $categoriesResult = $this->firestore->listDocuments('categories', 20);
+        $categories = collect($categoriesResult['documents'] ?? [])
+            ->where('active', true)
+            ->take(4)
+            ->values();
+
+        return view('pages.home', [
+            'integrantes' => $integrantes,
+            'featured' => $featured,
+            'categories' => $categories,
+        ]);
     }
 }

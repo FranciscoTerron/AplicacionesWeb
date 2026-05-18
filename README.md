@@ -54,7 +54,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 
 ## Estado del Proyecto y Avances
 
-### Última Entrega (PR) — 20 de Abril 2025
+### Primer Entrega (PR) — 20 de Abril 2025
 **Módulo**: Backend Laravel (Deploy inicial + Frontpage)
 
 | Item | Estado | Observaciones |
@@ -63,10 +63,31 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Docker configurado | ✅ | Contenedores backend y nginx |
 | Laravel 13 instalado | ✅ | Estructura base funcional |
 | Landing page con datos | ✅ | Empresa "MA Piscinas" + integrantes |
-| PR creado hacia `main` | ✅ | PR en espera de aprobación de docentes |
-| Deploy en Vercel | ⏳ | Pendiente de aprobación del PR |
+| PR creado hacia `main` | ✅ | PR Aprobado |
+| Deploy en Vercel | ✅ | Correcto |
 
-**Conclusión**: Se cumplió con lo mínimo requerido para el 20/04. Se espera aprobación del PR y configuración de Vercel una vez aprobado.
+**Conclusión**: Se cumplió con lo mínimo requerido para el 20/04.
+
+---
+
+### Segunda Entrega (PR) — 11 de Mayo 2026
+**Módulo**: Backend Laravel (CRUDs parciales + Panel Admin + Firestore)
+
+| Item | Estado | Observaciones |
+|------|--------|---------------|
+| **CRUD Categorías** | ✅ | **Completo y funcional** |
+| **CRUD Subcategorías** | ✅ | **Completo y funcional** |
+| **CRUD Productos** | ✅ | **Completo y funcional**|
+| **CRUD Descuentos** | ✅ | **Completo y funcional**|
+| **CRUD Usuarios** | ✅ | **Completo y funcional** |
+| **CRUD Clientes** | ✅ | **Completo y funcional** |
+| Configuración Firestore | ✅ | FirestoreService implementado, reglas y desplegados en Firebase |
+| Login Administrativos | ✅ | AuthController con Firebase implementado; FirestoreUserProvider bloquea usuarios inactivos |
+| Panel Administrativo | ⚠️ | Estructura base con sidebar, ruteo y vistas Blade |
+| Dashboard con estadísticas | ✅ | **Completo y funcional** |
+| Ruteo configurado | ✅ | Web routes definidas para admin y auth |
+
+**Conclusión**: CRUD Usuarios 100% funcional con UX optimizada (modal único, AJAX inline) y código robusto (tests + PHPStan).
 
 ---
 
@@ -74,8 +95,8 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 
 | Fecha Límite | Hito | Estado |
 |--------------|------|--------|
-| 20 de Abril | Deploy en Vercel (frontpage mínimo) | ⚠️ Pendiente PR |
-| 11 de Mayo | Avance Laravel (CRUDs parciales) | ⏳ Pendiente |
+| 20 de Abril | Deploy en Vercel (frontpage mínimo) | ✅ Completo PR |
+| 11 de Mayo | Avance Laravel (CRUDs parciales) | ✅ En proceso |
 | 25 de Mayo | Avance Laravel (funcionalidades adicionales) | ⏳ Pendiente |
 | 7 de Junio | PR Final — Laravel + API Completa | ⏳ Pendiente |
 
