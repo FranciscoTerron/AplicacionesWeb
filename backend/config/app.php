@@ -137,4 +137,16 @@ return [
     'firebase_credentials_json' => env('FIREBASE_CREDENTIALS_JSON'),
     'firestore_key_file' => env('FIRESTORE_KEY_FILE'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | API Version
+    |--------------------------------------------------------------------------
+    |
+    | Version de la API expuesta para consumo de frontends externos.
+    | Puede sobreescribirse con APP_VERSION en .env.
+    |
+    */
+
+    'version' => env('APP_VERSION', '1.0.0'),
+
 ];
