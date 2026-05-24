@@ -30,10 +30,65 @@ class ExportControllerTest extends TestCase
         $this->actingAs($user);
     }
 
-    public function test_export_requires_admin_role(): void
+    public function test_export_editor_can_export_catalog_entities(): void
     {
         $this->mockAuthUser('editor');
 
+        $this->firestoreMock->method('fetchForPage')->willReturn([
+            'documents' => [],
+            'hasMore' => false,
+            'lastDocumentId' => null,
+        ]);
+
+        $response = $this->get(route('admin.export.csv', 'categories'));
+
+        $response->assertStatus(200);
+    }
+
+    public function test_export_editor_cannot_export_sensitive_entities(): void
+    {
+        $this->mockAuthUser('editor');
+
+        // Editor NO puede exportar clients
+        $response = $this->get(route('admin.export.csv', 'clients'));
+        $response->assertStatus(403);
+    }
+
+    public function test_export_editor_cannot_export_orders(): void
+    {
+        $this->mockAuthUser('editor');
+
+        $response = $this->get(route('admin.export.csv', 'orders'));
+        $response->assertStatus(403);
+    }
+
+    public function test_export_editor_cannot_export_shipments(): void
+    {
+        $this->mockAuthUser('editor');
+
+        $response = $this->get(route('admin.export.csv', 'shipments'));
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_export_all_entities(): void
+    {
+        $this->mockAuthUser('admin');
+
+        $this->firestoreMock->method('fetchForPage')->willReturn([
+            'documents' => [],
+            'hasMore' => false,
+            'lastDocumentId' => null,
+        ]);
+
+        // Admin puede exportar todas las entidades
+        foreach (['categories', 'products', 'discounts', 'clients', 'orders', 'shipments'] as $entity) {
+            $response = $this->get(route('admin.export.csv', $entity));
+            $response->assertStatus(200, "Admin should be able to export {$entity}");
+        }
+    }
+
+    public function test_export_unauthenticated_user_denied(): void
+    {
         $response = $this->get(route('admin.export.csv', 'categories'));
 
         $response->assertStatus(403);

@@ -25,13 +25,20 @@ class ExportController
         'shipments' => 'Envíos',
     ];
 
+    private array $editorExportableEntities = [
+        'categories',
+        'subcategories',
+        'products',
+        'discounts',
+    ];
+
     public function export(string $entity)
     {
         if (! isset($this->exportableEntities[$entity])) {
             abort(404, 'Entidad no exportable.');
         }
 
-        $this->authorizeAdmin($entity);
+        $this->authorizeExport($entity);
 
         $documents = $this->fetchAllDocuments($entity);
         $csv = $this->generateEntityCsv($entity, $documents);
@@ -44,12 +51,22 @@ class ExportController
         ]);
     }
 
-    protected function authorizeAdmin(string $entity): void
+    protected function authorizeExport(string $entity): void
     {
         $user = auth()->user();
-        if (! $user || $user->role !== 'admin') {
-            abort(403, 'No tienes permiso para exportar.');
+        if (! $user) {
+            abort(403, 'No autenticado.');
         }
+
+        if ($user->role === 'admin') {
+            return;
+        }
+
+        if ($user->role === 'editor' && in_array($entity, $this->editorExportableEntities)) {
+            return;
+        }
+
+        abort(403, 'No tienes permiso para exportar esta entidad.');
     }
 
     protected function fetchAllDocuments(string $collection): array

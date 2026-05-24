@@ -1,17 +1,18 @@
 @php
     $entityMap = [
-        'categories' => 'categories',
-        'subcategories' => 'subcategories',
-        'products' => 'products',
-        'discounts' => 'discounts',
-        'clients' => 'clients',
-        'orders' => 'orders',
-        'shipments' => 'shipments',
+        'categories' => ['roles' => ['admin', 'editor']],
+        'subcategories' => ['roles' => ['admin', 'editor']],
+        'products' => ['roles' => ['admin', 'editor']],
+        'discounts' => ['roles' => ['admin', 'editor']],
+        'clients' => ['roles' => ['admin']],
+        'orders' => ['roles' => ['admin']],
+        'shipments' => ['roles' => ['admin']],
     ];
     $entity = $entityName ?? null;
+    $userRole = Auth::user()?->role ?? null;
 @endphp
 
-@if(in_array($entity, $entityMap))
+@if(isset($entityMap[$entity]) && $userRole && in_array($userRole, $entityMap[$entity]['roles']))
 <div class="dropdown">
     <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Opciones de exportación">
         <i class="bi bi-download"></i> Exportar
