@@ -252,12 +252,18 @@ class OrderControllerTest extends TestCase
     {
         $this->mockAuthUser('admin');
 
-        $this->firestoreMock->method('listDocuments')->willReturn([
+        $this->firestoreMock->method('fetchForPage')->willReturn([
             'documents' => [
                 ['client_name' => 'PEDIDOPENDIENTE', 'status' => 'pending'],
                 ['client_name' => 'PEDIDOCOMPLETO', 'status' => 'completed'],
             ],
-            'nextPageToken' => null,
+            'hasMore' => false,
+            'lastDocumentId' => null,
+        ]);
+
+        // Mock listDocuments for clients/products filter dropdowns
+        $this->firestoreMock->method('listDocuments')->willReturn([
+            'documents' => [],
         ]);
 
         $response = $this->get(route('admin.orders.index', ['status' => 'pending']));

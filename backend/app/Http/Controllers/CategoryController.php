@@ -74,20 +74,26 @@ class CategoryController extends Controller
     {
         $this->authorizeRequest('viewAny', $this->getModelClass());
 
-        $page = request()->get('page', 1);
+        $page = max(1, intval(request()->get('page', 1)));
+        $perPage = intval(request()->get('per_page', 10));
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
         $startAfter = request()->get('after');
         $search = request()->get('search');
         $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter);
-        $items = collect($result['documents']);
+        $fetchResult = $this->firestore->fetchForPage(
+            $this->getCollectionName(),
+            $perPage,
+            $startAfter,
+        );
+        $items = collect($fetchResult['documents'] ?? []);
 
-        // Apply search filter (name or slug)
+        // Apply search filter
         if ($search) {
             $items = $items->filter(function ($item) use ($search) {
                 return stripos($item['name'] ?? '', $search) !== false ||
                        stripos($item['slug'] ?? '', $search) !== false;
-            });
+            })->values();
         }
 
         // Apply status filter
@@ -97,16 +103,28 @@ class CategoryController extends Controller
 
                 return ($statusFilter === 'active' && $isActive) ||
                        ($statusFilter === 'inactive' && ! $isActive);
-            });
+            })->values();
         }
 
+        // Slice to current page
+        $totalFiltered = $items->count();
+        $totalPages = intval(ceil($totalFiltered / $perPage));
+        $offset = ($page - 1) * $perPage;
+        $pageItems = $items->slice($offset, $perPage)->values();
+
+        // Determine next cursor from the current page's last item
+        $lastDocumentId = $pageItems->last()['id'] ?? null;
+
         return view("{$this->getViewFolder()}.index", [
-            'categories' => $items,
+            'categories' => $pageItems,
             'search' => $search,
             'statusFilter' => $statusFilter,
-            'hasMore' => $result['hasMore'] ?? false,
-            'lastDocumentId' => $result['lastDocumentId'] ?? null,
+            'hasMore' => $page < $totalPages,
+            'lastDocumentId' => $lastDocumentId,
             'page' => $page,
+            'perPage' => $perPage,
+            'totalFiltered' => $totalFiltered,
+            'totalPages' => $totalPages,
         ]);
     }
 

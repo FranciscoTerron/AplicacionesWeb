@@ -44,7 +44,7 @@
             </tr>
         </thead>
         <tbody>
-            @forelse($items as $discount)
+            @forelse($discounts as $discount)
                 @php
                     $isActive = $discount['active'] ?? true;
                 @endphp

@@ -91,13 +91,20 @@ class ShipmentController extends Controller
     {
         $this->authorizeRequest('viewAny', $this->getModelClass());
 
-        $page = request()->get('page', 1);
+        $page = max(1, intval(request()->get('page', 1)));
+        $perPage = intval(request()->get('per_page', 10));
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
         $startAfter = request()->get('after');
         $search = request()->get('search');
         $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter, 'created_at');
-        $items = collect($result['documents']);
+        $fetchResult = $this->firestore->fetchForPage(
+            $this->getCollectionName(),
+            $perPage,
+            $startAfter,
+            'created_at',
+        );
+        $items = collect($fetchResult['documents'] ?? []);
 
         if ($search) {
             $items = $items->filter(function ($item) use ($search) {
@@ -105,26 +112,36 @@ class ShipmentController extends Controller
                     || stripos($item['order_id'] ?? '', $search) !== false
                     || stripos($item['carrier'] ?? '', $search) !== false
                     || stripos($item['address'] ?? '', $search) !== false;
-            });
+            })->values();
         }
 
         if ($statusFilter) {
-            $items = $items->where('status', $statusFilter);
+            $items = $items->where('status', $statusFilter)->values();
         }
 
         // Datos para el modal "new" (select de orden asociada, máx. 100).
         $ordersResult = $this->firestore->listDocuments('orders', 100, null, 'created_at');
         $orders = collect($ordersResult['documents'] ?? []);
 
+        // Paginate filtered results
+        $totalFiltered = $items->count();
+        $totalPages = intval(ceil($totalFiltered / $perPage));
+        $offset = ($page - 1) * $perPage;
+        $pageItems = $items->slice($offset, $perPage)->values();
+        $lastDocumentId = $pageItems->last()['id'] ?? null;
+
         return view("{$this->getViewFolder()}.index", [
-            'shipments' => $items,
+            'shipments' => $pageItems,
             'orders' => $orders,
             'statuses' => Shipment::statuses(),
             'search' => $search,
             'statusFilter' => $statusFilter,
-            'hasMore' => $result['hasMore'] ?? false,
-            'lastDocumentId' => $result['lastDocumentId'] ?? null,
+            'hasMore' => $page < $totalPages,
+            'lastDocumentId' => $lastDocumentId,
             'page' => $page,
+            'perPage' => $perPage,
+            'totalFiltered' => $totalFiltered,
+            'totalPages' => $totalPages,
         ]);
     }
 

@@ -57,36 +57,43 @@ class ProductController extends Controller
     {
         $this->authorizeRequest('viewAny', $this->getModelClass());
 
-        $page = request()->get('page', 1);
+        $page = max(1, intval(request()->get('page', 1)));
+        $perPage = intval(request()->get('per_page', 10));
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
         $startAfter = request()->get('after');
         $search = request()->get('search');
         $categoryFilter = request()->get('category');
         $subcategoryFilter = request()->get('subcategory');
         $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter);
-        $items = collect($result['documents']);
+        $fetchResult = $this->firestore->fetchForPage(
+            $this->getCollectionName(),
+            $perPage,
+            $startAfter,
+        );
+        $items = collect($fetchResult['documents'] ?? []);
 
-        // Apply search filter (by name or description)
+        // Apply search filter (by name, sku or description)
         if ($search) {
             $items = $items->filter(function ($item) use ($search) {
                 return stripos($item['name'] ?? '', $search) !== false ||
-                       stripos($item['description'] ?? '', $search) !== false;
-            });
+                       stripos($item['description'] ?? '', $search) !== false ||
+                       stripos($item['sku'] ?? '', $search) !== false;
+            })->values();
         }
 
         // Apply category filter
         if ($categoryFilter) {
             $items = $items->filter(function ($item) use ($categoryFilter) {
                 return ($item['category_id'] ?? '') === $categoryFilter;
-            });
+            })->values();
         }
 
         // Apply subcategory filter
         if ($subcategoryFilter) {
             $items = $items->filter(function ($item) use ($subcategoryFilter) {
                 return ($item['subcategory_id'] ?? '') === $subcategoryFilter;
-            });
+            })->values();
         }
 
         // Apply status filter (active/inactive)
@@ -96,10 +103,10 @@ class ProductController extends Controller
 
                 return ($statusFilter === 'active' && $isActive) ||
                        ($statusFilter === 'inactive' && ! $isActive);
-            });
+            })->values();
         }
 
-        // Load categories and subcategories for filter dropdowns
+        // Bulk-fetch categories and subcategories for filter dropdowns
         $categoriesResult = $this->firestore->listDocuments('categories', 100);
         $categories = collect($categoriesResult['documents'] ?? [])->where('active', true)->map(function ($category) {
             if (! isset($category['id']) && isset($category['_document_path'])) {
@@ -122,17 +129,27 @@ class ProductController extends Controller
                 return $subcategory;
             });
 
+        // Paginate filtered results
+        $totalFiltered = $items->count();
+        $totalPages = intval(ceil($totalFiltered / $perPage));
+        $offset = ($page - 1) * $perPage;
+        $pageItems = $items->slice($offset, $perPage)->values();
+        $lastDocumentId = $pageItems->last()['id'] ?? null;
+
         return ViewFacade::make("{$this->getViewFolder()}.index", [
-            'products' => $items,
+            'products' => $pageItems,
             'categories' => $categories,
             'subcategories' => $subcategories,
             'search' => $search,
             'categoryFilter' => $categoryFilter,
             'subcategoryFilter' => $subcategoryFilter,
             'statusFilter' => $statusFilter,
-            'hasMore' => $result['hasMore'] ?? false,
-            'lastDocumentId' => $result['lastDocumentId'] ?? null,
+            'hasMore' => $page < $totalPages,
+            'lastDocumentId' => $lastDocumentId,
             'page' => $page,
+            'perPage' => $perPage,
+            'totalFiltered' => $totalFiltered,
+            'totalPages' => $totalPages,
         ]);
     }
 

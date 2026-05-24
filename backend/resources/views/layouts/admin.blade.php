@@ -525,7 +525,20 @@
     </div>
 </div>
 
- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
- @yield('scripts')
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  // Pagination per_page selector
+  document.querySelectorAll('.per-page-select').forEach(function (select) {
+      select.addEventListener('change', function () {
+          var route = this.getAttribute('data-route');
+          var perPage = this.value;
+          var url = new URL(window.location.href);
+          url.searchParams.set('per_page', perPage);
+          url.searchParams.set('page', '1'); // reset to page 1 on size change
+          window.location.href = url.toString();
+      });
+  });
+  </script>
+  @yield('scripts')
 </body>
 </html>

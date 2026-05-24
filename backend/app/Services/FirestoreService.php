@@ -220,6 +220,137 @@ class FirestoreService
         Http::withToken($this->accessToken)->delete($url);
     }
 
+    /**
+     * Count the total number of documents in a collection.
+     */
+    public function countDocuments(string $collection): int
+    {
+        $url = "{$this->baseUrl}/{$collection}:runAggregationQuery";
+
+        $body = [
+            'structuredAggregationQuery' => [
+                'aggregations' => [
+                    ['count' => new \stdClass],
+                ],
+                'structuredQuery' => [
+                    'from' => [['collectionId' => $collection]],
+                ],
+            ],
+        ];
+
+        $response = Http::withToken($this->accessToken)->post($url, $body);
+
+        if ($response->failed()) {
+            throw new Exception('Firestore count query failed: '.$response->body());
+        }
+
+        $result = $response->json();
+        $count = $result['aggregationResults'][0]['aggregateProperties']['integerValue'] ?? '0';
+
+        return (int) $count;
+    }
+
+    /**
+     * Count documents that would match a structured query.
+     */
+    public function countDocumentsWithQuery(string $collection, array $filters = []): int
+    {
+        $url = "{$this->baseUrl}/:runAggregationQuery";
+
+        $structuredQuery = [
+            'from' => [['collectionId' => $collection]],
+        ];
+
+        if ($filters) {
+            $structuredQuery['where'] = [
+                'compositeFilter' => [
+                    'op' => 'AND',
+                    'filters' => [],
+                ],
+            ];
+            foreach ($filters as $field => $value) {
+                $structuredQuery['where']['compositeFilter']['filters'][] = [
+                    'fieldFilter' => [
+                        'field' => ['fieldPath' => $field],
+                        'op' => 'EQUAL',
+                        'value' => $this->encodeValue($value),
+                    ],
+                ];
+            }
+            /** @phpstan-ignore-next-line filters initialised as [] so can be empty at runtime */
+            if (empty($structuredQuery['where']['compositeFilter']['filters'])) {
+                unset($structuredQuery['where']);
+            }
+        }
+
+        $body = [
+            'structuredAggregationQuery' => [
+                'aggregations' => [
+                    ['count' => new \stdClass],
+                ],
+                'structuredQuery' => $structuredQuery,
+            ],
+        ];
+
+        $response = Http::withToken($this->accessToken)->post($url, $body);
+
+        if ($response->failed()) {
+            throw new Exception('Firestore count query failed: '.$response->body());
+        }
+
+        $result = $response->json();
+        $count = $result['aggregationResults'][0]['aggregateProperties']['integerValue'] ?? '0';
+
+        return (int) $count;
+    }
+
+    /**
+     * Returns documents with pagination info suitable for server-side filtering.
+     * Fetches enough documents so that after client-side filtering there are enough
+     * results to fill the requested page. Uses listDocuments internally in a loop.
+     */
+    public function fetchForPage(
+        string $collection,
+        int $perPage,
+        ?string $startAfter = null,
+        string $orderBy = 'name',
+        int $maxBatches = 6,
+    ): array {
+        $fetchLimit = $perPage * $maxBatches;
+        $documents = [];
+        $cursor = $startAfter;
+        $hasMore = false;
+        $lastDocId = null;
+        $batch = 0;
+
+        do {
+            $limit = min($fetchLimit - count($documents), $perPage * 2);
+            if ($limit <= 0) {
+                break;
+            }
+
+            $result = $this->listDocuments($collection, $limit, $cursor, $orderBy);
+            $documents = array_merge($documents, $result['documents']);
+            $hasMore = $result['hasMore'];
+
+            if (! empty($result['documents'])) {
+                $lastDocId = end($result['documents'])['id'] ?? end($result['documents'])['_document_path'] ?? null;
+            }
+
+            if ($result['hasMore'] && ! empty($result['documents'])) {
+                $cursor = end($result['documents'])['id'] ?? end($result['documents'])['_document_path'] ?? null;
+            }
+
+            $batch++;
+        } while ($hasMore && $batch < $maxBatches && count($documents) < $fetchLimit);
+
+        return [
+            'documents' => $documents,
+            'hasMore' => $hasMore,
+            'lastDocumentId' => $lastDocId,
+        ];
+    }
+
     public function listDocuments(string $collection, int $limit = 20, ?string $startAfter = null, string $orderBy = 'name'): array
     {
         // Use structured query for cursor-based pagination

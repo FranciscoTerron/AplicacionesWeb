@@ -23,24 +23,20 @@ class SubcategoryControllerTest extends TestCase
     {
         $this->mockAuthUser('admin');
 
-        // Mock both listDocuments calls (subcategories first, then categories)
-        $this->firestoreMock->expects($this->exactly(2))
-            ->method('listDocuments')
-            ->willReturnOnConsecutiveCalls(
-                // First call: subcategories
-                [
-                    'documents' => [
-                        ['id' => 'sub1', 'name' => 'Cloro Líquido', 'category_id' => 'cat1', 'active' => true],
-                    ],
-                    'hasMore' => false,
-                ],
-                // Second call: categories
-                [
-                    'documents' => [
-                        ['id' => 'cat1', 'name' => 'Piscinas', 'active' => true],
-                    ],
-                ]
-            );
+        $this->firestoreMock->method('fetchForPage')->willReturn([
+            'documents' => [
+                ['id' => 'sub1', 'name' => 'Cloro Líquido', 'category_id' => 'cat1', 'active' => true],
+            ],
+            'hasMore' => false,
+            'lastDocumentId' => null,
+        ]);
+
+        // Mock listDocuments for the categories filter dropdown
+        $this->firestoreMock->method('listDocuments')->willReturn([
+            'documents' => [
+                ['id' => 'cat1', 'name' => 'Piscinas', 'active' => true],
+            ],
+        ]);
 
         $response = $this->get(route('admin.subcategories.index'));
 
