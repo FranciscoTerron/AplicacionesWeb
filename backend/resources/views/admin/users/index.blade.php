@@ -95,146 +95,153 @@
     let currentAction = '';
     let currentUser = null;
 
-    function openModal(action, user) {
-        @if(!$isAdmin)
-        // Solo admin puede crear/editar/eliminar usuarios
-        if (action === 'new' || action === 'edit' || action === 'delete' || action === 'activate') {
-            return;
-        }
-        @endif
+     function openModal(action, user) {
+         @if(!$isAdmin)
+         // Solo admin puede crear/editar/eliminar usuarios
+         if (action === 'new' || action === 'edit' || action === 'delete' || action === 'activate') {
+             return;
+         }
+         @endif
 
-        currentAction = action;
-        currentUser = user;
-        const titleEl = document.getElementById('modalTitle');
-        const bodyEl = document.getElementById('modalBody');
-        const footerEl = document.getElementById('modalFooter');
-        const formEl = document.getElementById('modalForm');
+         currentAction = action;
+         currentUser = user;
+         const titleEl = document.getElementById('modalTitle');
+         const bodyEl = document.getElementById('modalBody');
+         const footerEl = document.getElementById('modalFooter');
+         const formEl = document.getElementById('modalForm');
 
-        if (action === 'show') {
-            titleEl.textContent = 'Detalles del Usuario';
-            bodyEl.innerHTML = `
-                <div class="text-center mb-3">
-                </div>
-                <p><strong>Nombre:</strong> ${escapeHtml(user.name)}</p>
-                <p><strong>Email:</strong> ${escapeHtml(user.email)}</p>
-                <p><strong>Rol:</strong> ${user.role === 'admin' ?
-                    '<span class="badge bg-primary">Administrador</span>' :
-                    '<span class="badge bg-secondary">Editor</span>'}</p>
-                <p><strong>Estado:</strong> ${user.active ?
-                    '<span class="badge bg-success">Activo</span>' :
-                    '<span class="badge bg-danger">Bloqueado</span>'}</p>
-            `;
-            footerEl.innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            `;
-            formEl.setAttribute('method', 'GET');
+         if (action === 'show') {
+             titleEl.textContent = 'Detalles del Usuario';
+             bodyEl.innerHTML = `
+                 <div class="text-center mb-3">
+                 </div>
+                 <p><strong>Nombre:</strong> ${escapeHtml(user.name)}</p>
+                 <p><strong>Email:</strong> ${escapeHtml(user.email)}</p>
+                 <p><strong>Rol:</strong> ${user.role === 'admin' ?
+                     '<span class="badge bg-primary">Administrador</span>' :
+                     '<span class="badge bg-secondary">Editor</span>'}</p>
+                 <p><strong>Estado:</strong> ${user.active ?
+                     '<span class="badge bg-success">Activo</span>' :
+                     '<span class="badge bg-danger">Bloqueado</span>'}</p>
+             `;
+             footerEl.innerHTML = `
+                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+             `;
+             formEl.setAttribute('method', 'GET');
 
-        } else if (action === 'new') {
-            titleEl.textContent = 'Nuevo Usuario';
-            bodyEl.innerHTML = `
-                <div class="mb-3">
-                    <label class="form-label">Nombre</label>
-                    <input type="text" name="name" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Contraseña</label>
-                    <input type="password" name="password" class="form-control" required minlength="8">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Confirmar contraseña</label>
-                    <input type="password" name="password_confirmation" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Rol</label>
-                    <select name="role" class="form-select">
-                        <option value="editor">Editor</option>
-                        <option value="admin">Administrador</option>
-                    </select>
-                </div>
-            `;
-            footerEl.innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Crear Usuario</button>
-            `;
-            formEl.setAttribute('method', 'POST');
-            formEl.setAttribute('action', '/admin/users');
+         } else if (action === 'new') {
+             titleEl.textContent = 'Nuevo Usuario';
+             bodyEl.innerHTML = `
+                 <div class="mb-3">
+                     <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                     <input type="text" name="name" class="form-control" required aria-label="Nombre">
+                 </div>
+                 <div class="mb-3">
+                     <label class="form-label">Email <span class="text-danger">*</span></label>
+                     <input type="email" name="email" class="form-control" required aria-label="Email">
+                 </div>
+                 <div class="mb-3">
+                     <label class="form-label">Contraseña <span class="text-danger">*</span></label>
+                     <input type="password" name="password" class="form-control" required minlength="8" aria-label="Contraseña">
+                 </div>
+                 <div class="mb-3">
+                     <label class="form-label">Confirmar contraseña <span class="text-danger">*</span></label>
+                     <input type="password" name="password_confirmation" class="form-control" required aria-label="Confirmar contraseña">
+                 </div>
+                 <div class="mb-3">
+                     <label class="form-label">Rol</label>
+                     <select name="role" class="form-select">
+                         <option value="editor">Editor</option>
+                         <option value="admin">Administrador</option>
+                     </select>
+                 </div>
+             `;
+             footerEl.innerHTML = `
+                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                 <button type="submit" class="btn btn-primary">Crear Usuario</button>
+             `;
+             formEl.setAttribute('method', 'POST');
+             formEl.setAttribute('action', '/admin/users');
 
-        } else if (action === 'edit') {
-            titleEl.textContent = 'Editar Usuario';
-            bodyEl.innerHTML = `
-                <div class="mb-3">
-                    <label class="form-label">Nombre</label>
-                    <input type="text" name="name" class="form-control" value="${escapeHtml(user.name)}" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control" value="${escapeHtml(user.email)}" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Rol</label>
-                    <select name="role" class="form-select">
-                        <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Administrador</option>
-                        <option value="editor" ${user.role === 'editor' ? 'selected' : ''}>Editor</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Nueva contraseña (dejar en blanco para mantener)</label>
-                    <input type="password" name="password" class="form-control" placeholder="Mínimo 8 caracteres">
-                    <div class="form-text">Si no completas este campo, la contraseña actual se mantendrá.</div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Confirmar nueva contraseña</label>
-                    <input type="password" name="password_confirmation" class="form-control" placeholder="Repite la nueva contraseña">
-                    <div class="form-text">Solo si cambias la contraseña arriba.</div>
-                </div>
-                <input type="hidden" name="_method" value="PUT">
-            `;
-            footerEl.innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-            `;
-            formEl.setAttribute('method', 'POST');
-            formEl.setAttribute('action', '/admin/users/' + user.id);
+         } else if (action === 'edit') {
+             titleEl.textContent = 'Editar Usuario';
+             bodyEl.innerHTML = `
+                 <div class="mb-3">
+                     <label class="form-label">Nombre <span class="text-danger">*</span></label>
+                     <input type="text" name="name" class="form-control" value="${escapeHtml(user.name)}" required aria-label="Nombre">
+                 </div>
+                 <div class="mb-3">
+                     <label class="form-label">Email <span class="text-danger">*</span></label>
+                     <input type="email" name="email" class="form-control" value="${escapeHtml(user.email)}" required aria-label="Email">
+                 </div>
+                 <div class="mb-3">
+                     <label class="form-label">Rol</label>
+                     <select name="role" class="form-select" aria-label="Rol">
+                         <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Administrador</option>
+                         <option value="editor" ${user.role === 'editor' ? 'selected' : ''}>Editor</option>
+                     </select>
+                 </div>
+                 <div class="mb-3">
+                     <label class="form-label">Nueva contraseña (dejar en blanco para mantener)</label>
+                     <input type="password" name="password" class="form-control" placeholder="Mínimo 8 caracteres" aria-label="Nueva contraseña">
+                     <div class="form-text">Si no completas este campo, la contraseña actual se mantendrá.</div>
+                 </div>
+                 <div class="mb-3">
+                     <label class="form-label">Confirmar nueva contraseña</label>
+                     <input type="password" name="password_confirmation" class="form-control" placeholder="Repite la nueva contraseña" aria-label="Confirmar nueva contraseña">
+                     <div class="form-text">Solo si cambias la contraseña arriba.</div>
+                 </div>
+                 <input type="hidden" name="_method" value="PUT">
+             `;
+             footerEl.innerHTML = `
+                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                 <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+             `;
+             formEl.setAttribute('method', 'POST');
+             formEl.setAttribute('action', '/admin/users/' + user.id);
 
-        } else if (action === 'delete') {
-            titleEl.textContent = 'Bloquear Usuario';
-            bodyEl.innerHTML = `
-                <div class="text-center">
-                    <p class="mt-3">¿Estás seguro de bloquear al usuario <strong>${escapeHtml(user.name)}</strong>?</p>
-                    <p class="text-muted mb-0">Esta acción evitará que el usuario acceda al sistema.</p>
-                </div>
-                <input type="hidden" name="_method" value="DELETE">
-            `;
-            footerEl.innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" class="btn btn-danger">Bloquear Usuario</button>
-            `;
-            formEl.setAttribute('method', 'POST');
-            formEl.setAttribute('action', '/admin/users/' + user.id);
+         } else if (action === 'delete') {
+             titleEl.textContent = 'Bloquear Usuario';
+             bodyEl.innerHTML = `
+                 <div class="text-center">
+                     <p class="mt-3">¿Estás seguro de bloquear al usuario <strong>${escapeHtml(user.name)}</strong>?</p>
+                     <p class="text-muted mb-0">Esta acción evitará que el usuario acceda al sistema.</p>
+                 </div>
+                 <input type="hidden" name="_method" value="DELETE">
+             `;
+             footerEl.innerHTML = `
+                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                 <button type="submit" class="btn btn-danger">Bloquear Usuario</button>
+             `;
+             formEl.setAttribute('method', 'POST');
+             formEl.setAttribute('action', '/admin/users/' + user.id);
 
-        } else if (action === 'activate') {
-            titleEl.textContent = 'Desbloquear Usuario';
-            bodyEl.innerHTML = `
-                <div class="text-center">
-                    <p class="mt-3">¿Estás seguro de desbloquear al usuario <strong>${escapeHtml(user.name)}</strong>?</p>
-                    <p class="text-muted mb-0">El usuario podrá acceder al sistema normalmente.</p>
-                </div>
-                <input type="hidden" name="_method" value="POST">
-            `;
-            footerEl.innerHTML = `
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" formmethod="post" class="btn btn-success">Desbloquear Usuario</button>
-            `;
-            formEl.setAttribute('method', 'POST');
-            formEl.setAttribute('action', '/admin/users/' + user.id + '/activate');
-        }
+         } else if (action === 'activate') {
+             titleEl.textContent = 'Desbloquear Usuario';
+             bodyEl.innerHTML = `
+                 <div class="text-center">
+                     <p class="mt-3">¿Estás seguro de desbloquear al usuario <strong>${escapeHtml(user.name)}</strong>?</p>
+                     <p class="text-muted mb-0">El usuario podrá acceder al sistema normalmente.</p>
+                 </div>
+                 <input type="hidden" name="_method" value="POST">
+             `;
+             footerEl.innerHTML = `
+                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                 <button type="submit" formmethod="post" class="btn btn-success">Desbloquear Usuario</button>
+             `;
+             formEl.setAttribute('method', 'POST');
+             formEl.setAttribute('action', '/admin/users/' + user.id + '/activate');
+         }
 
-        modal.show();
-    }
+         modal.show();
+         // Focus first input when modal opens
+         setTimeout(() => {
+             const firstInput = bodyEl.querySelector('input, select, textarea');
+             if (firstInput) {
+                 firstInput.focus();
+             }
+         }, 300);
+     }
 
     function escapeHtml(text) {
         const div = document.createElement('div');

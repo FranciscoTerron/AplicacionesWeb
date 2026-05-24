@@ -22,16 +22,18 @@
     <td class="text-end" style="white-space: nowrap">
         <!-- Ver -->
         <button type="button" class="btn btn-sm btn-outline-primary"
-            onclick="openModal('show', {{ json_encode($subcategory) }})"
-            title="Ver detalles">
+            onclick="openModal('show', {{ json_encode($subcategory) }}, this)"
+            title="Ver detalles"
+            aria-label="Ver detalles de {{ $subcategory['name'] ?? '' }}">
             <i class="bi bi-eye"></i> Ver
         </button>
 
         <!-- Editar -->
         @if($canManage ?? $isAdmin)
             <button type="button" class="btn btn-sm btn-outline-secondary"
-                onclick="openModal('edit', {{ json_encode($subcategory) }})"
-                title="Editar">
+                onclick="openModal('edit', {{ json_encode($subcategory) }}, this)"
+                title="Editar"
+                aria-label="Editar {{ $subcategory['name'] ?? '' }}">
                 <i class="bi bi-pencil"></i> Editar
             </button>
         @else
@@ -45,14 +47,16 @@
         @if($canManage ?? $isAdmin)
             @if($isActive)
                 <button type="button" class="btn btn-sm btn-outline-danger"
-                    onclick="openModal('deactivate', {{ json_encode($subcategory) }})"
-                    title="Desactivar subcategoría">
+                    onclick="openModal('deactivate', {{ json_encode($subcategory) }}, this)"
+                    title="Desactivar subcategoría"
+                    aria-label="Desactivar {{ $subcategory['name'] ?? '' }}">
                     <i class="bi bi-lock"></i> Desactivar
                 </button>
             @else
                 <button type="button" class="btn btn-sm btn-outline-success"
-                    onclick="openModal('activate', {{ json_encode($subcategory) }})"
-                    title="Activar subcategoría">
+                    onclick="openModal('activate', {{ json_encode($subcategory) }}, this)"
+                    title="Activar subcategoría"
+                    aria-label="Activar {{ $subcategory['name'] ?? '' }}">
                     <i class="bi bi-unlock"></i> Activar
                 </button>
             @endif

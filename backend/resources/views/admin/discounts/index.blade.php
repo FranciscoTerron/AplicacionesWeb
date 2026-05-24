@@ -16,7 +16,7 @@
         <h1>Descuentos</h1>
     </div>
     @if($isAdmin)
-        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewDiscount">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewDiscount" aria-label="Crear nuevo descuento">
             <i class="bi bi-plus-circle"></i> Nuevo Descuento
         </button>
     @endif
@@ -55,7 +55,7 @@
                         <i class="bi bi-percent display-6"></i>
                         <p class="lead mt-2">No hay descuentos registrados</p>
                         @if($isAdmin)
-                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btnNewDiscountEmpty">
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="btnNewDiscountEmpty" aria-label="Crear primer descuento">
                                 <i class="bi bi-plus-circle"></i> Crear primer descuento
                             </button>
                         @endif
@@ -69,14 +69,14 @@
 @include('admin.discounts.partials._pagination')
 
 <!-- Modal Único Dinámico -->
-<div class="modal fade" id="discountModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="discountModal" tabindex="-1" aria-hidden="true" aria-labelledby="modalTitle">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalTitle">-</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="modalForm" action="#" method="POST">
+            <form id="modalForm" action="#" method="POST" aria-describedby="modalDescription">
                 @csrf
                 @method('POST')
                 <div class="modal-body" id="modalBody">
@@ -89,11 +89,15 @@
         </div>
     </div>
 </div>
-
 @endsection
+
+@include('admin.partials._modal_focus')
+
 @section('scripts')
 <script>
-    const modal = new bootstrap.Modal(document.getElementById('discountModal'));
+    let modal = null;
+    let modalElement = null;
+    let lastFocusedButton = null;
     let currentAction = '';
     let currentDiscount = null;
 
@@ -102,9 +106,18 @@
     let totalSteps = 4;
     let formData = {};
 
-    function openModal(action, discount) {
+    function openModal(action, discount, triggerButton) {
+        if (!modal) {
+            modalElement = document.getElementById('discountModal');
+            if (!modalElement) return;
+            modal = new bootstrap.Modal(modalElement);
+        }
+        
+        ModalFocusManager.rememberFocus();
+        lastFocusedButton = triggerButton || document.activeElement;
         currentAction = action;
         currentDiscount = discount;
+
         const titleEl = document.getElementById('modalTitle');
         const bodyEl = document.getElementById('modalBody');
         const footerEl = document.getElementById('modalFooter');
@@ -305,7 +318,7 @@
 
             bodyEl.innerHTML = `
                 <div class="deactivation-modal">
-                    <div class="alert alert-danger">
+                    <div class="alert alert-danger" role="alert">
                         <i class="bi bi-exclamation-triangle-fill"></i>
                         <strong>¿Estás seguro de desactivar este descuento?</strong>
                     </div>
@@ -329,7 +342,7 @@
                         </div>
                     </div>
 
-                    <div class="impact-alert alert alert-warning">
+                    <div class="impact-alert alert alert-warning" role="alert">
                         <h6 class="alert-heading mb-2"><i class="bi bi-info-circle"></i> Impacto de la desactivación:</h6>
                         <ul class="mb-0">
                             <li>Los clientes <strong>ya no podrán utilizar</strong> este descuento</li>
@@ -382,7 +395,7 @@
 
             bodyEl.innerHTML = `
                 <div class="activation-modal">
-                    <div class="alert alert-success">
+                    <div class="alert alert-success" role="alert">
                         <i class="bi bi-check-circle-fill"></i>
                         <strong>¿Estás seguro de reactivar este descuento?</strong>
                     </div>
@@ -409,7 +422,7 @@
                     </div>
 
                     ${isExpired ? `
-                        <div class="alert alert-warning">
+                        <div class="alert alert-warning" role="alert">
                             <i class="bi bi-exclamation-triangle"></i>
                             <strong>Nota:</strong> Este descuento está configurado para expirar el ${validTo.toLocaleDateString('es-ES')}.
                             Si lo reactivas ahora, seguirá funcionando hasta esa fecha.
@@ -439,8 +452,22 @@
             formEl.setAttribute('action', '/admin/discounts/' + discount.id + '/activate');
         }
 
+        ModalFocusManager.trapFocus(modalElement);
         modal.show();
+
+        const firstInput = modalElement.querySelector('input:not([type="hidden"]), textarea, select');
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 150);
+        }
     }
+
+    modalElement?.addEventListener('hide.bs.modal', function () {
+        setTimeout(() => {
+            if (lastFocusedButton) {
+                lastFocusedButton.focus();
+            }
+        }, 150);
+    });
 
     function getAppliesToText(appliesTo) {
         switch(appliesTo) {
@@ -580,26 +607,30 @@
             <div class="step-content">
                 <div class="mb-3">
                     <label class="form-label">Código <span class="text-danger">*</span></label>
-                    <input type="text" name="code" class="form-control" value="${escapeHtml(formData.code)}" required
-                           placeholder="Ej: VERANO20" maxlength="50">
-                    <div class="form-text">Código alfanumérico único, se guardará en mayúsculas.</div>
+                    <input type="text" name="code" class="form-control" value="${escapeHtml(formData.code)}" required aria-required="true"
+                           placeholder="Ej: VERANO20" maxlength="50"
+                           aria-describedby="codeStepHelp">
+                    <div class="form-text" id="codeStepHelp">Código alfanumérico único, se guardará en mayúsculas.</div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Nombre <span class="text-danger">*</span></label>
-                    <input type="text" name="name" class="form-control" value="${escapeHtml(formData.name)}" required
-                           placeholder="Ej: Descuento Verano 20%" maxlength="255">
+                    <input type="text" name="name" class="form-control" value="${escapeHtml(formData.name)}" required aria-required="true"
+                           placeholder="Ej: Descuento Verano 20%" maxlength="255"
+                           aria-describedby="nameStepHelp">
+                    <div class="form-text" id="nameStepHelp">Nombre descriptivo del descuento.</div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Descripción</label>
                     <textarea name="description" class="form-control" rows="3" maxlength="1000"
-                              placeholder="Descripción opcional del descuento">${escapeHtml(formData.description)}</textarea>
+                              placeholder="Descripción opcional del descuento" aria-describedby="descStepHelp">${escapeHtml(formData.description)}</textarea>
+                    <div class="form-text" id="descStepHelp">Descripción corta del descuento (opcional).</div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Tipo de Descuento <span class="text-danger">*</span></label>
-                    <select name="discount_type" class="form-select" required>
+                    <select name="discount_type" class="form-select" required aria-required="true" aria-label="Tipo de descuento">
                         <option value="percentage" ${formData.discount_type === 'percentage' ? 'selected' : ''}>Porcentaje (%)</option>
                         <option value="fixed" ${formData.discount_type === 'fixed' ? 'selected' : ''}>Importe Fijo ($)</option>
                     </select>
@@ -616,10 +647,10 @@
                     <label class="form-label">Valor del Descuento <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <input type="number" name="value" class="form-control" value="${formData.value}"
-                               step="0.01" min="0" required>
+                               step="0.01" min="0" required aria-required="true" aria-describedby="valueStepHelp">
                         <span class="input-group-text">${isPercentage ? '%' : '$'}</span>
                     </div>
-                    <div class="form-text">
+                    <div class="form-text" id="valueStepHelp">
                         ${isPercentage ? 'Valor entre 0 y 100 para porcentajes.' : 'Monto en pesos para descuento fijo.'}
                     </div>
                 </div>
@@ -627,13 +658,14 @@
                 <div class="mb-3">
                     <label class="form-label">Usos Máximos</label>
                     <input type="number" name="max_uses" class="form-control" value="${formData.max_uses}"
-                           min="1" placeholder="Dejar vacío para usos ilimitados">
-                    <div class="form-text">Número máximo de veces que se puede utilizar este descuento.</div>
+                           min="1" placeholder="Dejar vacío para usos ilimitados"
+                           aria-describedby="maxUsesStepHelp">
+                    <div class="form-text" id="maxUsesStepHelp">Número máximo de veces que se puede utilizar este descuento.</div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Aplicar a <span class="text-danger">*</span></label>
-                    <select name="applies_to" class="form-select" required>
+                    <select name="applies_to" class="form-select" required aria-required="true" aria-label="Aplicación del descuento">
                         <option value="all" ${formData.applies_to === 'all' ? 'selected' : ''}>Todos los productos</option>
                         <option value="categories" ${formData.applies_to === 'categories' ? 'selected' : ''}>Categorías específicas</option>
                         <option value="products" ${formData.applies_to === 'products' ? 'selected' : ''}>Productos específicos</option>
@@ -678,14 +710,17 @@
 
                 <div class="mb-3">
                     <label class="form-label">Válido Desde <span class="text-danger">*</span></label>
-                    <input type="datetime-local" name="valid_from" class="form-control" value="${defaultFrom}" required>
-                    <div class="form-text">Fecha y hora a partir de la cual el descuento estará disponible.</div>
+                    <input type="datetime-local" name="valid_from" class="form-control" value="${defaultFrom}" required aria-required="true"
+                           aria-describedby="validFromStepHelp">
+                    <div class="form-text" id="validFromStepHelp">Fecha y hora a partir de la cual el descuento estará disponible.</div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Válido Hasta <span class="text-danger">*</span></label>
-                    <input type="datetime-local" name="valid_to" class="form-control" value="${defaultTo}" required>
-                    <div class="form-text">Fecha y hora hasta la cual el descuento estará disponible.</div>
+                    <input type="datetime-local" name="valid_to" class="form-control" value="${defaultTo}" required aria-required="true"
+                           aria-describedby="validToStepHelp">
+                    <div class="form-text" id="validToStepHelp">Fecha y hora hasta la cual el descuento estará disponible.</div>
+                </div>
                 </div>
 
                 <div class="mb-3">
@@ -811,11 +846,11 @@
                 isValid = false;
             }
 
-            if (input.name === 'valid_from' && input.name === 'valid_to') {
+            if (input.name === 'valid_to' && formData.valid_from) {
                 const fromDate = new Date(formData.valid_from);
                 const toDate = new Date(formData.valid_to);
                 if (fromDate >= toDate) {
-                    showFieldError(document.querySelector('[name="valid_to"]'), 'La fecha de fin debe ser posterior a la fecha de inicio.');
+                    showFieldError(input, 'La fecha de fin debe ser posterior a la fecha de inicio.');
                     isValid = false;
                 }
             }
@@ -850,8 +885,14 @@
 
     function showFieldError(input, message) {
         input.classList.add('is-invalid');
+        const errorId = input.name + '-error-' + Date.now();
+        input.setAttribute('aria-invalid', 'true');
+        const existingDesc = input.getAttribute('aria-describedby');
+        input.setAttribute('aria-describedby', existingDesc ? existingDesc + ' ' + errorId : errorId);
         const errorDiv = document.createElement('div');
         errorDiv.className = 'invalid-feedback';
+        errorDiv.id = errorId;
+        errorDiv.setAttribute('role', 'alert');
         errorDiv.textContent = message;
         input.parentNode.appendChild(errorDiv);
     }
@@ -940,24 +981,26 @@
 
                 <div class="mb-3">
                     <label class="form-label">Código</label>
-                    <input type="text" name="code" class="form-control${hasCodeError ? '' : ' bg-light'}" value="${escapeHtml(formData.code)}"${hasCodeError ? '' : ' readonly'}>
-                    <div class="form-text text-muted">${hasCodeError ? 'Corrige el código duplicado.' : 'El código no se puede modificar.'}</div>
+                    <input type="text" name="code" class="form-control${hasCodeError ? '' : ' bg-light'}" value="${escapeHtml(formData.code)}"${hasCodeError ? '' : ' readonly'} aria-describedby="codeEditHelp">
+                    <div class="form-text text-muted" id="codeEditHelp">${hasCodeError ? 'Corrige el código duplicado.' : 'El código no se puede modificar.'}</div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Nombre <span class="text-danger">*</span></label>
-                    <input type="text" name="name" class="form-control" value="${escapeHtml(formData.name)}" required maxlength="255">
+                    <input type="text" name="name" class="form-control" value="${escapeHtml(formData.name)}" required aria-required="true" maxlength="255" aria-describedby="nameEditHelp">
+                    <div class="form-text" id="nameEditHelp">Nombre descriptivo del descuento.</div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Descripción</label>
-                    <textarea name="description" class="form-control" rows="3" maxlength="1000">${escapeHtml(formData.description)}</textarea>
+                    <textarea name="description" class="form-control" rows="3" maxlength="1000" aria-describedby="descEditHelp">${escapeHtml(formData.description)}</textarea>
+                    <div class="form-text" id="descEditHelp">Descripción corta del descuento (opcional).</div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Tipo de Descuento</label>
-                    <input type="text" class="form-control bg-light" value="${formData.discount_type === 'percentage' ? 'Porcentaje (%)' : 'Importe Fijo ($)'}" readonly>
-                    <div class="form-text text-muted">El tipo no se puede modificar.</div>
+                    <input type="text" class="form-control bg-light" value="${formData.discount_type === 'percentage' ? 'Porcentaje (%)' : 'Importe Fijo ($)'}" readonly aria-describedby="typeEditHelp">
+                    <div class="form-text text-muted" id="typeEditHelp">El tipo no se puede modificar.</div>
                 </div>
             </div>
         `;
@@ -970,7 +1013,7 @@
         return `
             <div class="step-content">
                 ${hasBeenUsed ? `
-                    <div class="alert alert-warning">
+                    <div class="alert alert-warning" role="alert">
                         <i class="bi bi-exclamation-triangle"></i>
                         Este descuento ya ha sido utilizado ${formData.used_count} ${formData.used_count === 1 ? 'vez' : 'veces'}.
                         Solo puedes aumentar los usos máximos, no reducirlos.
@@ -981,10 +1024,10 @@
                     <label class="form-label">Valor del Descuento <span class="text-danger">*</span></label>
                     <div class="input-group">
                         <input type="number" name="value" class="form-control" value="${formData.value}"
-                               step="0.01" min="0" required>
+                               step="0.01" min="0" required aria-required="true" aria-describedby="valueEditHelp">
                         <span class="input-group-text">${isPercentage ? '%' : '$'}</span>
                     </div>
-                    <div class="form-text">
+                    <div class="form-text" id="valueEditHelp">
                         ${isPercentage ? 'Valor entre 0 y 100 para porcentajes.' : 'Monto en pesos para descuento fijo.'}
                     </div>
                 </div>
@@ -992,8 +1035,9 @@
                 <div class="mb-3">
                     <label class="form-label">Usos Máximos</label>
                     <input type="number" name="max_uses" class="form-control" value="${formData.max_uses}"
-                           min="${hasBeenUsed ? formData.used_count : 1}" placeholder="Dejar vacío para usos ilimitados">
-                    <div class="form-text">
+                           min="${hasBeenUsed ? formData.used_count : 1}" placeholder="Dejar vacío para usos ilimitados"
+                           aria-describedby="maxUsesEditHelp">
+                    <div class="form-text" id="maxUsesEditHelp">
                         ${hasBeenUsed ?
                             `Debe ser al menos ${formData.used_count} (ya utilizado).` :
                             'Número máximo de veces que se puede utilizar este descuento.'
@@ -1028,21 +1072,24 @@
 
                 <div class="mb-3">
                     <label class="form-label">Válido Desde <span class="text-danger">*</span></label>
-                    <input type="datetime-local" name="valid_from" class="form-control" value="${formData.valid_from}" required>
-                    <div class="form-text">Fecha y hora a partir de la cual el descuento estará disponible.</div>
+                    <input type="datetime-local" name="valid_from" class="form-control" value="${formData.valid_from}" required aria-required="true"
+                           aria-describedby="validFromEditHelp">
+                    <div class="form-text" id="validFromEditHelp">Fecha y hora a partir de la cual el descuento estará disponible.</div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Válido Hasta <span class="text-danger">*</span></label>
-                    <input type="datetime-local" name="valid_to" class="form-control" value="${formData.valid_to}" required>
-                    <div class="form-text">Fecha y hora hasta la cual el descuento estará disponible.</div>
+                    <input type="datetime-local" name="valid_to" class="form-control" value="${formData.valid_to}" required aria-required="true"
+                           aria-describedby="validToEditHelp">
+                    <div class="form-text" id="validToEditHelp">Fecha y hora hasta la cual el descuento estará disponible.</div>
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Estado</label>
-                    <input type="text" class="form-control bg-light" value="${formData.active ? 'Activo' : 'Inactivo'}" readonly>
+                    <input type="text" class="form-control bg-light" value="${formData.active ? 'Activo' : 'Inactivo'}" readonly
+                           aria-describedby="statusEditHelp">
                     <input type="hidden" name="active" value="${formData.active ? '1' : '0'}">
-                    <div class="form-text">El estado se mantiene tal como estaba al abrir el editor.</div>
+                    <div class="form-text" id="statusEditHelp">El estado se mantiene tal como estaba al abrir el editor.</div>
                 </div>
             </div>
         `;
@@ -1197,11 +1244,11 @@
                 }
             }
 
-            if (input.name === 'valid_from' && input.name === 'valid_to') {
+            if (input.name === 'valid_to' && formData.valid_from) {
                 const fromDate = new Date(formData.valid_from);
                 const toDate = new Date(formData.valid_to);
                 if (fromDate >= toDate) {
-                    showFieldError(document.querySelector('[name="valid_to"]'), 'La fecha de fin debe ser posterior a la fecha de inicio.');
+                    showFieldError(input, 'La fecha de fin debe ser posterior a la fecha de inicio.');
                     isValid = false;
                 }
             }
@@ -1275,6 +1322,7 @@
                 const footer = document.getElementById('modalFooter');
                 const successDiv = document.createElement('div');
                 successDiv.className = 'alert alert-success mt-3 mb-0';
+                successDiv.setAttribute('role', 'alert');
                 successDiv.innerHTML = `<i class="bi bi-check-circle"></i> Descuento ${currentAction === 'new' ? 'creado' : 'actualizado'} exitosamente.`;
                 footer.insertBefore(successDiv, footer.firstChild);
 
@@ -1287,8 +1335,14 @@
                     const input = document.querySelector(`[name="${field}"]`);
                     if (input) {
                         input.classList.add('is-invalid');
+                        input.setAttribute('aria-invalid', 'true');
+                        const errorId = `${field}-error-inline`;
+                        const existingDesc = input.getAttribute('aria-describedby');
+                        input.setAttribute('aria-describedby', existingDesc ? existingDesc + ' ' + errorId : errorId);
                         const errorDiv = document.createElement('div');
                         errorDiv.className = 'invalid-feedback';
+                        errorDiv.id = errorId;
+                        errorDiv.setAttribute('role', 'alert');
                         errorDiv.textContent = Array.isArray(data.errors[field])
                             ? data.errors[field][0]
                             : data.errors[field];
@@ -1317,8 +1371,14 @@
                         const input = document.querySelector(`[name="${field}"]`);
                         if (input) {
                             input.classList.add('is-invalid');
+                            input.setAttribute('aria-invalid', 'true');
+                            const errorId = `${field}-error-render`;
+                            const existingDesc = input.getAttribute('aria-describedby');
+                            input.setAttribute('aria-describedby', existingDesc ? existingDesc + ' ' + errorId : errorId);
                             const errorDiv = document.createElement('div');
                             errorDiv.className = 'invalid-feedback';
+                            errorDiv.id = errorId;
+                            errorDiv.setAttribute('role', 'alert');
                             errorDiv.textContent = Array.isArray(data.errors[field])
                                 ? data.errors[field][0]
                                 : data.errors[field];
@@ -1331,6 +1391,7 @@
                 const footer = document.getElementById('modalFooter');
                 const alertDiv = document.createElement('div');
                 alertDiv.className = 'alert alert-danger mt-3 mb-0';
+                alertDiv.setAttribute('role', 'alert');
                 alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle"></i> ' + (data.message || 'Ocurrió un error. Por favor, inténtalo nuevamente.');
                 footer.insertBefore(alertDiv, footer.firstChild);
                 setTimeout(() => alertDiv.remove(), 5000);
@@ -1343,6 +1404,7 @@
             const footer = document.getElementById('modalFooter');
             const alertDiv = document.createElement('div');
             alertDiv.className = 'alert alert-danger mt-3 mb-0';
+            alertDiv.setAttribute('role', 'alert');
             alertDiv.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Error de conexión. Por favor, inténtalo nuevamente.';
             footer.insertBefore(alertDiv, footer.firstChild);
             setTimeout(() => alertDiv.remove(), 5000);
@@ -1355,7 +1417,7 @@
     });
 
     // Botones de nuevo descuento
-    document.getElementById('btnNewDiscount')?.addEventListener('click', () => openModal('new', null));
-    document.getElementById('btnNewDiscountEmpty')?.addEventListener('click', () => openModal('new', null));
+    document.getElementById('btnNewDiscount')?.addEventListener('click', function() { openModal('new', null, this); });
+    document.getElementById('btnNewDiscountEmpty')?.addEventListener('click', function() { openModal('new', null, this); });
 </script>
 @endsection

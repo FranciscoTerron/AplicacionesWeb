@@ -17,7 +17,7 @@
                 </select>
             </div>
             <div class="col-md-2 d-grid">
-                <button type="submit" class="btn btn-sm btn-outline-primary">Filtrar</button>
+                <button type="submit" class="btn btn-sm btn-outline-primary" aria-label="Aplicar filtros de descuentos">Filtrar</button>
                 @include('admin.partials._filters', ['routeName' => 'admin.discounts.index'])
             </div>
         </form>

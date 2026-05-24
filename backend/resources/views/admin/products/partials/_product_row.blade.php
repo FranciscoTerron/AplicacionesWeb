@@ -18,22 +18,24 @@
     <td>
         <!-- Ver -->
         <button type="button" class="btn btn-sm btn-outline-primary"
-            onclick="openModal('show', {{ json_encode($product) }})"
-            title="Ver detalles">
-            <i class="bi bi-eye">Ver</i>
+            onclick="openProductModal('show', {{ json_encode($product) }}, this)"
+            title="Ver detalles"
+            aria-label="Ver detalles de {{ $product['name'] ?? '' }}">
+            <i class="bi bi-eye"></i> Ver
         </button>
 
         <!-- Editar -->
         @if($canManage ?? $isAdmin)
             <button type="button" class="btn btn-sm btn-outline-secondary"
-                onclick="openModal('edit', {{ json_encode($product) }})"
-                title="Editar">
-                <i class="bi bi-pencil">Editar</i>
+                onclick="openProductModal('edit', {{ json_encode($product) }}, this)"
+                title="Editar"
+                aria-label="Editar {{ $product['name'] ?? '' }}">
+                <i class="bi bi-pencil"></i> Editar
             </button>
         @else
             <button type="button" class="btn btn-outline-secondary btn-sm" disabled
                 title="No tienes permisos para editar productos">
-                <i class="bi bi-pencil">Editar</i>
+                <i class="bi bi-pencil"></i> Editar
             </button>
         @endif
 
@@ -41,21 +43,23 @@
         @if($canManage ?? $isAdmin)
             @if($isActive)
                 <button type="button" class="btn btn-sm btn-outline-danger"
-                    onclick="openModal('deactivate', {{ json_encode($product) }})"
-                    title="Desactivar producto">
-                    <i class="bi bi-lock">Desactivar</i>
+                    onclick="openProductModal('deactivate', {{ json_encode($product) }}, this)"
+                    title="Desactivar producto"
+                    aria-label="Desactivar {{ $product['name'] ?? '' }}">
+                    <i class="bi bi-lock"></i> Desactivar
                 </button>
             @else
                 <button type="button" class="btn btn-sm btn-outline-success"
-                    onclick="openModal('activate', {{ json_encode($product) }})"
-                    title="Activar producto">
-                    <i class="bi bi-unlock">Activar</i>
+                    onclick="openProductModal('activate', {{ json_encode($product) }}, this)"
+                    title="Activar producto"
+                    aria-label="Activar {{ $product['name'] ?? '' }}">
+                    <i class="bi bi-unlock"></i> Activar
                 </button>
             @endif
         @else
             <button type="button" class="btn btn-sm btn-outline-danger" disabled
                 title="No tienes permisos para cambiar el estado">
-                <i class="bi bi-lock">Desactivar</i>
+                <i class="bi bi-lock"></i> Desactivar
             </button>
         @endif
     </td>
