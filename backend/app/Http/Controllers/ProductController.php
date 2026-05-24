@@ -65,6 +65,8 @@ class ProductController extends Controller
         $categoryFilter = request()->get('category');
         $subcategoryFilter = request()->get('subcategory');
         $statusFilter = request()->get('status');
+        $sort = request()->get('sort', 'name');
+        $order = request()->get('order', 'asc');
 
         $fetchResult = $this->firestore->fetchForPage(
             $this->getCollectionName(),
@@ -106,6 +108,12 @@ class ProductController extends Controller
             })->values();
         }
 
+        // Apply sorting
+        $sortableFields = ['name', 'price', 'stock', 'created_at'];
+        if (in_array($sort, $sortableFields)) {
+            $items = $items->sortBy($sort, SORT_REGULAR, $order === 'desc')->values();
+        }
+
         // Bulk-fetch categories and subcategories for filter dropdowns
         $categoriesResult = $this->firestore->listDocuments('categories', 100);
         $categories = collect($categoriesResult['documents'] ?? [])->where('active', true)->map(function ($category) {
@@ -143,6 +151,8 @@ class ProductController extends Controller
             'categoryFilter' => $categoryFilter,
             'subcategoryFilter' => $subcategoryFilter,
             'statusFilter' => $statusFilter,
+            'sort' => $sort,
+            'order' => $order,
             'hasMore' => $page < $totalPages,
             'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,

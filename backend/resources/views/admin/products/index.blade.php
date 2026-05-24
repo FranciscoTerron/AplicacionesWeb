@@ -28,11 +28,11 @@
     <table class="table table-hover mb-0">
         <thead>
             <tr>
-                <th>Producto</th>
+                <th>@include('admin.partials._sort_header', ['field' => 'name', 'label' => 'Producto', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
                 <th>Categoría</th>
-                <th>Precio</th>
-                <th>Stock</th>
-                <th>Estado</th>
+                <th>@include('admin.partials._sort_header', ['field' => 'price', 'label' => 'Precio', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
+                <th>@include('admin.partials._sort_header', ['field' => 'stock', 'label' => 'Stock', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
+                <th>@include('admin.partials._sort_header', ['field' => 'active', 'label' => 'Estado', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
                 <th>Acciones</th>
             </tr>
         </thead>

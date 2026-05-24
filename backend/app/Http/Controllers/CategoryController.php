@@ -80,6 +80,8 @@ class CategoryController extends Controller
         $startAfter = request()->get('after');
         $search = request()->get('search');
         $statusFilter = request()->get('status');
+        $sort = request()->get('sort', 'name');
+        $order = request()->get('order', 'asc');
 
         $fetchResult = $this->firestore->fetchForPage(
             $this->getCollectionName(),
@@ -106,6 +108,12 @@ class CategoryController extends Controller
             })->values();
         }
 
+        // Apply sorting
+        $sortableFields = ['name', 'created_at'];
+        if (in_array($sort, $sortableFields)) {
+            $items = $items->sortBy($sort, SORT_REGULAR, $order === 'desc')->values();
+        }
+
         // Slice to current page
         $totalFiltered = $items->count();
         $totalPages = intval(ceil($totalFiltered / $perPage));
@@ -116,6 +124,8 @@ class CategoryController extends Controller
             'categories' => $pageItems,
             'search' => $search,
             'statusFilter' => $statusFilter,
+            'sort' => $sort,
+            'order' => $order,
             'hasMore' => $page < $totalPages,
             'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,

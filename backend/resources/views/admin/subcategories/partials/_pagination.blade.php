@@ -9,6 +9,8 @@
                 'category' => $categoryFilter ?? null,
                 'status' => $statusFilter ?? null,
                 'per_page' => $perPage ?? 10,
+                'sort' => $sort ?? null,
+                'order' => $order ?? null,
             ])) }}" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-chevron-left"></i> Anterior
             </a>
@@ -41,6 +43,8 @@
                 'category' => $categoryFilter ?? null,
                 'status' => $statusFilter ?? null,
                 'per_page' => $perPage ?? 10,
+                'sort' => $sort ?? null,
+                'order' => $order ?? null,
             ])) }}" class="btn btn-outline-primary btn-sm">
                 Siguiente <i class="bi bi-chevron-right"></i>
             </a>

@@ -29,15 +29,15 @@
 
 <div class="card">
     <table class="table table-hover mb-0">
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Teléfono</th>
-                <th>Estado</th>
-                <th class="text-end">Acciones</th>
-            </tr>
-        </thead>
+<thead>
+             <tr>
+                 <th>@include('admin.partials._sort_header', ['field' => 'name', 'label' => 'Nombre', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
+                 <th>@include('admin.partials._sort_header', ['field' => 'email', 'label' => 'Email', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
+                 <th>@include('admin.partials._sort_header', ['field' => 'phone', 'label' => 'Teléfono', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
+                 <th>Estado</th>
+                 <th class="text-end">Acciones</th>
+             </tr>
+         </thead>
         <tbody>
             @forelse($clients as $client)
                 @php

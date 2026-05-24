@@ -88,6 +88,14 @@ class ClientController extends Controller
             })->values();
         }
 
+        // Apply sorting
+        $sort = request()->get('sort', 'name');
+        $order = request()->get('order', 'asc');
+        $sortableFields = ['name', 'email', 'phone', 'created_at'];
+        if (in_array($sort, $sortableFields)) {
+            $items = $items->sortBy($sort, SORT_REGULAR, $order === 'desc')->values();
+        }
+
         // Paginate filtered results
         $totalFiltered = $items->count();
         $totalPages = intval(ceil($totalFiltered / $perPage));
@@ -98,6 +106,8 @@ class ClientController extends Controller
             'clients' => $pageItems,
             'search' => $search,
             'statusFilter' => $statusFilter,
+            'sort' => $sort,
+            'order' => $order,
             'hasMore' => $page < $totalPages,
             'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,

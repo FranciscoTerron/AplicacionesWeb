@@ -66,6 +66,14 @@ class UserController extends Controller
             })->values();
         }
 
+        // Apply sorting
+        $sort = request()->get('sort', 'name');
+        $order = request()->get('order', 'asc');
+        $sortableFields = ['name', 'email', 'role', 'created_at'];
+        if (in_array($sort, $sortableFields)) {
+            $users = $users->sortBy($sort, SORT_REGULAR, $order === 'desc')->values();
+        }
+
         // Paginate filtered results
         $totalFiltered = $users->count();
         $totalPages = intval(ceil($totalFiltered / $perPage));
@@ -83,6 +91,8 @@ class UserController extends Controller
             'search' => $search,
             'roleFilter' => $roleFilter,
             'statusFilter' => $statusFilter,
+            'sort' => $sort,
+            'order' => $order,
         ]);
     }
 

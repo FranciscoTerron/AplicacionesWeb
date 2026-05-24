@@ -94,6 +94,14 @@ class DiscountController extends Controller
             })->values();
         }
 
+        // Apply sorting
+        $sort = request()->get('sort', 'code');
+        $order = request()->get('order', 'asc');
+        $sortableFields = ['code', 'name', 'discount_type', 'value', 'created_at'];
+        if (in_array($sort, $sortableFields)) {
+            $items = $items->sortBy($sort, SORT_REGULAR, $order === 'desc')->values();
+        }
+
         // Paginate filtered results
         $totalFiltered = $items->count();
         $totalPages = intval(ceil($totalFiltered / $perPage));
@@ -111,6 +119,8 @@ class DiscountController extends Controller
             'search' => $search,
             'typeFilter' => $typeFilter,
             'statusFilter' => $statusFilter,
+            'sort' => $sort,
+            'order' => $order,
         ]);
     }
 

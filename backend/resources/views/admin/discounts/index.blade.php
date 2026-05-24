@@ -31,18 +31,18 @@
 
 <div class="card">
     <table class="table table-hover mb-0">
-        <thead>
-            <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Tipo</th>
-                <th>Valor</th>
-                <th>Válido Desde</th>
-                <th>Válido Hasta</th>
-                <th>Estado</th>
-                <th class="text-end">Acciones</th>
-            </tr>
-        </thead>
+<thead>
+             <tr>
+                 <th>@include('admin.partials._sort_header', ['field' => 'code', 'label' => 'Código', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
+                 <th>@include('admin.partials._sort_header', ['field' => 'name', 'label' => 'Nombre', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
+                 <th>@include('admin.partials._sort_header', ['field' => 'discount_type', 'label' => 'Tipo', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
+                 <th>@include('admin.partials._sort_header', ['field' => 'value', 'label' => 'Valor', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
+                 <th>Válido Desde</th>
+                 <th>Válido Hasta</th>
+                 <th>Estado</th>
+                 <th class="text-end">Acciones</th>
+             </tr>
+         </thead>
         <tbody>
             @forelse($discounts as $discount)
                 @php

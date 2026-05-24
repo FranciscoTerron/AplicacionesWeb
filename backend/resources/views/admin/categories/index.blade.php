@@ -30,10 +30,10 @@
     <table class="table table-hover mb-0">
         <thead>
             <tr>
-                <th>Nombre</th>
+                <th>@include('admin.partials._sort_header', ['field' => 'name', 'label' => 'Nombre', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
                 <th>Slug</th>
                 <th>Descripción</th>
-                <th>Estado</th>
+                <th>@include('admin.partials._sort_header', ['field' => 'active', 'label' => 'Estado', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
                 <th>Acciones</th>
             </tr>
         </thead>

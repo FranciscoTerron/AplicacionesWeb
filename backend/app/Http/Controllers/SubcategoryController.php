@@ -63,6 +63,8 @@ class SubcategoryController extends Controller
         $search = request()->get('search');
         $categoryFilter = request()->get('category');
         $statusFilter = request()->get('status');
+        $sort = request()->get('sort', 'name');
+        $order = request()->get('order', 'asc');
 
         $fetchResult = $this->firestore->fetchForPage(
             $this->getCollectionName(),
@@ -96,6 +98,12 @@ class SubcategoryController extends Controller
             })->values();
         }
 
+        // Apply sorting
+        $sortableFields = ['name', 'created_at'];
+        if (in_array($sort, $sortableFields)) {
+            $items = $items->sortBy($sort, SORT_REGULAR, $order === 'desc')->values();
+        }
+
         // Bulk-fetch categories for filter dropdown (no per-page for select lists)
         $categoriesResult = $this->firestore->listDocuments('categories', 100);
         $categories = collect($categoriesResult['documents'] ?? [])->where('active', true)->map(function ($category) {
@@ -119,6 +127,8 @@ class SubcategoryController extends Controller
             'search' => $search,
             'categoryFilter' => $categoryFilter,
             'statusFilter' => $statusFilter,
+            'sort' => $sort,
+            'order' => $order,
             'hasMore' => $page < $totalPages,
             'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,
