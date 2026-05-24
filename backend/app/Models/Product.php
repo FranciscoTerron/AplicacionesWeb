@@ -15,8 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property float|null $cost
  * @property int $stock
  * @property int $min_stock
- * @property string|null $main_image
- * @property array|null $images
+ * @property array<int,array{url:string,public_id:string}>|null $images
  * @property bool $active
  * @property bool $featured
  * @property array|null $dimensions
@@ -37,7 +36,6 @@ class Product extends Model
         'cost',
         'stock',
         'min_stock',
-        'main_image',
         'images',
         'active',
         'featured',

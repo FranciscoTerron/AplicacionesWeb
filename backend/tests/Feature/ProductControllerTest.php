@@ -3,12 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\CloudinaryService;
 use App\Services\FirestoreService;
 use Tests\TestCase;
 
 class ProductControllerTest extends TestCase
 {
     protected FirestoreService $firestoreMock;
+
+    protected CloudinaryService $cloudinaryMock;
 
     /**
      * Configuración inicial.
@@ -19,6 +22,8 @@ class ProductControllerTest extends TestCase
         $this->withoutMiddleware();
         $this->firestoreMock = $this->createMock(FirestoreService::class);
         $this->app->instance(FirestoreService::class, $this->firestoreMock);
+        $this->cloudinaryMock = $this->createMock(CloudinaryService::class);
+        $this->app->instance(CloudinaryService::class, $this->cloudinaryMock);
     }
 
     /**
@@ -202,6 +207,100 @@ class ProductControllerTest extends TestCase
 
         $response->assertRedirect(route('admin.products.index'));
         $response->assertSessionHas('success');
+    }
+
+    /**
+     * Verifica que store acepta el shape {url, public_id} en images[].
+     */
+    public function test_store_accepts_cloudinary_image_shape(): void
+    {
+        $this->mockAuthUser('admin');
+
+        $productData = [
+            'name' => 'Filtro 50mm',
+            'category_id' => 'cat-1',
+            'sku' => 'FIL-50',
+            'price' => 3000,
+            'stock' => 5,
+            'min_stock' => 2,
+            'active' => '1',
+            'images' => [
+                ['url' => 'https://res.cloudinary.com/demo/image/upload/v1/ma-piscinas/products/main.jpg', 'public_id' => 'ma-piscinas/products/main'],
+                ['url' => 'https://res.cloudinary.com/demo/image/upload/v1/ma-piscinas/products/g1.jpg', 'public_id' => 'ma-piscinas/products/g1'],
+            ],
+        ];
+
+        $this->firestoreMock
+            ->expects($this->once())
+            ->method('createDocument')
+            ->with('products', $this->callback(function ($data) {
+                return is_array($data['images'] ?? null)
+                    && count($data['images']) === 2
+                    && ($data['images'][0]['public_id'] ?? null) === 'ma-piscinas/products/main';
+            }))
+            ->willReturn(['id' => 'prod-x', 'name' => 'Filtro 50mm']);
+
+        $this->firestoreMock
+            ->method('getDocument')
+            ->willReturn(['id' => 'cat-1', 'name' => 'Limpieza', 'active' => true]);
+
+        $response = $this->post(route('admin.products.store'), $productData);
+
+        $response->assertRedirect(route('admin.products.index'));
+        $response->assertSessionHas('success');
+    }
+
+    /**
+     * Verifica que update borra del Cloudinary las imágenes removidas.
+     */
+    public function test_update_deletes_removed_images_in_cloudinary(): void
+    {
+        $this->mockAuthUser('admin');
+
+        $productId = 'product-xyz';
+        $existing = [
+            'id' => $productId,
+            'name' => 'Cloro 1L',
+            'category_id' => 'cat-1',
+            'active' => true,
+            'images' => [
+                ['url' => 'https://res.cloudinary.com/demo/upload/old.jpg', 'public_id' => 'ma-piscinas/products/old'],
+                ['url' => 'https://res.cloudinary.com/demo/upload/keep.jpg', 'public_id' => 'ma-piscinas/products/keep'],
+            ],
+        ];
+
+        $updateData = [
+            'name' => 'Cloro 1L',
+            'category_id' => 'cat-1',
+            'sku' => 'CLORO-1L',
+            'price' => 1500,
+            'stock' => 10,
+            'min_stock' => 5,
+            'active' => '1',
+            'images' => [
+                ['url' => 'https://res.cloudinary.com/demo/upload/keep.jpg', 'public_id' => 'ma-piscinas/products/keep'],
+            ],
+        ];
+
+        $this->firestoreMock
+            ->method('getDocument')
+            ->willReturnMap([
+                ['products', $productId, $existing],
+                ['categories', 'cat-1', ['id' => 'cat-1', 'name' => 'Limpieza', 'active' => true]],
+            ]);
+
+        $this->firestoreMock
+            ->expects($this->once())
+            ->method('updateDocument');
+
+        $this->cloudinaryMock
+            ->expects($this->once())
+            ->method('deleteAssets')
+            ->with(['ma-piscinas/products/old']);
+
+        $response = $this->put(route('admin.products.update', $productId), $updateData);
+
+        $response->assertRedirect(route('admin.products.index'));
     }
 
     /**

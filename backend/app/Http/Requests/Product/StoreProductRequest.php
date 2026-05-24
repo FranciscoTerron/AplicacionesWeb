@@ -40,9 +40,10 @@ class StoreProductRequest extends FormRequest
             'cost' => 'nullable|numeric|min:0',
             'stock' => 'required|integer|min:0',
             'min_stock' => 'required|integer|min:0',
-            'main_image' => 'nullable|string|url',
             'images' => 'nullable|array',
-            'images.*' => 'string|url',
+            'images.*' => 'array',
+            'images.*.url' => 'required|string|url',
+            'images.*.public_id' => 'required|string',
             'active' => 'boolean',
             'featured' => 'boolean',
             'dimensions' => 'nullable|array',
@@ -70,8 +71,9 @@ class StoreProductRequest extends FormRequest
             'stock.min' => 'El stock no puede ser negativo.',
             'min_stock.required' => 'El stock mínimo es obligatorio.',
             'min_stock.integer' => 'El stock mínimo debe ser un número entero.',
-            'main_image.url' => 'La imagen principal debe ser una URL válida.',
-            'images.*.url' => 'Cada imagen de la galería debe ser una URL válida.',
+            'images.*.url.url' => 'Cada imagen debe ser una URL válida.',
+            'images.*.url.required' => 'Cada imagen debe tener URL.',
+            'images.*.public_id.required' => 'Cada imagen debe tener identificador.',
         ];
     }
 

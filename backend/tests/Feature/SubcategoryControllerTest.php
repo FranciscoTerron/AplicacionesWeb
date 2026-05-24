@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\CloudinaryService;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
@@ -11,12 +12,16 @@ class SubcategoryControllerTest extends TestCase
 {
     protected FirestoreService $firestoreMock;
 
+    protected CloudinaryService $cloudinaryMock;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->withoutMiddleware();
         $this->firestoreMock = $this->createMock(FirestoreService::class);
         $this->app->instance(FirestoreService::class, $this->firestoreMock);
+        $this->cloudinaryMock = $this->createMock(CloudinaryService::class);
+        $this->app->instance(CloudinaryService::class, $this->cloudinaryMock);
     }
 
     public function test_index_returns_200(): void
@@ -157,6 +162,56 @@ class SubcategoryControllerTest extends TestCase
             ->method('updateDocument');
 
         $response = $this->delete(route('admin.subcategories.destroy', $subcategoryId));
+
+        $response->assertRedirect(route('admin.subcategories.index'));
+    }
+
+    /**
+     * Verifica que update borra del Cloudinary la imagen reemplazada.
+     */
+    public function test_update_deletes_replaced_image_in_cloudinary(): void
+    {
+        $this->mockAuthUser('admin');
+
+        $subcategoryId = 'subcat-img';
+        $existing = [
+            'id' => $subcategoryId,
+            'name' => 'Cloro Líquido',
+            'slug' => 'cloro-liquido',
+            'category_id' => 'Piscinas',
+            'active' => true,
+            'image' => ['url' => 'https://res.cloudinary.com/demo/upload/old.jpg', 'public_id' => 'ma-piscinas/subcategories/old'],
+        ];
+
+        $updateData = [
+            'name' => 'Cloro Líquido',
+            'category_id' => 'Piscinas',
+            'active' => true,
+            'image' => [
+                'url' => 'https://res.cloudinary.com/demo/upload/new.jpg',
+                'public_id' => 'ma-piscinas/subcategories/new',
+            ],
+        ];
+
+        $this->firestoreMock
+            ->method('getDocument')
+            ->willReturnMap([
+                ['subcategories', $subcategoryId, $existing],
+                ['categories', 'Piscinas', ['id' => 'Piscinas', 'name' => 'Piscinas', 'active' => true]],
+            ]);
+
+        $this->firestoreMock->method('query')->willReturn([]);
+
+        $this->firestoreMock
+            ->expects($this->once())
+            ->method('updateDocument');
+
+        $this->cloudinaryMock
+            ->expects($this->once())
+            ->method('deleteAsset')
+            ->with('ma-piscinas/subcategories/old');
+
+        $response = $this->put(route('admin.subcategories.update', $subcategoryId), $updateData);
 
         $response->assertRedirect(route('admin.subcategories.index'));
     }

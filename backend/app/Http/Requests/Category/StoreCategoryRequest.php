@@ -50,6 +50,9 @@ class StoreCategoryRequest extends FormRequest
             ],
             'description' => 'nullable|string|max:1000',
             'active' => 'nullable|boolean',
+            'image' => 'nullable|array',
+            'image.url' => 'required_with:image|string|url',
+            'image.public_id' => 'required_with:image|string',
         ];
     }
 
@@ -62,6 +65,9 @@ class StoreCategoryRequest extends FormRequest
             'slug.max' => 'El slug no puede tener más de 255 caracteres.',
             'description.max' => 'La descripción no puede tener más de 1000 caracteres.',
             'active.boolean' => 'El estado activo debe ser verdadero o falso.',
+            'image.url.url' => 'La imagen debe ser una URL válida.',
+            'image.url.required_with' => 'La imagen está incompleta (falta URL).',
+            'image.public_id.required_with' => 'La imagen está incompleta (falta identificador).',
         ];
     }
 }

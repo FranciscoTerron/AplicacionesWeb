@@ -7,6 +7,7 @@ use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Http\Traits\CrudActionsTrait;
 use App\Models\Category;
+use App\Services\CloudinaryService;
 use App\Services\FirestoreService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -17,9 +18,12 @@ class CategoryController extends Controller
 {
     use CrudActionsTrait;
 
-    public function __construct(FirestoreService $firestore)
+    protected CloudinaryService $cloudinary;
+
+    public function __construct(FirestoreService $firestore, CloudinaryService $cloudinary)
     {
         $this->firestore = $firestore;
+        $this->cloudinary = $cloudinary;
     }
 
     protected function getCollectionName(): string
@@ -184,13 +188,25 @@ class CategoryController extends Controller
         $validated['updated_at'] = now()->toISOString();
         $validated['updated_by'] = auth()->id();
 
+        // Sanitize image: si viene incompleta, la dejamos como null.
+        if (isset($validated['image']) && (empty($validated['image']['url']) || empty($validated['image']['public_id']))) {
+            $validated['image'] = null;
+        }
+
         try {
             $existing = $this->firestore->getDocument($this->getCollectionName(), $id);
             if (! $existing) {
                 return redirect()->route($this->getRedirectRoute())->with('error', 'Categoría no encontrada.');
             }
 
+            $oldPublicId = $existing['image']['public_id'] ?? null;
+            $newPublicId = $validated['image']['public_id'] ?? null;
+
             $this->firestore->updateDocument($this->getCollectionName(), $id, $validated);
+
+            if (is_string($oldPublicId) && $oldPublicId !== '' && $oldPublicId !== $newPublicId) {
+                $this->cloudinary->deleteAsset($oldPublicId);
+            }
 
             $message = 'Categoría actualizada correctamente.';
             if ($request->ajax()) {

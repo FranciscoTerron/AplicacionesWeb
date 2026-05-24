@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $description
  * @property bool $active
  * @property int $order
- * @property string|null $image
+ * @property array{url:string,public_id:string}|null $image
  * @property string $created_by
  * @property string $updated_by
  * @property Carbon $created_at
@@ -31,6 +31,7 @@ class Category extends Model
     protected $casts = [
         'active' => 'boolean',
         'order' => 'integer',
+        'image' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
