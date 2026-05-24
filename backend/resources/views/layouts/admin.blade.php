@@ -554,14 +554,14 @@
 
   <!-- Lightbox global de imágenes (compartido por products/categories/subcategories) -->
   <div class="modal fade" id="imageLightboxModal" tabindex="-1" aria-hidden="true" aria-labelledby="imageLightboxTitle">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content" style="background:#0f172a;border:none;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:90vw;width:auto;">
+      <div class="modal-content" style="background:rgba(15,23,42,0.95);border:none;backdrop-filter:blur(6px);">
         <div class="modal-header border-0" style="padding:.75rem 1rem;">
           <h5 class="modal-title text-white" id="imageLightboxTitle" style="font-size:.95rem;">Imagen</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
-        <div class="modal-body p-0 text-center">
-          <img id="imageLightboxImg" src="" alt="" style="max-width:100%;max-height:80vh;display:block;margin:0 auto;">
+        <div class="modal-body" style="display:flex;align-items:center;justify-content:center;padding:1rem;min-height:60vh;">
+          <img id="imageLightboxImg" src="" alt="" style="max-width:100%;max-height:80vh;width:auto;height:auto;object-fit:contain;border-radius:6px;">
         </div>
       </div>
     </div>
