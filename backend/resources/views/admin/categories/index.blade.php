@@ -104,6 +104,13 @@
     let currentAction = '';
     let currentCategory = null;
 
+    function escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
     function openModal(action, category, triggerButton) {
         if (!modal) {
             modalElement = document.getElementById('categoryModal');
@@ -130,6 +137,7 @@
                 <p><strong>Estado:</strong> ${category.active ?
                     '<span class="badge bg-success">Activo</span>' :
                     '<span class="badge bg-danger">Inactivo</span>'}</p>
+                ${category.image && category.image.url ? `<p><strong>Imagen:</strong></p><img src="${escapeHtml(category.image.url.replace('/upload/', '/upload/c_thumb,w_240,h_240,g_auto/'))}" alt="" style="max-width:240px;border-radius:6px;border:1px solid var(--border);">` : ''}
             `;
             footerEl.innerHTML = `
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -161,6 +169,7 @@
                     <input type="checkbox" name="active" class="form-check-input" id="activeCheck" value="1" checked>
                     <label class="form-check-label" for="activeCheck">Activo</label>
                 </div>
+                ${window.renderCloudinaryImageInput('image', 'categories', null, 'Imagen', '_new')}
             `;
             footerEl.innerHTML = `
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -202,6 +211,7 @@
                     <input type="checkbox" name="active" class="form-check-input" id="activeCheckEdit" value="1" ${category.active ? 'checked' : ''}>
                     <label class="form-check-label" for="activeCheckEdit">Activo</label>
                 </div>
+                ${window.renderCloudinaryImageInput('image', 'categories', category.image || null, 'Imagen', '_edit')}
                 <input type="hidden" name="_method" value="PUT">
             `;
             footerEl.innerHTML = `

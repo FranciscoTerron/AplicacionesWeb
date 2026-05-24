@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="cloudinary-cloud-name" content="{{ config('cloudinary.cloud_name') }}">
+    <meta name="cloudinary-upload-preset" content="{{ config('cloudinary.upload_preset') }}">
     <title>@yield('title', 'MA Piscinas - Admin')</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -520,29 +522,100 @@
             </header>
             
             <main class="content">
-                @if(session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
-                
-                @if(session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                @endif
-                
                 @include('admin.partials._breadcrumbs')
-                
+
                 @yield('content')
             </main>
+            {{-- Toast container (Bootstrap 5) --}}
+            <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100">
+                @if(session('success'))
+                    <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000" data-auto-show="1">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+                        </div>
+                    </div>
+                @endif
+                @if(session('error'))
+                    <div class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false" data-auto-show="1">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ session('error') }}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+                        </div>
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
 
+  <!-- Lightbox global de imágenes (compartido por products/categories/subcategories) -->
+  <div class="modal fade" id="imageLightboxModal" tabindex="-1" aria-hidden="true" aria-labelledby="imageLightboxTitle">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content" style="background:#0f172a;border:none;">
+        <div class="modal-header border-0" style="padding:.75rem 1rem;">
+          <h5 class="modal-title text-white" id="imageLightboxTitle" style="font-size:.95rem;">Imagen</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body p-0 text-center">
+          <img id="imageLightboxImg" src="" alt="" style="max-width:100%;max-height:80vh;display:block;margin:0 auto;">
+        </div>
+      </div>
+    </div>
+  </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+  @include('admin.components._cloudinary_js')
   <script>
+  // Auto-show server-side toasts (flash session)
+  document.addEventListener('DOMContentLoaded', function () {
+      document.querySelectorAll('.toast[data-auto-show="1"]').forEach(function (el) {
+          try { new bootstrap.Toast(el).show(); } catch (e) { /* noop */ }
+      });
+  });
+
+  // Helper global para mostrar toasts desde JS (e.g. después de un AJAX en la misma página).
+  window.showToast = function (message, type) {
+      type = type || 'success';
+      const container = document.querySelector('.toast-container') || (function () {
+          const c = document.createElement('div');
+          c.className = 'toast-container position-fixed top-0 end-0 p-3';
+          c.style.zIndex = 1100;
+          document.body.appendChild(c);
+          return c;
+      })();
+      const bgClass = type === 'error' || type === 'danger' ? 'bg-danger' : (type === 'warning' ? 'bg-warning' : 'bg-success');
+      const icon = type === 'error' || type === 'danger' ? 'bi-exclamation-triangle-fill' : (type === 'warning' ? 'bi-exclamation-circle-fill' : 'bi-check-circle-fill');
+      const autohide = type === 'error' || type === 'danger' ? 'data-bs-autohide="false"' : 'data-bs-delay="4000"';
+      const wrapper = document.createElement('div');
+      wrapper.className = 'toast align-items-center text-white border-0 ' + bgClass;
+      wrapper.setAttribute('role', 'alert');
+      wrapper.setAttribute('aria-live', 'assertive');
+      wrapper.setAttribute('aria-atomic', 'true');
+      wrapper.innerHTML = `<div class="d-flex"><div class="toast-body"><i class="bi ${icon} me-2"></i>${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button></div>`;
+      wrapper.setAttribute(autohide.split('=')[0], autohide.split('=')[1].replace(/"/g, ''));
+      container.appendChild(wrapper);
+      try { new bootstrap.Toast(wrapper).show(); } catch (e) { /* noop */ }
+  };
+
+  // Lightbox global: muestra imagen grande al click en thumb
+  window.showImageLightbox = function (url, title) {
+      if (!url) return;
+      const img = document.getElementById('imageLightboxImg');
+      const titleEl = document.getElementById('imageLightboxTitle');
+      const modalEl = document.getElementById('imageLightboxModal');
+      if (!img || !modalEl) return;
+      // Usar tamaño grande pero limitado por Cloudinary para no bajar 9MB
+      const bigUrl = url.replace('/upload/', '/upload/c_limit,w_1400,h_1400,q_auto,f_auto/');
+      img.src = bigUrl;
+      img.alt = title || 'Imagen';
+      if (titleEl) titleEl.textContent = title || 'Imagen';
+      try { bootstrap.Modal.getOrCreateInstance(modalEl).show(); } catch (e) { /* noop */ }
+  };
+
   // Pagination per_page selector
   document.querySelectorAll('.per-page-select').forEach(function (select) {
       select.addEventListener('change', function () {

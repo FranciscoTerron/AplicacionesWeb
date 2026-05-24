@@ -1,5 +1,22 @@
 <tr class="{{ !$isActive ? 'table-light' : '' }}">
-    <td>{{ $subcategory['name'] ?? 'N/A' }}</td>
+    <td>
+        @php
+            $thumbUrl = null;
+            $fullUrl = $subcategory['image']['url'] ?? null;
+            if ($fullUrl) {
+                $thumbUrl = str_replace('/upload/', '/upload/c_thumb,w_40,h_40,g_auto/', $fullUrl);
+            }
+        @endphp
+        <div class="d-flex align-items-center gap-2">
+            @if($thumbUrl)
+                <img src="{{ $thumbUrl }}" alt="Imagen de {{ $subcategory['name'] ?? '' }}"
+                     onclick="showImageLightbox('{{ e($fullUrl) }}', '{{ e($subcategory['name'] ?? '') }}')"
+                     style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border);flex:0 0 auto;cursor:zoom-in;"
+                     title="Click para ampliar">
+            @endif
+            <span>{{ $subcategory['name'] ?? 'N/A' }}</span>
+        </div>
+    </td>
     <td><code>{{ $subcategory['slug'] ?? 'N/A' }}</code></td>
     <td>
         @php

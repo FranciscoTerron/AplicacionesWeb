@@ -1,9 +1,33 @@
 <tr class="{{ !$isActive ? 'table-light' : '' }}">
     <td>
-        <strong>{{ $product['name'] ?? 'N/A' }}</strong>
-        @if(!empty($product['description']))
-            <br><small class="text-muted">{{ Str::limit($product['description'], 50) }}</small>
-        @endif
+        @php
+            $thumbUrl = null;
+            $fullUrl = null;
+            $images = $product['images'] ?? [];
+            if (is_array($images)) {
+                foreach ($images as $img) {
+                    if (is_array($img) && ! empty($img['url'])) {
+                        $fullUrl = $img['url'];
+                        $thumbUrl = str_replace('/upload/', '/upload/c_thumb,w_40,h_40,g_auto/', $fullUrl);
+                        break;
+                    }
+                }
+            }
+        @endphp
+        <div class="d-flex align-items-center gap-2">
+            @if($thumbUrl)
+                <img src="{{ $thumbUrl }}" alt="Imagen de {{ $product['name'] ?? '' }}"
+                     onclick="showImageLightbox('{{ e($fullUrl) }}', '{{ e($product['name'] ?? '') }}')"
+                     style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border);flex:0 0 auto;cursor:zoom-in;"
+                     title="Click para ampliar">
+            @endif
+            <div>
+                <strong>{{ $product['name'] ?? 'N/A' }}</strong>
+                @if(!empty($product['description']))
+                    <br><small class="text-muted">{{ Str::limit($product['description'], 50) }}</small>
+                @endif
+            </div>
+        </div>
     </td>
     <td>{{ $categoryName ?? 'N/A' }}</td>
     <td>${{ number_format($product['price'] ?? 0, 2, ',', '.') }}</td>

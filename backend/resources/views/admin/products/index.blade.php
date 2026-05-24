@@ -180,7 +180,8 @@
                 <p><strong>Estado:</strong> ${product.active ?
                     '<span class="badge bg-success">Activo</span>' :
                     '<span class="badge bg-danger">Inactivo</span>'}</p>
-                <p><strong>Creado:</strong> ${new Date(product.created_at).toLocaleString()}</p>
+                ${Array.isArray(product.images) && product.images.length > 0 ? `<p class="mt-3"><strong>Imágenes (${product.images.length}):</strong></p><div class="d-flex flex-wrap gap-2">${product.images.filter(i => i && i.url).map((i, idx) => `<div style="position:relative;">${idx === 0 ? '<span class="badge bg-primary" style="position:absolute;top:4px;left:4px;font-size:.65rem;">Principal</span>' : ''}<img src="${escapeHtml(i.url.replace('/upload/', '/upload/c_thumb,w_160,h_160,g_auto/'))}" alt="" style="width:120px;height:120px;object-fit:cover;border-radius:6px;border:1px solid var(--border);"></div>`).join('')}</div>` : ''}
+                <p class="mt-3"><strong>Creado:</strong> ${new Date(product.created_at).toLocaleString()}</p>
                 <p><strong>Actualizado:</strong> ${new Date(product.updated_at).toLocaleString()}</p>
             `;
             footerEl.innerHTML = `
@@ -263,6 +264,7 @@
                     </select>
                     <div class="form-text" id="activeHelp">Productos inactivos no aparecen en el catálogo.</div>
                 </div>
+                ${window.renderCloudinaryGalleryInput('images', 'products', [], 'Imágenes (la primera será la principal)', '_new')}
             `;
             footerEl.innerHTML = `
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -348,6 +350,7 @@
                     </select>
                     <div class="form-text" id="activeHelpEdit">Productos inactivos no aparecen en el catálogo.</div>
                 </div>
+                ${window.renderCloudinaryGalleryInput('images', 'products', product.images || [], 'Imágenes (la primera será la principal)', '_edit')}
                 <input type="hidden" name="_method" value="PUT">
             `;
             footerEl.innerHTML = `
