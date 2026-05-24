@@ -91,13 +91,32 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 
 ---
 
+### Segunda Entrega (PR) — 25 de Mayo 2026
+**Módulo**: Backend Laravel (funcionalidades adicionales)
+
+| Item | Estado | Observaciones |
+|------|--------|---------------|
+| Paginación | ✅ | completa y funcional |
+| Filtros | ✅ | completa y funcional |
+| Busqueda | ✅ | completa y funcional |
+| Ordenamiento | ✅ | completa y funcional |
+| breadcrumbs | ✅ | completa y funcional |
+| Accesibilidad y Validación Frontend | ⏳ | Falta implementar |
+| Importaciones CSV | ⏳ | Falta implementar |
+| Exportaciones CSV| ⏳ | Falta implementar |
+| Integración de Cloudinary | ⏳ | Falta implementar |
+
+**Conclusión**: avance sobre funcionalidades + correccion en UX.
+
+---
+
 ## Cronograma de Entregas (PRs Obligatorios)
 
 | Fecha Límite | Hito | Estado |
 |--------------|------|--------|
 | 20 de Abril | Deploy en Vercel (frontpage mínimo) | ✅ Completo PR |
-| 11 de Mayo | Avance Laravel (CRUDs parciales) | ✅ En proceso |
-| 25 de Mayo | Avance Laravel (funcionalidades adicionales) | ⏳ Pendiente |
+| 11 de Mayo | Avance Laravel (CRUDs parciales) | ✅ Completo PR |
+| 25 de Mayo | Avance Laravel (funcionalidades adicionales) | ⏳ En proceso  |
 | 7 de Junio | PR Final — Laravel + API Completa | ⏳ Pendiente |
 
 *Las fechas corresponden al cronograma establecido por la catedra.*
