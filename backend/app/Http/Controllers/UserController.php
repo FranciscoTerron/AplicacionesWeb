@@ -71,12 +71,11 @@ class UserController extends Controller
         $totalPages = intval(ceil($totalFiltered / $perPage));
         $offset = ($page - 1) * $perPage;
         $pageItems = $users->slice($offset, $perPage)->values();
-        $lastDocumentId = $pageItems->last()['id'] ?? null;
 
         return View::make('admin.users.index', [
             'users' => $pageItems->all(),
             'hasMore' => $page < $totalPages,
-            'lastDocumentId' => $lastDocumentId,
+            'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,
             'perPage' => $perPage,
             'totalFiltered' => $totalFiltered,

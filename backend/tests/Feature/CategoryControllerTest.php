@@ -28,11 +28,12 @@ class CategoryControllerTest extends TestCase
     {
         $this->mockAuthUser('admin');
 
-        $this->firestoreMock->method('listDocuments')->willReturn([
+        $this->firestoreMock->method('fetchForPage')->willReturn([
             'documents' => [
-                ['name' => 'Piscinas', 'description' => 'Categoría de piscinas', 'active' => true],
+                ['id' => '1', 'name' => 'Piscinas', 'description' => 'Categoría de piscinas', 'active' => true],
             ],
-            'nextPageToken' => null,
+            'hasMore' => false,
+            'lastDocumentId' => null,
         ]);
 
         $response = $this->get(route('admin.categories.index'));

@@ -156,7 +156,6 @@ class OrderController extends Controller
         $totalPages = intval(ceil($totalFiltered / $perPage));
         $offset = ($page - 1) * $perPage;
         $pageItems = $items->slice($offset, $perPage)->values();
-        $lastDocumentId = $pageItems->last()['id'] ?? null;
 
         return view("{$this->getViewFolder()}.index", [
             'orders' => $pageItems,
@@ -167,7 +166,7 @@ class OrderController extends Controller
             'statusFilter' => $statusFilter,
             'paymentFilter' => $paymentFilter,
             'hasMore' => $page < $totalPages,
-            'lastDocumentId' => $lastDocumentId,
+            'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,
             'perPage' => $perPage,
             'totalFiltered' => $totalFiltered,

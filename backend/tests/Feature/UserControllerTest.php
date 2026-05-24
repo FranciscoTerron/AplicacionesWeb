@@ -30,7 +30,7 @@ class UserControllerTest extends TestCase
         Auth::shouldReceive('user')->andReturn($authUser);
         Auth::shouldReceive('check')->andReturn(true);
 
-        $this->firestoreMock->method('listDocuments')->willReturn([
+        $this->firestoreMock->method('fetchForPage')->willReturn([
             'documents' => [
                 ['id' => '1', 'name' => 'Test User', 'email' => 'test@example.com', 'role' => 'admin'],
             ],

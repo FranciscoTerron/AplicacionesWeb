@@ -134,7 +134,6 @@ class ProductController extends Controller
         $totalPages = intval(ceil($totalFiltered / $perPage));
         $offset = ($page - 1) * $perPage;
         $pageItems = $items->slice($offset, $perPage)->values();
-        $lastDocumentId = $pageItems->last()['id'] ?? null;
 
         return ViewFacade::make("{$this->getViewFolder()}.index", [
             'products' => $pageItems,
@@ -145,7 +144,7 @@ class ProductController extends Controller
             'subcategoryFilter' => $subcategoryFilter,
             'statusFilter' => $statusFilter,
             'hasMore' => $page < $totalPages,
-            'lastDocumentId' => $lastDocumentId,
+            'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,
             'perPage' => $perPage,
             'totalFiltered' => $totalFiltered,

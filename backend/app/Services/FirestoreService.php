@@ -317,37 +317,35 @@ class FirestoreService
         int $maxBatches = 6,
     ): array {
         $fetchLimit = $perPage * $maxBatches;
-        $documents = [];
+        $allDocuments = [];
         $cursor = $startAfter;
         $hasMore = false;
-        $lastDocId = null;
         $batch = 0;
 
         do {
-            $limit = min($fetchLimit - count($documents), $perPage * 2);
+            $limit = min($fetchLimit - count($allDocuments), $perPage * 2);
             if ($limit <= 0) {
                 break;
             }
 
             $result = $this->listDocuments($collection, $limit, $cursor, $orderBy);
-            $documents = array_merge($documents, $result['documents']);
+            $allDocuments = array_merge($allDocuments, $result['documents']);
             $hasMore = $result['hasMore'];
 
-            if (! empty($result['documents'])) {
-                $lastDocId = end($result['documents'])['id'] ?? end($result['documents'])['_document_path'] ?? null;
-            }
-
+            // Advance cursor using the ORDER BY field value, not the document ID
+            // Firestore requires startAfter value to match the orderBy type/field
             if ($result['hasMore'] && ! empty($result['documents'])) {
-                $cursor = end($result['documents'])['id'] ?? end($result['documents'])['_document_path'] ?? null;
+                $lastDoc = end($result['documents']);
+                $cursor = $lastDoc[$orderBy] ?? $lastDoc['id'] ?? null;
             }
 
             $batch++;
-        } while ($hasMore && $batch < $maxBatches && count($documents) < $fetchLimit);
+        } while ($hasMore && $batch < $maxBatches && count($allDocuments) < $fetchLimit);
 
         return [
-            'documents' => $documents,
+            'documents' => $allDocuments,
             'hasMore' => $hasMore,
-            'lastDocumentId' => $lastDocId,
+            'lastDocumentId' => $cursor, // cursor for NEXT fetchForPage call (= last doc in batch, to be excluded)
         ];
     }
 
@@ -366,17 +364,32 @@ class FirestoreService
             ],
         ];
 
-        // Add startAfter cursor if provided
+        // Add startAfter cursor if provided (excludes the cursor document)
         if ($startAfter) {
-            $structuredQuery['structuredQuery']['startAt'] = [
+            $structuredQuery['structuredQuery']['startAfter'] = [
                 'values' => [$this->encodeValue($startAfter)],
-                'before' => false,
             ];
         }
 
-        $response = Http::withToken($this->accessToken)->post($url, $structuredQuery);
+        \Log::info('Firestore listDocuments called', [
+            'collection' => $collection,
+            'limit' => $limit,
+            'startAfter' => $startAfter,
+            'orderBy' => $orderBy,
+            'body' => $structuredQuery,
+        ]);
+
+        $response = Http::withToken($this->accessToken)->asJson()->post($url, $structuredQuery);
 
         if ($response->failed()) {
+            \Log::error('Firestore listDocuments FAILED', [
+                'collection' => $collection,
+                'limit' => $limit,
+                'startAfter' => $startAfter,
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'query_payload' => $structuredQuery,
+            ]);
             throw new Exception('Firestore list documents failed: '.$response->body());
         }
 

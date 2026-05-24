@@ -112,7 +112,6 @@ class SubcategoryController extends Controller
         $totalPages = intval(ceil($totalFiltered / $perPage));
         $offset = ($page - 1) * $perPage;
         $pageItems = $items->slice($offset, $perPage)->values();
-        $lastDocumentId = $pageItems->last()['id'] ?? null;
 
         return view("{$this->getViewFolder()}.index", [
             'subcategories' => $pageItems,
@@ -121,7 +120,7 @@ class SubcategoryController extends Controller
             'categoryFilter' => $categoryFilter,
             'statusFilter' => $statusFilter,
             'hasMore' => $page < $totalPages,
-            'lastDocumentId' => $lastDocumentId,
+            'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,
             'perPage' => $perPage,
             'totalFiltered' => $totalFiltered,

@@ -29,15 +29,18 @@ class ProductControllerTest extends TestCase
         $this->mockAuthUser('admin');
 
         $this->firestoreMock
+            ->method('fetchForPage')
+            ->willReturn([
+                'documents' => [
+                    ['id' => 'prod-1', 'name' => 'Cloro 1L', 'price' => 1500, 'stock' => 10, 'active' => true],
+                ],
+                'hasMore' => false,
+                'lastDocumentId' => null,
+            ]);
+
+        $this->firestoreMock
             ->method('listDocuments')
             ->willReturnMap([
-                ['products', 10, null, 'name', [
-                    'documents' => [
-                        ['id' => 'prod-1', 'name' => 'Cloro 1L', 'price' => 1500, 'stock' => 10, 'active' => true],
-                    ],
-                    'hasMore' => false,
-                    'lastDocumentId' => null,
-                ]],
                 ['categories', 100, null, 'name', [
                     'documents' => [['id' => 'cat-1', 'name' => 'Limpieza', 'active' => true]],
                 ]],

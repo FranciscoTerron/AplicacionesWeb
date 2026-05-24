@@ -31,11 +31,12 @@ class OrderControllerTest extends TestCase
     {
         $this->mockAuthUser('admin');
 
-        $this->firestoreMock->method('listDocuments')->willReturn([
+        $this->firestoreMock->method('fetchForPage')->willReturn([
             'documents' => [
-                ['clientId' => 'Juan', 'status' => 'pending', 'paymentStatus' => 'pending'],
+                ['id' => '1', 'clientId' => 'Juan', 'status' => 'pending', 'paymentStatus' => 'pending'],
             ],
-            'nextPageToken' => null,
+            'hasMore' => false,
+            'lastDocumentId' => null,
         ]);
 
         $response = $this->get(route('admin.orders.index'));

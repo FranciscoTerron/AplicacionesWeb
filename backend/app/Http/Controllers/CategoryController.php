@@ -112,15 +112,12 @@ class CategoryController extends Controller
         $offset = ($page - 1) * $perPage;
         $pageItems = $items->slice($offset, $perPage)->values();
 
-        // Determine next cursor from the current page's last item
-        $lastDocumentId = $pageItems->last()['id'] ?? null;
-
         return view("{$this->getViewFolder()}.index", [
             'categories' => $pageItems,
             'search' => $search,
             'statusFilter' => $statusFilter,
             'hasMore' => $page < $totalPages,
-            'lastDocumentId' => $lastDocumentId,
+            'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,
             'perPage' => $perPage,
             'totalFiltered' => $totalFiltered,
