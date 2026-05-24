@@ -28,7 +28,7 @@
             <span class="badge bg-danger">Inactivo</span>
         @endif
     </td>
-    <td>
+    <td class="text-end" style="white-space: nowrap">
         <!-- Ver -->
         <button type="button" class="btn btn-sm btn-outline-primary"
             onclick="openModal('show', {{ json_encode($discount) }})"

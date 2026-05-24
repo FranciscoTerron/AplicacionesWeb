@@ -19,12 +19,12 @@
             <span class="badge bg-danger">Inactivo</span>
         @endif
     </td>
-    <td>
+    <td class="text-end" style="white-space: nowrap">
         <!-- Ver -->
         <button type="button" class="btn btn-sm btn-outline-primary"
             onclick="openModal('show', {{ json_encode($subcategory) }})"
             title="Ver detalles">
-            <i class="bi bi-eye">Ver</i>
+            <i class="bi bi-eye"></i> Ver
         </button>
 
         <!-- Editar -->
@@ -32,12 +32,12 @@
             <button type="button" class="btn btn-sm btn-outline-secondary"
                 onclick="openModal('edit', {{ json_encode($subcategory) }})"
                 title="Editar">
-                <i class="bi bi-pencil">Editar</i>
+                <i class="bi bi-pencil"></i> Editar
             </button>
         @else
             <button type="button" class="btn btn-sm btn-outline-secondary" disabled
                 title="Solo los administradores pueden editar subcategorías">
-                <i class="bi bi-pencil">Editar</i>
+                <i class="bi bi-pencil"></i> Editar
             </button>
         @endif
 
@@ -47,19 +47,19 @@
                 <button type="button" class="btn btn-sm btn-outline-danger"
                     onclick="openModal('deactivate', {{ json_encode($subcategory) }})"
                     title="Desactivar subcategoría">
-                    <i class="bi bi-lock">Desactivar</i>
+                    <i class="bi bi-lock"></i> Desactivar
                 </button>
             @else
                 <button type="button" class="btn btn-sm btn-outline-success"
                     onclick="openModal('activate', {{ json_encode($subcategory) }})"
                     title="Activar subcategoría">
-                    <i class="bi bi-unlock">Activar</i>
+                    <i class="bi bi-unlock"></i> Activar
                 </button>
             @endif
         @else
             <button type="button" class="btn btn-sm btn-outline-danger" disabled
                 title="Solo los administradores pueden cambiar el estado">
-                <i class="bi bi-lock">Desactivar</i>
+                <i class="bi bi-lock"></i> Desactivar
             </button>
         @endif
     </td>
