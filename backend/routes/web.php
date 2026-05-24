@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CategoryController;
@@ -112,5 +113,12 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::middleware(['admin'])->group(function () {
         Route::resource('users', UserController::class)->names('admin.users');
         Route::post('users/{user}/activate', [UserController::class, 'activate'])->name('admin.users.activate');
+    });
+
+    // Exportaciones CSV
+    Route::middleware(['admin'])->group(function () {
+        Route::get('export/{entity}/csv', [ExportController::class, 'export'])
+            ->where('entity', 'categories|subcategories|products|discounts|clients|orders|shipments')
+            ->name('admin.export.csv');
     });
 });

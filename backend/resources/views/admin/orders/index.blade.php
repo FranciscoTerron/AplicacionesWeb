@@ -20,11 +20,14 @@
 
 <div class="flex justify-between items-center mb-4">
     <h1>Pedidos</h1>
-    @if($isAdmin)
-        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewOrder">
-            <i class="bi bi-plus-circle"></i> Nuevo Pedido
-        </button>
-    @endif
+    <div class="d-flex gap-2">
+        @include('admin.partials._export_button', ['entityName' => 'orders'])
+        @if($isAdmin)
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewOrder">
+                <i class="bi bi-plus-circle"></i> Nuevo Pedido
+            </button>
+        @endif
+    </div>
 </div>
 
 <!-- Search and Filters -->

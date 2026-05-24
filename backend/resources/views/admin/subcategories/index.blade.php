@@ -14,9 +14,12 @@
     <div>
         <h1>Subcategorías</h1>
     </div>
-    <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewSubcategory" aria-label="Crear nueva subcategoría">
-        <i class="bi bi-plus-circle"></i> Nueva Subcategoría
-    </button>
+    <div class="d-flex gap-2">
+        @include('admin.partials._export_button', ['entityName' => 'subcategories'])
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewSubcategory" aria-label="Crear nueva subcategoría">
+            <i class="bi bi-plus-circle"></i> Nueva Subcategoría
+        </button>
+    </div>
 </div>
 
 <!-- Search and Filters -->

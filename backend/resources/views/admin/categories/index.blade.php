@@ -14,9 +14,12 @@
     <div>
         <h1>Categorías</h1>
     </div>
-    <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewCategory" aria-label="Crear nueva categoría">
-        <i class="bi bi-plus-circle"></i> Nueva Categoría
-    </button>
+    <div class="d-flex gap-2">
+        @include('admin.partials._export_button', ['entityName' => 'categories'])
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewCategory" aria-label="Crear nueva categoría">
+            <i class="bi bi-plus-circle"></i> Nueva Categoría
+        </button>
+    </div>
 </div>
 
 <!-- Search and Filters -->

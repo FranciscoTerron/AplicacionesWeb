@@ -12,9 +12,12 @@
 
 <div class="flex justify-between items-center mb-4">
     <h1>Productos</h1>
-    <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewProduct" aria-label="Crear nuevo producto">
-        <i class="bi bi-plus-circle"></i> Nuevo Producto
-    </button>
+    <div class="d-flex gap-2">
+        @include('admin.partials._export_button', ['entityName' => 'products'])
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewProduct" aria-label="Crear nuevo producto">
+            <i class="bi bi-plus-circle"></i> Nuevo Producto
+        </button>
+    </div>
 </div>
 
 <!-- Search and Filters -->

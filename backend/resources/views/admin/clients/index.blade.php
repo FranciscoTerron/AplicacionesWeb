@@ -13,11 +13,14 @@
 
 <div class="flex justify-between items-center mb-4">
     <h1>Clientes</h1>
-    @if($isAdmin)
-        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewClient" aria-label="Crear nuevo cliente">
-            <i class="bi bi-plus-circle"></i> Nuevo Cliente
-        </button>
-    @endif
+    <div class="d-flex gap-2">
+        @include('admin.partials._export_button', ['entityName' => 'clients'])
+        @if($isAdmin)
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewClient" aria-label="Crear nuevo cliente">
+                <i class="bi bi-plus-circle"></i> Nuevo Cliente
+            </button>
+        @endif
+    </div>
 </div>
 
 <!-- Search and Filters -->

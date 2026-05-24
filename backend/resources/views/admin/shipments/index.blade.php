@@ -13,11 +13,14 @@
 
 <div class="flex justify-between items-center mb-4">
     <h1>Envíos</h1>
-    @if($isAdmin)
-        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewShipment">
-            <i class="bi bi-plus-circle"></i> Nuevo Envío
-        </button>
-    @endif
+    <div class="d-flex gap-2">
+        @include('admin.partials._export_button', ['entityName' => 'shipments'])
+        @if($isAdmin)
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewShipment">
+                <i class="bi bi-plus-circle"></i> Nuevo Envío
+            </button>
+        @endif
+    </div>
 </div>
 
 <!-- Search and Filters -->

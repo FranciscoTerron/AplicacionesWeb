@@ -15,11 +15,14 @@
     <div>
         <h1>Descuentos</h1>
     </div>
-    @if($isAdmin)
-        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewDiscount" aria-label="Crear nuevo descuento">
-            <i class="bi bi-plus-circle"></i> Nuevo Descuento
-        </button>
-    @endif
+    <div class="d-flex gap-2">
+        @include('admin.partials._export_button', ['entityName' => 'discounts'])
+        @if($isAdmin)
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewDiscount" aria-label="Crear nuevo descuento">
+                <i class="bi bi-plus-circle"></i> Nuevo Descuento
+            </button>
+        @endif
+    </div>
 </div>
 
 <!-- Search and Filters -->
