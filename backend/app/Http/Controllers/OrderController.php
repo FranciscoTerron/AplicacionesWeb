@@ -162,6 +162,11 @@ class OrderController extends Controller
             'clients' => $clients,
             'products' => $products,
             'statuses' => self::statuses(),
+            'paymentStatuses' => [
+                'pending' => 'Pendiente',
+                'paid' => 'Pagado',
+                'overdue' => 'Vencido',
+            ],
             'search' => $search,
             'statusFilter' => $statusFilter,
             'paymentFilter' => $paymentFilter,

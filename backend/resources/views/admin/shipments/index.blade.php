@@ -23,26 +23,7 @@
 <!-- Search and Filters -->
 <div class="card mb-3">
     <div class="card-body">
-        <form method="GET" action="{{ route('admin.shipments.index') }}" class="row g-3">
-            <div class="col-md-6">
-                <input type="text" name="search" value="{{ $search ?? '' }}"
-                       class="form-control" placeholder="Buscar por orden, tracking, transportista o dirección...">
-            </div>
-            <div class="col-md-4">
-                <select name="status" class="form-select">
-                    <option value="">Todos los estados</option>
-                    @foreach($statuses as $key => $label)
-                        <option value="{{ $key }}" {{ ($statusFilter ?? '') === $key ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button type="submit" class="btn btn-sm btn-outline-primary">Filtrar</button>
-                @if($search || $statusFilter)
-                    <a href="{{ route('admin.shipments.index') }}" class="btn btn-sm btn-outline-secondary w-100 mt-1">Limpiar</a>
-                @endif
-            </div>
-        </form>
+        @include('admin.shipments.partials._search_form')
     </div>
 </div>
 

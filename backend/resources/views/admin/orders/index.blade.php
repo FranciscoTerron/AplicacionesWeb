@@ -10,11 +10,6 @@
     $currentUserRole = $currentUser?->role ?? 'editor';
     $isAdmin = $currentUserRole === 'admin';
     $isEditor = $currentUserRole === 'editor';
-    $paymentStatuses = [
-        'pending' => 'Pendiente',
-        'paid' => 'Pagado',
-        'overdue' => 'Vencido',
-    ];
     $paymentMethods = [
         'cash' => 'Efectivo',
         'transfer' => 'Transferencia',
@@ -35,34 +30,7 @@
 <!-- Search and Filters -->
 <div class="card mb-3">
     <div class="card-body">
-        <form method="GET" action="{{ route('admin.orders.index') }}" class="row g-3">
-            <div class="col-md-4">
-                <input type="text" name="search" value="{{ $search ?? '' }}"
-                       class="form-control" placeholder="Buscar por cliente o ID...">
-            </div>
-            <div class="col-md-3">
-                <select name="status" class="form-select">
-                    <option value="">Todos los estados</option>
-                    @foreach($statuses as $key => $label)
-                        <option value="{{ $key }}" {{ ($statusFilter ?? '') === $key ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-3">
-                <select name="payment_status" class="form-select">
-                    <option value="">Cualquier pago</option>
-                    @foreach($paymentStatuses as $key => $label)
-                        <option value="{{ $key }}" {{ ($paymentFilter ?? '') === $key ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button type="submit" class="btn btn-sm btn-outline-primary">Filtrar</button>
-                @if($search || $statusFilter || $paymentFilter)
-                    <a href="{{ route('admin.orders.index') }}" class="btn btn-sm btn-outline-secondary w-100 mt-1">Limpiar</a>
-                @endif
-            </div>
-        </form>
+        @include('admin.orders.partials._search_form')
     </div>
 </div>
 
