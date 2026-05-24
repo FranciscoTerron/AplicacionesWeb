@@ -15,6 +15,9 @@
         <h1>Subcategorías</h1>
     </div>
     <div class="d-flex gap-2">
+        @if($currentUserRole == 'admin')
+            @include('admin.partials._import_button', ['entityName' => 'subcategories'])
+        @endif
         @include('admin.partials._export_button', ['entityName' => 'subcategories'])
         <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewSubcategory" aria-label="Crear nueva subcategoría">
             <i class="bi bi-plus-circle"></i> Nueva Subcategoría

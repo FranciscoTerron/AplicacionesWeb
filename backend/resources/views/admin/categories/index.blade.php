@@ -15,6 +15,9 @@
         <h1>Categorías</h1>
     </div>
     <div class="d-flex gap-2">
+        @if($currentUserRole == 'admin')
+            @include('admin.partials._import_button', ['entityName' => 'categories'])
+        @endif
         @include('admin.partials._export_button', ['entityName' => 'categories'])
         <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewCategory" aria-label="Crear nueva categoría">
             <i class="bi bi-plus-circle"></i> Nueva Categoría

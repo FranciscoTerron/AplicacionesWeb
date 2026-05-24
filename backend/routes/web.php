@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ExportController;
+use App\Http\Controllers\Admin\ImportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CategoryController;
@@ -116,7 +117,19 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     });
 
     // Exportaciones CSV
-    Route::get('export/{entity}/csv', [ExportController::class, 'export'])
-        ->where('entity', 'categories|subcategories|products|discounts|clients|orders|shipments')
-        ->name('admin.export.csv');
+    Route::middleware(['admin'])->group(function () {
+        Route::get('export/{entity}/csv', [ExportController::class, 'export'])
+            ->where('entity', 'categories|subcategories|products|discounts|clients|orders|shipments')
+            ->name('admin.export.csv');
+    });
+
+    // Importaciones CSV
+    Route::middleware(['admin'])->group(function () {
+        Route::get('import/{entity}/create', [ImportController::class, 'create'])
+            ->where('entity', 'categories|subcategories|products')
+            ->name('admin.import.create');
+        Route::post('import/{entity}', [ImportController::class, 'store'])
+            ->where('entity', 'categories|subcategories|products')
+            ->name('admin.import.store');
+    });
 });
