@@ -116,11 +116,14 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
         Route::post('users/{user}/activate', [UserController::class, 'activate'])->name('admin.users.activate');
     });
 
-    // Exportaciones CSV
-    Route::middleware(['admin'])->group(function () {
+    // Exportaciones CSV y Excel
+    Route::middleware(['auth'])->group(function () {
         Route::get('export/{entity}/csv', [ExportController::class, 'export'])
             ->where('entity', 'categories|subcategories|products|discounts|clients|orders|shipments')
             ->name('admin.export.csv');
+        Route::get('export/{entity}/excel', [ExportController::class, 'exportExcel'])
+            ->where('entity', 'categories|subcategories|products|discounts|clients|orders|shipments')
+            ->name('admin.export.excel');
     });
 
     // Importaciones CSV

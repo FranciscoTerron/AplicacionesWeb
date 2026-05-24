@@ -23,6 +23,11 @@
                 <i class="bi bi-file-text"></i> Exportar CSV
             </a>
         </li>
+        <li>
+            <a href="{{ route('admin.export.excel', $entity) }}" class="dropdown-item" aria-label="Exportar a Excel">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </a>
+        </li>
     </ul>
 </div>
 @endif
