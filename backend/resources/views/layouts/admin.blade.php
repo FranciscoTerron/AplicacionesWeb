@@ -202,62 +202,76 @@
             color: rgba(255,255,255,0.5);
         }
 
-        .logout-btn {
-            background: none;
-            border: none;
-            color: rgba(255,255,255,0.5);
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 6px;
-            transition: all 0.15s;
-        }
+.logout-btn {
+             background: none;
+             border: none;
+             color: rgba(255,255,255,0.5);
+             cursor: pointer;
+             padding: 0.5rem;
+             border-radius: 6px;
+             transition: all 0.15s;
+         }
 
-        .logout-btn:hover {
-            color: var(--white);
-            background: rgba(255,255,255,0.06);
-        }
+         .logout-btn:hover {
+             color: var(--white);
+             background: rgba(255,255,255,0.06);
+         }
 
-        /* Main Content */
-        .main-content {
-            flex: 1;
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-        }
+         /* Main Content */
+         .main-content {
+             flex: 1;
+             margin-left: var(--sidebar-width);
+             min-height: 100vh;
+         }
 
-        .top-bar {
-            background: var(--bg-topbar);
-            color: var(--white);
-            padding: 1rem 2rem;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            min-height: 64px;
-        }
+         .top-bar {
+             background: var(--bg-topbar);
+             color: var(--white);
+             padding: 1rem 2rem;
+             border-bottom: 1px solid rgba(255,255,255,0.08);
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             position: sticky;
+             top: 0;
+             z-index: 50;
+             min-height: 64px;
+         }
 
-        .page-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--white);
-            letter-spacing: -0.01em;
-        }
+         .page-title {
+             font-size: 1.25rem;
+             font-weight: 600;
+             color: var(--white);
+             letter-spacing: -0.01em;
+         }
 
-        .page-subtitle {
-            font-size: 0.82rem;
-            color: rgba(255,255,255,0.55);
-            margin-top: 0.15rem;
-        }
+         .page-subtitle {
+             font-size: 0.82rem;
+             color: rgba(255,255,255,0.55);
+             margin-top: 0.15rem;
+         }
 
-        .top-bar .mobile-toggle {
-            color: var(--white);
-        }
+         /* Breadcrumbs */
+         .breadcrumb {
+             margin-bottom: 0;
+         }
 
-        .content {
-            padding: 2rem;
-        }
+         .breadcrumb-item + .breadcrumb-item::before {
+             content: '/';
+             color: #64748b;
+         }
+
+         .breadcrumb-item a:hover {
+             text-decoration: underline;
+         }
+
+         .top-bar .mobile-toggle {
+             color: var(--white);
+         }
+
+         .content {
+             padding: 2rem;
+         }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -495,35 +509,37 @@
     <div class="layout">
         @include('admin.partials.sidebar')
         
-     <div class="main-content">
-        <header class="top-bar">
-            @include('admin.components.page-header')
-            <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" style="background:none;border:none;cursor:pointer;padding:0.5rem;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 12h18M3 6h18M3 18h18"/>
-                </svg>
-            </button>
-        </header>
-        
-        <main class="content">
-            @if(session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
+        <div class="main-content">
+            <header class="top-bar">
+                @include('admin.components.page-header')
+                <button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" style="background:none;border:none;cursor:pointer;padding:0.5rem;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12h18M3 6h18M3 18h18"/>
+                    </svg>
+                </button>
+            </header>
             
-            @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    {{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-            
-            @yield('content')
-        </main>
+            <main class="content">
+                @if(session('success'))
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        {{ session('success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+                
+                @if(session('error'))
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        {{ session('error') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+                
+                @include('admin.partials._breadcrumbs')
+                
+                @yield('content')
+            </main>
+        </div>
     </div>
-</div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>

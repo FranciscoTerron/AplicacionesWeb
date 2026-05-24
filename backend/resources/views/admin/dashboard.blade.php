@@ -2,9 +2,7 @@
 
 @section('title', 'Dashboard - MA Piscinas')
 @section('page-title', 'Dashboard')
-@section('page-subtitle')
-<p class="page-subtitle">Resumen general del sistema</p>
-@endsection
+@section('page-subtitle', 'Resumen general del sistema')
 
 @section('content')
 @php
