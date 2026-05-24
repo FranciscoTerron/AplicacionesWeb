@@ -504,7 +504,12 @@ class FirestoreService
             return array_map([$this, 'decodeValue'], $values);
         }
         if (isset($field['mapValue'])) {
-            return $this->decodeValue($field['mapValue']);
+            $result = [];
+            foreach ($field['mapValue']['fields'] ?? [] as $key => $subField) {
+                $result[$key] = $this->decodeValue($subField);
+            }
+
+            return $result;
         }
         if (isset($field['timestampValue'])) {
             return $field['timestampValue'];
