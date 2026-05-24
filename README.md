@@ -104,6 +104,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Accesibilidad y Validación Frontend |✅ | completa y funcional |
 | Importaciones CSV | ✅ | completa y funcional |
 | Exportaciones CSV| ✅ | completa y funcional |
+| Exportaciones Excel| ✅ | completa y funcional |
 | Integración de Cloudinary | ⏳ | Falta implementar |
 
 **Conclusión**: avance sobre funcionalidades + correccion en UX.
