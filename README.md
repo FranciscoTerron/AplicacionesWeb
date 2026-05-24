@@ -102,8 +102,8 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Ordenamiento | ✅ | completa y funcional |
 | breadcrumbs | ✅ | completa y funcional |
 | Accesibilidad y Validación Frontend |✅ | completa y funcional |
-| Importaciones CSV | ⏳ | Falta implementar |
-| Exportaciones CSV| ⏳ | Falta implementar |
+| Importaciones CSV | ✅ | completa y funcional |
+| Exportaciones CSV| ✅ | completa y funcional |
 | Integración de Cloudinary | ⏳ | Falta implementar |
 
 **Conclusión**: avance sobre funcionalidades + correccion en UX.
