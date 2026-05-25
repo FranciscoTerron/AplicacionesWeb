@@ -3,6 +3,7 @@
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\Api\AcceptJsonHeaderMiddleware;
 use App\Http\Middleware\Api\ForceJsonResponseMiddleware;
+use App\Http\Middleware\ShareSettingsMiddleware;
 use App\Providers\AppServiceProvider;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
             StartSession::class,
             ShareErrorsFromSession::class,
             ValidateCsrfToken::class,
+            ShareSettingsMiddleware::class,
             SubstituteBindings::class,
         ]);
 

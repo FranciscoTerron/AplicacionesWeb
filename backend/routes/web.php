@@ -11,6 +11,7 @@ use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\ShipmentController;
 use App\Http\Controllers\SubcategoryController;
 use App\Http\Controllers\UserController;
@@ -31,9 +32,8 @@ Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallbac
 Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('admin.dashboard');
 
-    Route::get('settings', function () {
-        return view('admin.settings.index');
-    })->name('admin.settings');
+    Route::get('settings', [SettingController::class, 'index'])->name('admin.settings');
+    Route::put('settings', [SettingController::class, 'update'])->middleware(['admin'])->name('admin.settings.update');
 
     // Rutas accesibles tanto para editors como para admins (solo lectura)
     Route::resource('categories', CategoryController::class)->names('admin.categories');

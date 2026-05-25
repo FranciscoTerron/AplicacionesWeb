@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="cloudinary-cloud-name" content="{{ config('cloudinary.cloud_name') }}">
     <meta name="cloudinary-upload-preset" content="{{ config('cloudinary.upload_preset') }}">
-    <title>@yield('title', 'MA Piscinas - Admin')</title>
+    <title>@yield('title', $settings['store_name'] ?? 'MA Piscinas' . ' - Admin')</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">

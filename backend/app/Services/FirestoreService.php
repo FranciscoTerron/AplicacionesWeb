@@ -197,6 +197,19 @@ class FirestoreService
         return $this->getDocument($collection, $id);
     }
 
+    public function createDocumentWithId(string $collection, string $docId, array $data): array
+    {
+        $url = "{$this->baseUrl}/{$collection}/{$docId}";
+        $body = ['fields' => $this->encodeFields($data)];
+        $response = Http::withToken($this->accessToken)->patch($url, $body);
+
+        if ($response->failed()) {
+            throw new Exception('Firestore create failed: '.$response->body());
+        }
+
+        return $this->getDocument($collection, $docId);
+    }
+
     public function updateDocument(string $collection, string $docId, array $data): array
     {
         $queryParams = [];

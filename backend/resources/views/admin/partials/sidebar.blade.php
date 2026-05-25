@@ -50,7 +50,7 @@ $iconPaths = [
 <aside class="sidebar">
     <div class="sidebar-header">
         <a href="{{ route('admin.dashboard') }}" class="sidebar-logo">
-            MA Piscinas <span>Admin</span>
+            {{ $settings['store_name'] ?? 'MA Piscinas' }} <span>Admin</span>
         </a>
     </div>
 
