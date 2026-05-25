@@ -2,17 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\CategoriesExport;
-use App\Exports\ClientsExport;
-use App\Exports\DiscountsExport;
-use App\Exports\OrdersExport;
-use App\Exports\ProductsExport;
-use App\Exports\ShipmentsExport;
-use App\Exports\SubcategoriesExport;
 use App\Services\FirestoreService;
 use Carbon\Carbon;
 use League\Csv\Writer;
-use Maatwebsite\Excel\Facades\Excel;
 
 class ExportController
 {
@@ -40,27 +32,13 @@ class ExportController
         'discounts',
     ];
 
-    private static array $exportClasses = [
-        'categories' => CategoriesExport::class,
-        'subcategories' => SubcategoriesExport::class,
-        'products' => ProductsExport::class,
-        'discounts' => DiscountsExport::class,
-        'clients' => ClientsExport::class,
-        'orders' => OrdersExport::class,
-        'shipments' => ShipmentsExport::class,
-    ];
-
-    public function export(string $entity, string $format = 'csv')
+    public function export(string $entity)
     {
         if (! isset($this->exportableEntities[$entity])) {
             abort(404, 'Entidad no exportable.');
         }
 
         $this->authorizeExport($entity);
-
-        if ($format === 'excel') {
-            return $this->exportExcel($entity);
-        }
 
         return $this->exportCsv($entity);
     }
@@ -76,30 +54,6 @@ class ExportController
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
-    }
-
-    public function exportExcel(string $entity)
-    {
-        set_time_limit(0);
-        ini_set('memory_limit', '512M');
-
-        $this->authorizeExport($entity);
-
-        // Check if entity is valid
-        if (! isset($this->exportableEntities[$entity])) {
-            abort(404, 'Entidad no exportable.');
-        }
-
-        $exportClass = self::$exportClasses[$entity] ?? null;
-        if (! $exportClass) {
-            abort(404, 'Export no configurado.');
-        }
-
-        $export = new $exportClass($this->firestore);
-
-        $filename = $entity.'_'.now()->format('Y-m-d').'.xlsx';
-
-        return Excel::download($export, $filename);
     }
 
     protected function authorizeExport(string $entity): void
@@ -131,7 +85,6 @@ class ExportController
             $result = $this->firestore->fetchForPage($collection, 500, $cursor, 'name', 20);
             $documents = $result['documents'] ?? [];
 
-            // Filter duplicates
             foreach ($documents as $doc) {
                 $exists = false;
                 foreach ($allDocuments as $existing) {
