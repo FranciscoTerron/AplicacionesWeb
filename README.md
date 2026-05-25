@@ -104,7 +104,6 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Accesibilidad y validación frontend | ✅ | `aria-label`, `aria-describedby`, focus trap en modales, validación inline |
 | Importaciones CSV | ✅ | Productos, categorías y descuentos. Solo rol admin |
 | Exportaciones CSV | ✅ | Todas las entidades del admin |
-| Exportaciones Excel | ✅ | Con `maatwebsite/excel`, todas las entidades |
 | API REST básica | ✅ | `/api/v1/health`, `/api/v1/catalog/*` con resource classes y middleware JSON |
 | Health check endpoint | ✅ | `HealthCheckService` reporta status de Firestore + versión + entorno |
 | **Integración Cloudinary** | ✅ | Upload Widget (browser → Cloudinary directo), shape Firestore `{url, public_id}`, cleanup automático al reemplazar/borrar, max 10MB |
@@ -135,7 +134,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 - **Patrón único**: modales dinámicos con AJAX, validación inline, sin recarga
 - **Búsqueda + filtros + ordenamiento + paginación** en todos los listados
 - **Imágenes en Cloudinary**: galería única por producto (primera = principal), imagen única por categoría/subcategoría, cleanup automático al reemplazar
-- **Importación/Exportación masiva** en CSV y Excel
+- **Importación/Exportación masiva** en CSV
 - **Breadcrumbs** y **toasts** de feedback
 - **Autorización por rol** (admin / editor) con Laravel Policies
 - **Auditoría**: `created_by`, `updated_by`, `created_at`, `updated_at` en todos los documentos
