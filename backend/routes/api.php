@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\CatalogApiController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\HealthCheckController;
 use Illuminate\Support\Facades\Route;
@@ -29,6 +30,14 @@ Route::prefix('v1')->group(function () {
     // Catalog: productos activos (consumido por el frontend e-commerce)
     Route::get('/catalog/products', [CatalogController::class, 'products'])
         ->name('api.v1.catalog.products');
+
+    // Catalog API (externo) - Fase 1
+    Route::get('/catalog/products/{id}', [CatalogApiController::class, 'product'])
+        ->name('api.v1.catalog.product.show');
+
+    // Catalog API (externo) - Fase 2
+    Route::get('/catalog/categories', [CatalogApiController::class, 'categories'])
+        ->name('api.v1.catalog.categories');
 });
 
 /**
