@@ -31,43 +31,68 @@ class UserController extends Controller
             return $this->unauthorizedView();
         }
 
-        $page = request()->get('page', 1);
+        $page = max(1, intval(request()->get('page', 1)));
+        $perPage = intval(request()->get('per_page', 10));
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
         $startAfter = request()->get('after');
         $search = request()->get('search');
         $roleFilter = request()->get('role');
         $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments('users', 10, $startAfter);
+        $fetchResult = $this->firestore->fetchForPage(
+            'users',
+            $perPage,
+            $startAfter,
+        );
 
-        // Apply filters in PHP (since Firestore has limited query capabilities)
-        $users = collect($result['documents']);
+        // Apply filters in PHP
+        $users = collect($fetchResult['documents'] ?? []);
 
         if ($search) {
             $users = $users->filter(function ($user) use ($search) {
                 return stripos($user['name'] ?? '', $search) !== false ||
                        stripos($user['email'] ?? '', $search) !== false;
-            });
+            })->values();
         }
 
         if ($roleFilter) {
-            $users = $users->where('role', $roleFilter);
+            $users = $users->where('role', $roleFilter)->values();
         }
 
         if ($statusFilter !== null) {
             $statusBool = $statusFilter === 'active';
             $users = $users->filter(function ($user) use ($statusBool) {
                 return ($user['active'] ?? true) == $statusBool;
-            });
+            })->values();
         }
 
+        // Apply sorting
+        $sort = request()->get('sort', 'name');
+        $order = request()->get('order', 'asc');
+        $sortableFields = ['name', 'email', 'role', 'created_at'];
+        if (in_array($sort, $sortableFields)) {
+            $users = $users->sortBy($sort, SORT_REGULAR, $order === 'desc')->values();
+        }
+
+        // Paginate filtered results
+        $totalFiltered = $users->count();
+        $totalPages = intval(ceil($totalFiltered / $perPage));
+        $offset = ($page - 1) * $perPage;
+        $pageItems = $users->slice($offset, $perPage)->values();
+
         return View::make('admin.users.index', [
-            'users' => $users->values()->all(),
-            'hasMore' => $result['hasMore'],
-            'lastDocumentId' => $result['lastDocumentId'],
+            'users' => $pageItems->all(),
+            'hasMore' => $page < $totalPages,
+            'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,
+            'perPage' => $perPage,
+            'totalFiltered' => $totalFiltered,
+            'totalPages' => $totalPages,
             'search' => $search,
             'roleFilter' => $roleFilter,
             'statusFilter' => $statusFilter,
+            'sort' => $sort,
+            'order' => $order,
         ]);
     }
 

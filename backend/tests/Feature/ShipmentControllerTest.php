@@ -28,11 +28,17 @@ class ShipmentControllerTest extends TestCase
     {
         $this->mockAuthUser('admin');
 
-        $this->firestoreMock->method('listDocuments')->willReturn([
+        $this->firestoreMock->method('fetchForPage')->willReturn([
             'documents' => [
                 ['order_id' => 'ord-1', 'tracking_code' => 'TRK1', 'carrier' => 'OCA', 'status' => 'in_transit', 'address' => 'Calle 123', 'active' => true],
             ],
-            'nextPageToken' => null,
+            'hasMore' => false,
+            'lastDocumentId' => null,
+        ]);
+
+        // Mock listDocuments for orders filter dropdown
+        $this->firestoreMock->method('listDocuments')->willReturn([
+            'documents' => [],
         ]);
 
         $response = $this->get(route('admin.shipments.index'));
@@ -46,19 +52,19 @@ class ShipmentControllerTest extends TestCase
     {
         $this->mockAuthUser('admin');
 
-        $this->firestoreMock->method('listDocuments')->willReturnCallback(function ($collection) {
-            if ($collection === 'shipments') {
-                return [
-                    'documents' => [
-                        ['order_id' => 'ord-1', 'tracking_code' => 'TRACKINGUNICO', 'status' => 'in_transit', 'address' => 'Calle 1'],
-                        ['order_id' => 'ord-2', 'tracking_code' => 'OTROTRACKING', 'status' => 'delivered', 'address' => 'Calle 2'],
-                    ],
-                    'nextPageToken' => null,
-                ];
-            }
+        $this->firestoreMock->method('fetchForPage')->willReturn([
+            'documents' => [
+                ['order_id' => 'ord-1', 'tracking_code' => 'TRACKINGUNICO', 'status' => 'in_transit', 'address' => 'Calle 1'],
+                ['order_id' => 'ord-2', 'tracking_code' => 'OTROTRACKING', 'status' => 'delivered', 'address' => 'Calle 2'],
+            ],
+            'hasMore' => false,
+            'lastDocumentId' => null,
+        ]);
 
-            return ['documents' => [], 'nextPageToken' => null];
-        });
+        // Mock listDocuments for orders filter dropdown
+        $this->firestoreMock->method('listDocuments')->willReturn([
+            'documents' => [],
+        ]);
 
         $response = $this->get(route('admin.shipments.index', ['status' => 'in_transit']));
 

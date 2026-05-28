@@ -28,11 +28,12 @@ class ClientControllerTest extends TestCase
     {
         $this->mockAuthUser('admin');
 
-        $this->firestoreMock->method('listDocuments')->willReturn([
+        $this->firestoreMock->method('fetchForPage')->willReturn([
             'documents' => [
                 ['name' => 'Juan Pérez', 'email' => 'juan@example.com', 'phone' => '12345678', 'active' => true],
             ],
-            'nextPageToken' => null,
+            'hasMore' => false,
+            'lastDocumentId' => null,
         ]);
 
         $response = $this->get(route('admin.clients.index'));
@@ -132,9 +133,13 @@ class ClientControllerTest extends TestCase
         ];
 
         $this->firestoreMock
-            ->expects($this->exactly(2))
+            ->expects($this->atLeastOnce())
             ->method('getDocument')
-            ->willReturn(['name' => 'Juan Pérez']);
+            ->with('clients', $clientId)
+            ->willReturnOnConsecutiveCalls(
+                ['name' => 'Juan Pérez'],
+                ['name' => 'Juan Pérez'],
+            );
 
         $this->firestoreMock
             ->expects($this->once())

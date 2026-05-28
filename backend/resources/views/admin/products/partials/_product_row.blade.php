@@ -1,9 +1,33 @@
 <tr class="{{ !$isActive ? 'table-light' : '' }}">
     <td>
-        <strong>{{ $product['name'] ?? 'N/A' }}</strong>
-        @if(!empty($product['description']))
-            <br><small class="text-muted">{{ Str::limit($product['description'], 50) }}</small>
-        @endif
+        @php
+            $thumbUrl = null;
+            $fullUrl = null;
+            $images = $product['images'] ?? [];
+            if (is_array($images)) {
+                foreach ($images as $img) {
+                    if (is_array($img) && ! empty($img['url'])) {
+                        $fullUrl = $img['url'];
+                        $thumbUrl = str_replace('/upload/', '/upload/c_thumb,w_40,h_40,g_auto/', $fullUrl);
+                        break;
+                    }
+                }
+            }
+        @endphp
+        <div class="d-flex align-items-center gap-2">
+            @if($thumbUrl)
+                <img src="{{ $thumbUrl }}" alt="Imagen de {{ $product['name'] ?? '' }}"
+                     onclick="showImageLightbox('{{ e($fullUrl) }}', '{{ e($product['name'] ?? '') }}')"
+                     style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border);flex:0 0 auto;cursor:zoom-in;"
+                     title="Click para ampliar">
+            @endif
+            <div>
+                <strong>{{ $product['name'] ?? 'N/A' }}</strong>
+                @if(!empty($product['description']))
+                    <br><small class="text-muted">{{ Str::limit($product['description'], 50) }}</small>
+                @endif
+            </div>
+        </div>
     </td>
     <td>{{ $categoryName ?? 'N/A' }}</td>
     <td>${{ number_format($product['price'] ?? 0, 2, ',', '.') }}</td>
@@ -18,22 +42,24 @@
     <td>
         <!-- Ver -->
         <button type="button" class="btn btn-sm btn-outline-primary"
-            onclick="openModal('show', {{ json_encode($product) }})"
-            title="Ver detalles">
-            <i class="bi bi-eye">Ver</i>
+            onclick="openProductModal('show', {{ json_encode($product) }}, this)"
+            title="Ver detalles"
+            aria-label="Ver detalles de {{ $product['name'] ?? '' }}">
+            <i class="bi bi-eye"></i> Ver
         </button>
 
         <!-- Editar -->
         @if($canManage ?? $isAdmin)
             <button type="button" class="btn btn-sm btn-outline-secondary"
-                onclick="openModal('edit', {{ json_encode($product) }})"
-                title="Editar">
-                <i class="bi bi-pencil">Editar</i>
+                onclick="openProductModal('edit', {{ json_encode($product) }}, this)"
+                title="Editar"
+                aria-label="Editar {{ $product['name'] ?? '' }}">
+                <i class="bi bi-pencil"></i> Editar
             </button>
         @else
             <button type="button" class="btn btn-outline-secondary btn-sm" disabled
                 title="No tienes permisos para editar productos">
-                <i class="bi bi-pencil">Editar</i>
+                <i class="bi bi-pencil"></i> Editar
             </button>
         @endif
 
@@ -41,21 +67,23 @@
         @if($canManage ?? $isAdmin)
             @if($isActive)
                 <button type="button" class="btn btn-sm btn-outline-danger"
-                    onclick="openModal('deactivate', {{ json_encode($product) }})"
-                    title="Desactivar producto">
-                    <i class="bi bi-lock">Desactivar</i>
+                    onclick="openProductModal('deactivate', {{ json_encode($product) }}, this)"
+                    title="Desactivar producto"
+                    aria-label="Desactivar {{ $product['name'] ?? '' }}">
+                    <i class="bi bi-lock"></i> Desactivar
                 </button>
             @else
                 <button type="button" class="btn btn-sm btn-outline-success"
-                    onclick="openModal('activate', {{ json_encode($product) }})"
-                    title="Activar producto">
-                    <i class="bi bi-unlock">Activar</i>
+                    onclick="openProductModal('activate', {{ json_encode($product) }}, this)"
+                    title="Activar producto"
+                    aria-label="Activar {{ $product['name'] ?? '' }}">
+                    <i class="bi bi-unlock"></i> Activar
                 </button>
             @endif
         @else
             <button type="button" class="btn btn-sm btn-outline-danger" disabled
                 title="No tienes permisos para cambiar el estado">
-                <i class="bi bi-lock">Desactivar</i>
+                <i class="bi bi-lock"></i> Desactivar
             </button>
         @endif
     </td>

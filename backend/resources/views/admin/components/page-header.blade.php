@@ -12,8 +12,9 @@ $pageTitles = [
     'admin.users.show' => ['title' => 'Ver Usuario', 'subtitle' => 'Información completa del usuario'],
     'admin.users.edit' => ['title' => 'Editar Usuario', 'subtitle' => 'Modificar información del usuario'],
     'admin.discounts.index' => ['title' => 'Descuentos', 'subtitle' => 'Gestión de promociones'],
-    'admin.orders' => ['title' => 'Órdenes', 'subtitle' => 'Gestión de pedidos'],
-    'admin.customers' => ['title' => 'Clientes', 'subtitle' => 'Gestión de clientes'],
+    'admin.orders.index' => ['title' => 'Pedidos', 'subtitle' => 'Gestión de pedidos'],
+    'admin.shipments.index' => ['title' => 'Envíos', 'subtitle' => 'Gestión de envíos'],
+    'admin.clients.index' => ['title' => 'Clientes', 'subtitle' => 'Gestión de clientes'],
     'admin.settings' => ['title' => 'Configuración', 'subtitle' => 'Ajustes del sistema'],
 ];
 

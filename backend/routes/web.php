@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\ExportController;
+use App\Http\Controllers\Admin\ImportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\CategoryController;
@@ -9,6 +11,7 @@ use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SettingController;
 use App\Http\Controllers\ShipmentController;
 use App\Http\Controllers\SubcategoryController;
 use App\Http\Controllers\UserController;
@@ -29,9 +32,8 @@ Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallbac
 Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('admin.dashboard');
 
-    Route::get('settings', function () {
-        return view('admin.settings.index');
-    })->name('admin.settings');
+    Route::get('settings', [SettingController::class, 'index'])->name('admin.settings');
+    Route::put('settings', [SettingController::class, 'update'])->middleware(['admin'])->name('admin.settings.update');
 
     // Rutas accesibles tanto para editors como para admins (solo lectura)
     Route::resource('categories', CategoryController::class)->names('admin.categories');
@@ -112,5 +114,22 @@ Route::middleware(['auth'])->prefix('admin')->group(function () {
     Route::middleware(['admin'])->group(function () {
         Route::resource('users', UserController::class)->names('admin.users');
         Route::post('users/{user}/activate', [UserController::class, 'activate'])->name('admin.users.activate');
+    });
+
+    // Exportaciones CSV
+    Route::middleware(['auth'])->group(function () {
+        Route::get('export/{entity}', [ExportController::class, 'export'])
+            ->where('entity', 'categories|subcategories|products|discounts|clients|orders|shipments')
+            ->name('admin.export.csv');
+    });
+
+    // Importaciones CSV
+    Route::middleware(['admin'])->group(function () {
+        Route::get('import/{entity}/create', [ImportController::class, 'create'])
+            ->where('entity', 'categories|subcategories|products')
+            ->name('admin.import.create');
+        Route::post('import/{entity}', [ImportController::class, 'store'])
+            ->where('entity', 'categories|subcategories|products')
+            ->name('admin.import.store');
     });
 });

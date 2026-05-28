@@ -13,36 +13,20 @@
 
 <div class="flex justify-between items-center mb-4">
     <h1>Envíos</h1>
-    @if($isAdmin)
-        <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewShipment">
-            <i class="bi bi-plus-circle"></i> Nuevo Envío
-        </button>
-    @endif
+    <div class="d-flex gap-2">
+        @include('admin.partials._export_button', ['entityName' => 'shipments'])
+        @if($isAdmin)
+            <button type="button" class="btn btn-sm btn-outline-primary" id="btnNewShipment">
+                <i class="bi bi-plus-circle"></i> Nuevo Envío
+            </button>
+        @endif
+    </div>
 </div>
 
 <!-- Search and Filters -->
 <div class="card mb-3">
     <div class="card-body">
-        <form method="GET" action="{{ route('admin.shipments.index') }}" class="row g-3">
-            <div class="col-md-6">
-                <input type="text" name="search" value="{{ $search ?? '' }}"
-                       class="form-control" placeholder="Buscar por orden, tracking, transportista o dirección...">
-            </div>
-            <div class="col-md-4">
-                <select name="status" class="form-select">
-                    <option value="">Todos los estados</option>
-                    @foreach($statuses as $key => $label)
-                        <option value="{{ $key }}" {{ ($statusFilter ?? '') === $key ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button type="submit" class="btn btn-sm btn-outline-primary">Filtrar</button>
-                @if($search || $statusFilter)
-                    <a href="{{ route('admin.shipments.index') }}" class="btn btn-sm btn-outline-secondary w-100 mt-1">Limpiar</a>
-                @endif
-            </div>
-        </form>
+        @include('admin.shipments.partials._search_form')
     </div>
 </div>
 
@@ -142,6 +126,7 @@
 
     function buildShipmentForm(shipment) {
         const s = shipment || {};
+        const isDelivered = s.status === 'delivered';
         return `
             <div class="row g-3">
                 <div class="col-md-6">
@@ -150,7 +135,14 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Estado <span class="text-danger">*</span></label>
-                    <select name="status" class="form-select" required>${buildOptions(shipmentStatuses, s.status || 'preparing')}</select>
+                    ${isDelivered
+                        ? `<select name="status" class="form-select" disabled>
+                                <option value="delivered" selected>Entregado</option>
+                           </select>
+                           <input type="hidden" name="status" value="delivered">
+                           <div class="form-text text-muted">El estado no puede modificarse porque el envío ya fue entregado.</div>`
+                        : `<select name="status" class="form-select" required>${buildOptions(shipmentStatuses, s.status || 'preparing')}</select>`
+                    }
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Transportista</label>

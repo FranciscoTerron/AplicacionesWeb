@@ -17,7 +17,7 @@
     <td>{{ $shipment['carrier'] ?? '—' }}</td>
     <td><span class="badge {{ $badgeClass }}">{{ $statusLabel }}</span></td>
     <td>{{ \Illuminate\Support\Str::limit($shipment['address'] ?? '', 40) }}</td>
-    <td class="text-end">
+    <td class="text-end" style="white-space: nowrap">
         @if($shipmentId)
             <button type="button" class="btn btn-sm btn-outline-primary"
                 onclick="openModal('show', {{ json_encode($shipment) }})"

@@ -56,20 +56,26 @@ class ClientController extends Controller
     {
         $this->authorizeRequest('viewAny', $this->getModelClass());
 
-        $page = request()->get('page', 1);
+        $page = max(1, intval(request()->get('page', 1)));
+        $perPage = intval(request()->get('per_page', 10));
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
         $startAfter = request()->get('after');
         $search = request()->get('search');
-        $statusFilter = request()->get('status'); // Changed to 'status' to match view
+        $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter);
-        $items = collect($result['documents']);
+        $fetchResult = $this->firestore->fetchForPage(
+            $this->getCollectionName(),
+            $perPage,
+            $startAfter,
+        );
+        $items = collect($fetchResult['documents'] ?? []);
 
         // Apply search filter (name or email)
         if ($search) {
             $items = $items->filter(function ($item) use ($search) {
                 return stripos($item['name'] ?? '', $search) !== false ||
                        stripos($item['email'] ?? '', $search) !== false;
-            });
+            })->values();
         }
 
         // Apply status filter
@@ -79,16 +85,35 @@ class ClientController extends Controller
 
                 return ($statusFilter === 'active' && $isActive) ||
                        ($statusFilter === 'inactive' && ! $isActive);
-            });
+            })->values();
         }
 
+        // Apply sorting
+        $sort = request()->get('sort', 'name');
+        $order = request()->get('order', 'asc');
+        $sortableFields = ['name', 'email', 'phone', 'created_at'];
+        if (in_array($sort, $sortableFields)) {
+            $items = $items->sortBy($sort, SORT_REGULAR, $order === 'desc')->values();
+        }
+
+        // Paginate filtered results
+        $totalFiltered = $items->count();
+        $totalPages = intval(ceil($totalFiltered / $perPage));
+        $offset = ($page - 1) * $perPage;
+        $pageItems = $items->slice($offset, $perPage)->values();
+
         return View::make("{$this->getViewFolder()}.index", [
-            'clients' => $items,
+            'clients' => $pageItems,
             'search' => $search,
             'statusFilter' => $statusFilter,
-            'hasMore' => $result['hasMore'] ?? false,
-            'lastDocumentId' => $result['lastDocumentId'] ?? null,
+            'sort' => $sort,
+            'order' => $order,
+            'hasMore' => $page < $totalPages,
+            'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,
+            'perPage' => $perPage,
+            'totalFiltered' => $totalFiltered,
+            'totalPages' => $totalPages,
         ]);
     }
 

@@ -7,6 +7,7 @@ use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
 use App\Http\Traits\CrudActionsTrait;
 use App\Models\Product;
+use App\Services\CloudinaryService;
 use App\Services\FirestoreService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -18,9 +19,57 @@ class ProductController extends Controller
 {
     use CrudActionsTrait;
 
-    public function __construct(FirestoreService $firestore)
+    protected CloudinaryService $cloudinary;
+
+    public function __construct(FirestoreService $firestore, CloudinaryService $cloudinary)
     {
         $this->firestore = $firestore;
+        $this->cloudinary = $cloudinary;
+    }
+
+    /**
+     * Extrae los public_id que estaban en $existing pero ya no están en $validated.
+     *
+     * @param  array<string,mixed>  $existing
+     * @param  array<string,mixed>  $validated
+     * @return array<int,string>
+     */
+    /**
+     * Filtra items inválidos (nulls, sin url, sin public_id) y reindexa.
+     *
+     * @param  mixed  $images
+     * @return array<int,array{url:string,public_id:string}>
+     */
+    protected function sanitizeImages($images): array
+    {
+        if (! is_array($images)) {
+            return [];
+        }
+
+        $clean = [];
+        foreach ($images as $img) {
+            if (is_array($img) && ! empty($img['url']) && ! empty($img['public_id'])) {
+                $clean[] = ['url' => (string) $img['url'], 'public_id' => (string) $img['public_id']];
+            }
+        }
+
+        return $clean;
+    }
+
+    protected function diffRemovedImagePublicIds(array $existing, array $validated): array
+    {
+        $extractIds = function (array $doc): array {
+            $ids = [];
+            foreach (($doc['images'] ?? []) as $img) {
+                if (is_array($img) && ! empty($img['public_id']) && is_string($img['public_id'])) {
+                    $ids[] = $img['public_id'];
+                }
+            }
+
+            return $ids;
+        };
+
+        return array_values(array_diff($extractIds($existing), $extractIds($validated)));
     }
 
     protected function getCollectionName(): string
@@ -57,36 +106,45 @@ class ProductController extends Controller
     {
         $this->authorizeRequest('viewAny', $this->getModelClass());
 
-        $page = request()->get('page', 1);
+        $page = max(1, intval(request()->get('page', 1)));
+        $perPage = intval(request()->get('per_page', 10));
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
         $startAfter = request()->get('after');
         $search = request()->get('search');
         $categoryFilter = request()->get('category');
         $subcategoryFilter = request()->get('subcategory');
         $statusFilter = request()->get('status');
+        $sort = request()->get('sort', 'name');
+        $order = request()->get('order', 'asc');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter);
-        $items = collect($result['documents']);
+        $fetchResult = $this->firestore->fetchForPage(
+            $this->getCollectionName(),
+            $perPage,
+            $startAfter,
+        );
+        $items = collect($fetchResult['documents'] ?? []);
 
-        // Apply search filter (by name or description)
+        // Apply search filter (by name, sku or description)
         if ($search) {
             $items = $items->filter(function ($item) use ($search) {
                 return stripos($item['name'] ?? '', $search) !== false ||
-                       stripos($item['description'] ?? '', $search) !== false;
-            });
+                       stripos($item['description'] ?? '', $search) !== false ||
+                       stripos($item['sku'] ?? '', $search) !== false;
+            })->values();
         }
 
         // Apply category filter
         if ($categoryFilter) {
             $items = $items->filter(function ($item) use ($categoryFilter) {
                 return ($item['category_id'] ?? '') === $categoryFilter;
-            });
+            })->values();
         }
 
         // Apply subcategory filter
         if ($subcategoryFilter) {
             $items = $items->filter(function ($item) use ($subcategoryFilter) {
                 return ($item['subcategory_id'] ?? '') === $subcategoryFilter;
-            });
+            })->values();
         }
 
         // Apply status filter (active/inactive)
@@ -96,10 +154,16 @@ class ProductController extends Controller
 
                 return ($statusFilter === 'active' && $isActive) ||
                        ($statusFilter === 'inactive' && ! $isActive);
-            });
+            })->values();
         }
 
-        // Load categories and subcategories for filter dropdowns
+        // Apply sorting
+        $sortableFields = ['name', 'price', 'stock', 'created_at'];
+        if (in_array($sort, $sortableFields)) {
+            $items = $items->sortBy($sort, SORT_REGULAR, $order === 'desc')->values();
+        }
+
+        // Bulk-fetch categories and subcategories for filter dropdowns
         $categoriesResult = $this->firestore->listDocuments('categories', 100);
         $categories = collect($categoriesResult['documents'] ?? [])->where('active', true)->map(function ($category) {
             if (! isset($category['id']) && isset($category['_document_path'])) {
@@ -122,17 +186,28 @@ class ProductController extends Controller
                 return $subcategory;
             });
 
+        // Paginate filtered results
+        $totalFiltered = $items->count();
+        $totalPages = intval(ceil($totalFiltered / $perPage));
+        $offset = ($page - 1) * $perPage;
+        $pageItems = $items->slice($offset, $perPage)->values();
+
         return ViewFacade::make("{$this->getViewFolder()}.index", [
-            'products' => $items,
+            'products' => $pageItems,
             'categories' => $categories,
             'subcategories' => $subcategories,
             'search' => $search,
             'categoryFilter' => $categoryFilter,
             'subcategoryFilter' => $subcategoryFilter,
             'statusFilter' => $statusFilter,
-            'hasMore' => $result['hasMore'] ?? false,
-            'lastDocumentId' => $result['lastDocumentId'] ?? null,
+            'sort' => $sort,
+            'order' => $order,
+            'hasMore' => $page < $totalPages,
+            'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,
+            'perPage' => $perPage,
+            'totalFiltered' => $totalFiltered,
+            'totalPages' => $totalPages,
         ]);
     }
 
@@ -147,6 +222,9 @@ class ProductController extends Controller
 
         // Convert active to boolean (comes as string from select)
         $validated['active'] = filter_var($validated['active'], FILTER_VALIDATE_BOOLEAN);
+
+        // Sanitize images: filtrar nulls e items sin url/public_id.
+        $validated['images'] = $this->sanitizeImages($validated['images'] ?? []);
 
         // Auditoría
         $now = now()->toISOString();
@@ -187,12 +265,23 @@ class ProductController extends Controller
         // Convert active to boolean
         $validated['active'] = filter_var($validated['active'], FILTER_VALIDATE_BOOLEAN);
 
+        // Sanitize images
+        $validated['images'] = $this->sanitizeImages($validated['images'] ?? []);
+
         // Auditoría
         $validated['updated_at'] = now()->toISOString();
         $validated['updated_by'] = auth()->id();
 
         try {
+            // Reusamos el doc ya cargado por getModelInstance() para no hacer otra lectura.
+            $existing = $model->getAttributes();
+            $removedPublicIds = $this->diffRemovedImagePublicIds($existing, $validated);
+
             $this->firestore->updateDocument($this->getCollectionName(), $id, $validated);
+
+            if ($removedPublicIds !== []) {
+                $this->cloudinary->deleteAssets($removedPublicIds);
+            }
 
             $message = 'Producto actualizado correctamente.';
             if ($request->ajax()) {

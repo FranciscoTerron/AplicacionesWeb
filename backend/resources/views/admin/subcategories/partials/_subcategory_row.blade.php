@@ -1,5 +1,22 @@
 <tr class="{{ !$isActive ? 'table-light' : '' }}">
-    <td>{{ $subcategory['name'] ?? 'N/A' }}</td>
+    <td>
+        @php
+            $thumbUrl = null;
+            $fullUrl = $subcategory['image']['url'] ?? null;
+            if ($fullUrl) {
+                $thumbUrl = str_replace('/upload/', '/upload/c_thumb,w_40,h_40,g_auto/', $fullUrl);
+            }
+        @endphp
+        <div class="d-flex align-items-center gap-2">
+            @if($thumbUrl)
+                <img src="{{ $thumbUrl }}" alt="Imagen de {{ $subcategory['name'] ?? '' }}"
+                     onclick="showImageLightbox('{{ e($fullUrl) }}', '{{ e($subcategory['name'] ?? '') }}')"
+                     style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--border);flex:0 0 auto;cursor:zoom-in;"
+                     title="Click para ampliar">
+            @endif
+            <span>{{ $subcategory['name'] ?? 'N/A' }}</span>
+        </div>
+    </td>
     <td><code>{{ $subcategory['slug'] ?? 'N/A' }}</code></td>
     <td>
         @php
@@ -19,25 +36,27 @@
             <span class="badge bg-danger">Inactivo</span>
         @endif
     </td>
-    <td>
+    <td class="text-end" style="white-space: nowrap">
         <!-- Ver -->
         <button type="button" class="btn btn-sm btn-outline-primary"
-            onclick="openModal('show', {{ json_encode($subcategory) }})"
-            title="Ver detalles">
-            <i class="bi bi-eye">Ver</i>
+            onclick="openModal('show', {{ json_encode($subcategory) }}, this)"
+            title="Ver detalles"
+            aria-label="Ver detalles de {{ $subcategory['name'] ?? '' }}">
+            <i class="bi bi-eye"></i> Ver
         </button>
 
         <!-- Editar -->
         @if($canManage ?? $isAdmin)
             <button type="button" class="btn btn-sm btn-outline-secondary"
-                onclick="openModal('edit', {{ json_encode($subcategory) }})"
-                title="Editar">
-                <i class="bi bi-pencil">Editar</i>
+                onclick="openModal('edit', {{ json_encode($subcategory) }}, this)"
+                title="Editar"
+                aria-label="Editar {{ $subcategory['name'] ?? '' }}">
+                <i class="bi bi-pencil"></i> Editar
             </button>
         @else
             <button type="button" class="btn btn-sm btn-outline-secondary" disabled
                 title="Solo los administradores pueden editar subcategorías">
-                <i class="bi bi-pencil">Editar</i>
+                <i class="bi bi-pencil"></i> Editar
             </button>
         @endif
 
@@ -45,21 +64,23 @@
         @if($canManage ?? $isAdmin)
             @if($isActive)
                 <button type="button" class="btn btn-sm btn-outline-danger"
-                    onclick="openModal('deactivate', {{ json_encode($subcategory) }})"
-                    title="Desactivar subcategoría">
-                    <i class="bi bi-lock">Desactivar</i>
+                    onclick="openModal('deactivate', {{ json_encode($subcategory) }}, this)"
+                    title="Desactivar subcategoría"
+                    aria-label="Desactivar {{ $subcategory['name'] ?? '' }}">
+                    <i class="bi bi-lock"></i> Desactivar
                 </button>
             @else
                 <button type="button" class="btn btn-sm btn-outline-success"
-                    onclick="openModal('activate', {{ json_encode($subcategory) }})"
-                    title="Activar subcategoría">
-                    <i class="bi bi-unlock">Activar</i>
+                    onclick="openModal('activate', {{ json_encode($subcategory) }}, this)"
+                    title="Activar subcategoría"
+                    aria-label="Activar {{ $subcategory['name'] ?? '' }}">
+                    <i class="bi bi-unlock"></i> Activar
                 </button>
             @endif
         @else
             <button type="button" class="btn btn-sm btn-outline-danger" disabled
                 title="Solo los administradores pueden cambiar el estado">
-                <i class="bi bi-lock">Desactivar</i>
+                <i class="bi bi-lock"></i> Desactivar
             </button>
         @endif
     </td>

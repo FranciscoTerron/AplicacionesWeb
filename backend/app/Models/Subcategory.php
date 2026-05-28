@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $category_id
  * @property string|null $description
  * @property bool $active
- * @property string|null $image
+ * @property array{url:string,public_id:string}|null $image
  * @property string $created_by
  * @property string $updated_by
  * @property Carbon $created_at
@@ -30,6 +30,7 @@ class Subcategory extends Model
 
     protected $casts = [
         'active' => 'boolean',
+        'image' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

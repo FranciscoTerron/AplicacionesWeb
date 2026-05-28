@@ -197,6 +197,19 @@ class FirestoreService
         return $this->getDocument($collection, $id);
     }
 
+    public function createDocumentWithId(string $collection, string $docId, array $data): array
+    {
+        $url = "{$this->baseUrl}/{$collection}/{$docId}";
+        $body = ['fields' => $this->encodeFields($data)];
+        $response = Http::withToken($this->accessToken)->patch($url, $body);
+
+        if ($response->failed()) {
+            throw new Exception('Firestore create failed: '.$response->body());
+        }
+
+        return $this->getDocument($collection, $docId);
+    }
+
     public function updateDocument(string $collection, string $docId, array $data): array
     {
         $queryParams = [];
@@ -220,6 +233,135 @@ class FirestoreService
         Http::withToken($this->accessToken)->delete($url);
     }
 
+    /**
+     * Count the total number of documents in a collection.
+     */
+    public function countDocuments(string $collection): int
+    {
+        $url = "{$this->baseUrl}/{$collection}:runAggregationQuery";
+
+        $body = [
+            'structuredAggregationQuery' => [
+                'aggregations' => [
+                    ['count' => new \stdClass],
+                ],
+                'structuredQuery' => [
+                    'from' => [['collectionId' => $collection]],
+                ],
+            ],
+        ];
+
+        $response = Http::withToken($this->accessToken)->post($url, $body);
+
+        if ($response->failed()) {
+            throw new Exception('Firestore count query failed: '.$response->body());
+        }
+
+        $result = $response->json();
+        $count = $result['aggregationResults'][0]['aggregateProperties']['integerValue'] ?? '0';
+
+        return (int) $count;
+    }
+
+    /**
+     * Count documents that would match a structured query.
+     */
+    public function countDocumentsWithQuery(string $collection, array $filters = []): int
+    {
+        $url = "{$this->baseUrl}/:runAggregationQuery";
+
+        $structuredQuery = [
+            'from' => [['collectionId' => $collection]],
+        ];
+
+        if ($filters) {
+            $structuredQuery['where'] = [
+                'compositeFilter' => [
+                    'op' => 'AND',
+                    'filters' => [],
+                ],
+            ];
+            foreach ($filters as $field => $value) {
+                $structuredQuery['where']['compositeFilter']['filters'][] = [
+                    'fieldFilter' => [
+                        'field' => ['fieldPath' => $field],
+                        'op' => 'EQUAL',
+                        'value' => $this->encodeValue($value),
+                    ],
+                ];
+            }
+            /** @phpstan-ignore-next-line filters initialised as [] so can be empty at runtime */
+            if (empty($structuredQuery['where']['compositeFilter']['filters'])) {
+                unset($structuredQuery['where']);
+            }
+        }
+
+        $body = [
+            'structuredAggregationQuery' => [
+                'aggregations' => [
+                    ['count' => new \stdClass],
+                ],
+                'structuredQuery' => $structuredQuery,
+            ],
+        ];
+
+        $response = Http::withToken($this->accessToken)->post($url, $body);
+
+        if ($response->failed()) {
+            throw new Exception('Firestore count query failed: '.$response->body());
+        }
+
+        $result = $response->json();
+        $count = $result['aggregationResults'][0]['aggregateProperties']['integerValue'] ?? '0';
+
+        return (int) $count;
+    }
+
+    /**
+     * Returns documents with pagination info suitable for server-side filtering.
+     * Fetches enough documents so that after client-side filtering there are enough
+     * results to fill the requested page. Uses listDocuments internally in a loop.
+     */
+    public function fetchForPage(
+        string $collection,
+        int $perPage,
+        ?string $startAfter = null,
+        string $orderBy = 'name',
+        int $maxBatches = 6,
+    ): array {
+        $fetchLimit = $perPage * $maxBatches;
+        $allDocuments = [];
+        $cursor = $startAfter;
+        $hasMore = false;
+        $batch = 0;
+
+        do {
+            $limit = min($fetchLimit - count($allDocuments), $perPage * 2);
+            if ($limit <= 0) {
+                break;
+            }
+
+            $result = $this->listDocuments($collection, $limit, $cursor, $orderBy);
+            $allDocuments = array_merge($allDocuments, $result['documents']);
+            $hasMore = $result['hasMore'];
+
+            // Advance cursor using the ORDER BY field value, not the document ID
+            // Firestore requires startAfter value to match the orderBy type/field
+            if ($result['hasMore'] && ! empty($result['documents'])) {
+                $lastDoc = end($result['documents']);
+                $cursor = $lastDoc[$orderBy] ?? $lastDoc['id'] ?? null;
+            }
+
+            $batch++;
+        } while ($hasMore && $batch < $maxBatches && count($allDocuments) < $fetchLimit);
+
+        return [
+            'documents' => $allDocuments,
+            'hasMore' => $hasMore,
+            'lastDocumentId' => $cursor, // cursor for NEXT fetchForPage call (= last doc in batch, to be excluded)
+        ];
+    }
+
     public function listDocuments(string $collection, int $limit = 20, ?string $startAfter = null, string $orderBy = 'name'): array
     {
         // Use structured query for cursor-based pagination
@@ -235,17 +377,32 @@ class FirestoreService
             ],
         ];
 
-        // Add startAfter cursor if provided
+        // Add startAfter cursor if provided (excludes the cursor document)
         if ($startAfter) {
-            $structuredQuery['structuredQuery']['startAt'] = [
+            $structuredQuery['structuredQuery']['startAfter'] = [
                 'values' => [$this->encodeValue($startAfter)],
-                'before' => false,
             ];
         }
 
-        $response = Http::withToken($this->accessToken)->post($url, $structuredQuery);
+        \Log::info('Firestore listDocuments called', [
+            'collection' => $collection,
+            'limit' => $limit,
+            'startAfter' => $startAfter,
+            'orderBy' => $orderBy,
+            'body' => $structuredQuery,
+        ]);
+
+        $response = Http::withToken($this->accessToken)->asJson()->post($url, $structuredQuery);
 
         if ($response->failed()) {
+            \Log::error('Firestore listDocuments FAILED', [
+                'collection' => $collection,
+                'limit' => $limit,
+                'startAfter' => $startAfter,
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'query_payload' => $structuredQuery,
+            ]);
             throw new Exception('Firestore list documents failed: '.$response->body());
         }
 
@@ -360,7 +517,12 @@ class FirestoreService
             return array_map([$this, 'decodeValue'], $values);
         }
         if (isset($field['mapValue'])) {
-            return $this->decodeValue($field['mapValue']);
+            $result = [];
+            foreach ($field['mapValue']['fields'] ?? [] as $key => $subField) {
+                $result[$key] = $this->decodeValue($subField);
+            }
+
+            return $result;
         }
         if (isset($field['timestampValue'])) {
             return $field['timestampValue'];

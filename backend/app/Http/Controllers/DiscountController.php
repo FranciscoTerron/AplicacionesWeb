@@ -52,32 +52,38 @@ class DiscountController extends Controller
     }
 
     /**
-     * Override index to add custom search and filters for discounts
+     * Override index to add custom search, type and status filters for discounts
      */
     public function index()
     {
         $this->authorizeRequest('viewAny');
 
-        $page = request()->get('page', 1);
+        $page = max(1, intval(request()->get('page', 1)));
+        $perPage = intval(request()->get('per_page', 10));
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
         $startAfter = request()->get('after');
         $search = request()->get('search');
         $typeFilter = request()->get('type');
         $statusFilter = request()->get('status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter);
-        $items = collect($result['documents']);
+        $fetchResult = $this->firestore->fetchForPage(
+            $this->getCollectionName(),
+            $perPage,
+            $startAfter,
+        );
+        $items = collect($fetchResult['documents'] ?? []);
 
         // Apply search filter (by code or name)
         if ($search) {
             $items = $items->filter(function ($item) use ($search) {
                 return stripos($item['code'] ?? '', $search) !== false ||
                        stripos($item['name'] ?? '', $search) !== false;
-            });
+            })->values();
         }
 
         // Apply type filter (percentage/fixed)
         if ($typeFilter) {
-            $items = $items->where('discount_type', $typeFilter);
+            $items = $items->where('discount_type', $typeFilter)->values();
         }
 
         // Apply status filter (active/inactive)
@@ -85,17 +91,36 @@ class DiscountController extends Controller
             $statusBool = $statusFilter === 'active';
             $items = $items->filter(function ($item) use ($statusBool) {
                 return ($item['active'] ?? true) == $statusBool;
-            });
+            })->values();
         }
 
+        // Apply sorting
+        $sort = request()->get('sort', 'code');
+        $order = request()->get('order', 'asc');
+        $sortableFields = ['code', 'name', 'discount_type', 'value', 'created_at'];
+        if (in_array($sort, $sortableFields)) {
+            $items = $items->sortBy($sort, SORT_REGULAR, $order === 'desc')->values();
+        }
+
+        // Paginate filtered results
+        $totalFiltered = $items->count();
+        $totalPages = intval(ceil($totalFiltered / $perPage));
+        $offset = ($page - 1) * $perPage;
+        $pageItems = $items->slice($offset, $perPage)->values();
+
         return View::make("{$this->getViewFolder()}.index", [
-            'items' => $items,
-            'hasMore' => $result['hasMore'] ?? false,
-            'lastDocumentId' => $result['lastDocumentId'] ?? null,
+            'discounts' => $pageItems,
+            'hasMore' => $page < $totalPages,
+            'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,
+            'perPage' => $perPage,
+            'totalFiltered' => $totalFiltered,
+            'totalPages' => $totalPages,
             'search' => $search,
             'typeFilter' => $typeFilter,
             'statusFilter' => $statusFilter,
+            'sort' => $sort,
+            'order' => $order,
         ]);
     }
 

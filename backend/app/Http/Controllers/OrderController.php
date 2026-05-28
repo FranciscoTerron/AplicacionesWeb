@@ -110,31 +110,38 @@ class OrderController extends Controller
     {
         $this->authorizeRequest('viewAny', $this->getModelClass());
 
-        $page = request()->get('page', 1);
+        $page = max(1, intval(request()->get('page', 1)));
+        $perPage = intval(request()->get('per_page', 10));
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
         $startAfter = request()->get('after');
         $search = request()->get('search');
         $statusFilter = request()->get('status');
         $paymentFilter = request()->get('payment_status');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter, 'created_at');
-        $items = collect($result['documents']);
+        $fetchResult = $this->firestore->fetchForPage(
+            $this->getCollectionName(),
+            $perPage,
+            $startAfter,
+            'created_at',
+        );
+        $items = collect($fetchResult['documents'] ?? []);
 
         if ($search) {
             $items = $items->filter(function ($item) use ($search) {
                 return stripos($item['clientId'] ?? $item['client_id'] ?? '', $search) !== false
                     || stripos($item['client_name'] ?? '', $search) !== false
                     || stripos($item['id'] ?? '', $search) !== false;
-            });
+            })->values();
         }
 
         if ($statusFilter) {
-            $items = $items->where('status', $statusFilter);
+            $items = $items->where('status', $statusFilter)->values();
         }
 
         if ($paymentFilter) {
             $items = $items->filter(function ($item) use ($paymentFilter) {
                 return ($item['paymentStatus'] ?? $item['payment_status'] ?? '') === $paymentFilter;
-            });
+            })->values();
         }
 
         // Datos para el modal "new" (selects de cliente/producto, sin paginar — máx. 100).
@@ -144,17 +151,31 @@ class OrderController extends Controller
         $productsResult = $this->firestore->listDocuments('products', 100);
         $products = collect($productsResult['documents'] ?? [])->where('active', true)->values();
 
+        // Paginate filtered results
+        $totalFiltered = $items->count();
+        $totalPages = intval(ceil($totalFiltered / $perPage));
+        $offset = ($page - 1) * $perPage;
+        $pageItems = $items->slice($offset, $perPage)->values();
+
         return view("{$this->getViewFolder()}.index", [
-            'orders' => $items,
+            'orders' => $pageItems,
             'clients' => $clients,
             'products' => $products,
             'statuses' => self::statuses(),
+            'paymentStatuses' => [
+                'pending' => 'Pendiente',
+                'paid' => 'Pagado',
+                'overdue' => 'Vencido',
+            ],
             'search' => $search,
             'statusFilter' => $statusFilter,
             'paymentFilter' => $paymentFilter,
-            'hasMore' => $result['hasMore'] ?? false,
-            'lastDocumentId' => $result['lastDocumentId'] ?? null,
+            'hasMore' => $page < $totalPages,
+            'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,
+            'perPage' => $perPage,
+            'totalFiltered' => $totalFiltered,
+            'totalPages' => $totalPages,
         ]);
     }
 

@@ -7,6 +7,7 @@ use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Http\Traits\CrudActionsTrait;
 use App\Models\Category;
+use App\Services\CloudinaryService;
 use App\Services\FirestoreService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -17,9 +18,12 @@ class CategoryController extends Controller
 {
     use CrudActionsTrait;
 
-    public function __construct(FirestoreService $firestore)
+    protected CloudinaryService $cloudinary;
+
+    public function __construct(FirestoreService $firestore, CloudinaryService $cloudinary)
     {
         $this->firestore = $firestore;
+        $this->cloudinary = $cloudinary;
     }
 
     protected function getCollectionName(): string
@@ -74,20 +78,28 @@ class CategoryController extends Controller
     {
         $this->authorizeRequest('viewAny', $this->getModelClass());
 
-        $page = request()->get('page', 1);
+        $page = max(1, intval(request()->get('page', 1)));
+        $perPage = intval(request()->get('per_page', 10));
+        $perPage = in_array($perPage, [10, 25, 50, 100]) ? $perPage : 10;
         $startAfter = request()->get('after');
         $search = request()->get('search');
         $statusFilter = request()->get('status');
+        $sort = request()->get('sort', 'name');
+        $order = request()->get('order', 'asc');
 
-        $result = $this->firestore->listDocuments($this->getCollectionName(), 10, $startAfter);
-        $items = collect($result['documents']);
+        $fetchResult = $this->firestore->fetchForPage(
+            $this->getCollectionName(),
+            $perPage,
+            $startAfter,
+        );
+        $items = collect($fetchResult['documents'] ?? []);
 
-        // Apply search filter (name or slug)
+        // Apply search filter
         if ($search) {
             $items = $items->filter(function ($item) use ($search) {
                 return stripos($item['name'] ?? '', $search) !== false ||
                        stripos($item['slug'] ?? '', $search) !== false;
-            });
+            })->values();
         }
 
         // Apply status filter
@@ -97,16 +109,33 @@ class CategoryController extends Controller
 
                 return ($statusFilter === 'active' && $isActive) ||
                        ($statusFilter === 'inactive' && ! $isActive);
-            });
+            })->values();
         }
 
+        // Apply sorting
+        $sortableFields = ['name', 'created_at'];
+        if (in_array($sort, $sortableFields)) {
+            $items = $items->sortBy($sort, SORT_REGULAR, $order === 'desc')->values();
+        }
+
+        // Slice to current page
+        $totalFiltered = $items->count();
+        $totalPages = intval(ceil($totalFiltered / $perPage));
+        $offset = ($page - 1) * $perPage;
+        $pageItems = $items->slice($offset, $perPage)->values();
+
         return view("{$this->getViewFolder()}.index", [
-            'categories' => $items,
+            'categories' => $pageItems,
             'search' => $search,
             'statusFilter' => $statusFilter,
-            'hasMore' => $result['hasMore'] ?? false,
-            'lastDocumentId' => $result['lastDocumentId'] ?? null,
+            'sort' => $sort,
+            'order' => $order,
+            'hasMore' => $page < $totalPages,
+            'lastDocumentId' => $fetchResult['lastDocumentId'],
             'page' => $page,
+            'perPage' => $perPage,
+            'totalFiltered' => $totalFiltered,
+            'totalPages' => $totalPages,
         ]);
     }
 
@@ -159,13 +188,25 @@ class CategoryController extends Controller
         $validated['updated_at'] = now()->toISOString();
         $validated['updated_by'] = auth()->id();
 
+        // Sanitize image: si viene incompleta, la dejamos como null.
+        if (isset($validated['image']) && (empty($validated['image']['url']) || empty($validated['image']['public_id']))) {
+            $validated['image'] = null;
+        }
+
         try {
             $existing = $this->firestore->getDocument($this->getCollectionName(), $id);
             if (! $existing) {
                 return redirect()->route($this->getRedirectRoute())->with('error', 'Categoría no encontrada.');
             }
 
+            $oldPublicId = $existing['image']['public_id'] ?? null;
+            $newPublicId = $validated['image']['public_id'] ?? null;
+
             $this->firestore->updateDocument($this->getCollectionName(), $id, $validated);
+
+            if (is_string($oldPublicId) && $oldPublicId !== '' && $oldPublicId !== $newPublicId) {
+                $this->cloudinary->deleteAsset($oldPublicId);
+            }
 
             $message = 'Categoría actualizada correctamente.';
             if ($request->ajax()) {

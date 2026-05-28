@@ -3,12 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\CloudinaryService;
 use App\Services\FirestoreService;
 use Tests\TestCase;
 
 class CategoryControllerTest extends TestCase
 {
     protected FirestoreService $firestoreMock;
+
+    protected CloudinaryService $cloudinaryMock;
 
     /**
      * Configuración inicial - desactiva middleware de autenticación.
@@ -19,6 +22,8 @@ class CategoryControllerTest extends TestCase
         $this->withoutMiddleware();
         $this->firestoreMock = $this->createMock(FirestoreService::class);
         $this->app->instance(FirestoreService::class, $this->firestoreMock);
+        $this->cloudinaryMock = $this->createMock(CloudinaryService::class);
+        $this->app->instance(CloudinaryService::class, $this->cloudinaryMock);
     }
 
     /**
@@ -28,11 +33,12 @@ class CategoryControllerTest extends TestCase
     {
         $this->mockAuthUser('admin');
 
-        $this->firestoreMock->method('listDocuments')->willReturn([
+        $this->firestoreMock->method('fetchForPage')->willReturn([
             'documents' => [
-                ['name' => 'Piscinas', 'description' => 'Categoría de piscinas', 'active' => true],
+                ['id' => '1', 'name' => 'Piscinas', 'description' => 'Categoría de piscinas', 'active' => true],
             ],
-            'nextPageToken' => null,
+            'hasMore' => false,
+            'lastDocumentId' => null,
         ]);
 
         $response = $this->get(route('admin.categories.index'));
@@ -169,6 +175,49 @@ class CategoryControllerTest extends TestCase
 
         $response->assertRedirect(route('admin.categories.index'));
         $response->assertSessionHas('success');
+    }
+
+    /**
+     * Verifica que update borra del Cloudinary la imagen reemplazada.
+     */
+    public function test_update_deletes_replaced_image_in_cloudinary(): void
+    {
+        $this->mockAuthUser('admin');
+
+        $categoryId = 'cat-img';
+        $existing = [
+            'id' => $categoryId,
+            'name' => 'Piscinas',
+            'image' => ['url' => 'https://res.cloudinary.com/demo/upload/old.jpg', 'public_id' => 'ma-piscinas/categories/old'],
+        ];
+
+        $updateData = [
+            'name' => 'Piscinas',
+            'description' => 'Cat',
+            'active' => true,
+            'image' => [
+                'url' => 'https://res.cloudinary.com/demo/upload/new.jpg',
+                'public_id' => 'ma-piscinas/categories/new',
+            ],
+        ];
+
+        $this->firestoreMock
+            ->expects($this->exactly(2))
+            ->method('getDocument')
+            ->willReturn($existing);
+
+        $this->firestoreMock
+            ->expects($this->once())
+            ->method('updateDocument');
+
+        $this->cloudinaryMock
+            ->expects($this->once())
+            ->method('deleteAsset')
+            ->with('ma-piscinas/categories/old');
+
+        $response = $this->put(route('admin.categories.update', $categoryId), $updateData);
+
+        $response->assertRedirect(route('admin.categories.index'));
     }
 
     /**

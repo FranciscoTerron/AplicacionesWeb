@@ -23,11 +23,12 @@ class DiscountControllerTest extends TestCase
     {
         $this->mockAuthUser('admin');
 
-        $this->firestoreMock->method('listDocuments')->willReturn([
+        $this->firestoreMock->method('fetchForPage')->willReturn([
             'documents' => [
-                ['code' => 'VERANO20', 'discountType' => 'percentage', 'discountValue' => 20, 'active' => true],
+                ['id' => '1', 'code' => 'VERANO20', 'discountType' => 'percentage', 'discountValue' => 20, 'active' => true],
             ],
-            'nextPageToken' => null,
+            'hasMore' => false,
+            'lastDocumentId' => null,
         ]);
 
         $response = $this->get(route('admin.discounts.index'));
