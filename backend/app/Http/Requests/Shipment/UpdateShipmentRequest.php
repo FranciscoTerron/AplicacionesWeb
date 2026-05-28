@@ -49,6 +49,15 @@ class UpdateShipmentRequest extends FormRequest
                     $validator->errors()->add('order_id', 'La orden seleccionada no existe.');
                 }
             }
+
+            $shipmentId = $this->route('shipment');
+            if ($shipmentId) {
+                $shipment = app(FirestoreService::class)->getDocument('shipments', $shipmentId);
+                $currentStatus = $shipment['status'] ?? null;
+                if ($currentStatus === Shipment::STATUS_DELIVERED && $this->input('status') !== Shipment::STATUS_DELIVERED) {
+                    $validator->errors()->add('status', 'No se puede cambiar el estado de un envío que ya fue entregado.');
+                }
+            }
         });
     }
 }

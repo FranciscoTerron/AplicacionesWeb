@@ -126,6 +126,7 @@
 
     function buildShipmentForm(shipment) {
         const s = shipment || {};
+        const isDelivered = s.status === 'delivered';
         return `
             <div class="row g-3">
                 <div class="col-md-6">
@@ -134,7 +135,14 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Estado <span class="text-danger">*</span></label>
-                    <select name="status" class="form-select" required>${buildOptions(shipmentStatuses, s.status || 'preparing')}</select>
+                    ${isDelivered
+                        ? `<select name="status" class="form-select" disabled>
+                                <option value="delivered" selected>Entregado</option>
+                           </select>
+                           <input type="hidden" name="status" value="delivered">
+                           <div class="form-text text-muted">El estado no puede modificarse porque el envío ya fue entregado.</div>`
+                        : `<select name="status" class="form-select" required>${buildOptions(shipmentStatuses, s.status || 'preparing')}</select>`
+                    }
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Transportista</label>
