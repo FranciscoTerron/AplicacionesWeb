@@ -10,10 +10,104 @@
         }
     ],
     "paths": {
+        "/v1/auth/login": {
+            "post": {
+                "operationId": "v1.auth.login",
+                "description": "Autenticaci\u00f3n de usuarios (admin/editor) con token personal.",
+                "summary": "POST /api/v1/auth/login",
+                "tags": [
+                    "AuthApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "user": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "email": {
+                                                    "type": "string"
+                                                },
+                                                "role": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "email",
+                                                "role"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "token",
+                                        "user"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Credenciales inv\u00e1lidas"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/v1/catalog/products": {
             "get": {
                 "operationId": "v1.catalog.products",
-                "description": "Lista productos activos de Firestore con filtros opcionales.\nRespuestas JSON consistentes para consumo por React.",
+                "description": "Lista productos activos de Firestore con filtros opcionales y paginaci\u00f3n.\nRespuestas JSON consistentes para consumo por React.",
                 "summary": "GET /api/v1/catalog/products",
                 "tags": [
                     "Catalog"
@@ -33,6 +127,46 @@
                         "schema": {
                             "type": "string",
                             "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "featured",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "min_price",
+                        "in": "query",
+                        "schema": {
+                            "type": "number",
+                            "minimum": 0
+                        }
+                    },
+                    {
+                        "name": "max_price",
+                        "in": "query",
+                        "schema": {
+                            "type": "number",
+                            "minimum": 0
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100
                         }
                     }
                 ],
@@ -56,12 +190,37 @@
                                                 "type": "array",
                                                 "items": {}
                                             }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "total",
+                                                "page",
+                                                "last_page",
+                                                "per_page"
+                                            ]
                                         }
                                     },
                                     "required": [
                                         "success",
                                         "message",
-                                        "data"
+                                        "data",
+                                        "meta"
                                     ]
                                 }
                             }
@@ -103,7 +262,7 @@
                                             "type": "boolean"
                                         },
                                         "data": {
-                                            "type": "string"
+                                            "type": "object"
                                         }
                                     },
                                     "required": [
@@ -162,8 +321,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "type": "array",
-                                                "items": {}
+                                                "type": "object"
                                             }
                                         }
                                     },
@@ -230,6 +388,85 @@
                 }
             }
         },
+        "/v1/orders": {
+            "post": {
+                "operationId": "v1.orders.store",
+                "description": "Crea una nueva orden desde el frontend.",
+                "summary": "POST /api/v1/orders",
+                "tags": [
+                    "OrderApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreOrderRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Orden creada exitosamente"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/": {
             "get": {
                 "operationId": "routing.redirect",
@@ -253,6 +490,74 @@
         }
     },
     "components": {
+        "schemas": {
+            "LoginRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "password": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "title": "LoginRequest"
+            },
+            "StoreOrderRequest": {
+                "type": "object",
+                "description": "POST /api/v1/orders\n\nCrea una nueva orden desde el frontend.\nAuth: Requerido (cliente autenticado)",
+                "properties": {
+                    "shipping_address": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "payment_method": {
+                        "type": "string",
+                        "enum": [
+                            "cash",
+                            "card",
+                            "transfer"
+                        ]
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "product_id": {
+                                    "type": "string"
+                                },
+                                "quantity": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                },
+                                "price": {
+                                    "type": "number",
+                                    "minimum": 0
+                                }
+                            },
+                            "required": [
+                                "product_id",
+                                "quantity",
+                                "price"
+                            ]
+                        },
+                        "minItems": 1
+                    }
+                },
+                "required": [
+                    "shipping_address",
+                    "payment_method",
+                    "items"
+                ],
+                "title": "StoreOrderRequest"
+            }
+        },
         "responses": {
             "ValidationException": {
                 "description": "Validation error",
