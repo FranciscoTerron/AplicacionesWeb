@@ -422,7 +422,7 @@
                                             "const": "Orden creada exitosamente"
                                         },
                                         "data": {
-                                            "type": "object",
+                                            "type": "array",
                                             "items": {}
                                         },
                                         "meta": {
@@ -459,6 +459,47 @@
                                     "required": [
                                         "success",
                                         "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "get": {
+                "operationId": "v1.orders.index",
+                "description": "Listar \u00f3rdenes del cliente autenticado con filtros opcionales.",
+                "summary": "GET /api/v1/orders",
+                "tags": [
+                    "OrderApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
                                     ]
                                 }
                             }
