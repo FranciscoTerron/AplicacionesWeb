@@ -167,4 +167,56 @@ class CatalogController extends Controller
             ]
         );
     }
+
+    /**
+     * GET /api/v1/catalog/featured
+     *
+     * Lista productos destacados activos desde Firestore.
+     */
+    #[OA\Get(
+        path: '/api/v1/catalog/featured',
+        operationId: 'listFeaturedProducts',
+        tags: ['Catalog'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Lista de productos destacados',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean'),
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
+                    ]
+                )
+            ),
+        ]
+    )]
+    public function featured(): JsonResponse
+    {
+        $result = $this->firestore->listDocuments('products', 100);
+        $products = collect($result['documents'] ?? [])
+            ->where('active', true)
+            ->where('featured', true)
+            ->map(fn (array $p) => $this->normalizeProduct($p))
+            ->values()
+            ->all();
+
+        return ApiResponse::success(
+            data: $products,
+            message: 'Productos destacados encontrados: '.count($products)
+        );
+    }
+
+    /**
+     * Normaliza los campos booleanos de un producto proveniente de Firestore.
+     */
+    protected function normalizeProduct(array $product): array
+    {
+        foreach (['active', 'featured'] as $field) {
+            if (isset($product[$field]) && ! is_bool($product[$field])) {
+                $product[$field] = filter_var($product[$field], FILTER_VALIDATE_BOOLEAN);
+            }
+        }
+
+        return $product;
+    }
 }

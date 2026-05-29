@@ -137,4 +137,58 @@ class CartApiController extends Controller
             message: 'Carrito actualizado'
         );
     }
+
+    /**
+     * GET /api/v1/cart
+     *
+     * Obtiene el carrito del usuario autenticado.
+     */
+    #[OA\Get(
+        path: '/api/v1/cart',
+        operationId: 'getCart',
+        tags: ['Cart'],
+        security: [new OA\Security(name: 'BearerAuth')],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Carrito encontrado',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean'),
+                        new OA\Property(property: 'data', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'No autenticado'
+            ),
+        ]
+    )]
+    public function show(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $cartResult = $this->firestore->query(
+            collection: 'carts',
+            fields: ['user_id' => $user->id],
+            limit: 1
+        );
+
+        if (count($cartResult) > 0) {
+            $cart = $cartResult[0];
+        } else {
+            $cart = [
+                'user_id' => $user->id,
+                'items' => [],
+                'created_at' => now()->toISOString(),
+                'updated_at' => now()->toISOString(),
+            ];
+        }
+
+        return ApiResponse::success(
+            data: $cart,
+            message: 'Carrito obtenido'
+        );
+    }
 }

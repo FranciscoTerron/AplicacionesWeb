@@ -7,6 +7,9 @@ use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\DiscountApiController;
 use App\Http\Controllers\Api\V1\HealthCheckController;
 use App\Http\Controllers\Api\V1\OrderApiController;
+use App\Http\Controllers\Api\V1\PaymentWebhookController;
+use App\Http\Controllers\Api\V1\SearchController;
+use App\Http\Controllers\Api\V1\WishlistController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -26,7 +29,7 @@ use Illuminate\Support\Facades\Route;
 /**
  * Ruta publica sin autenticacion: health check.
  */
-Route::prefix('v1')->group(function () {
+Route::prefix('v1')->middleware('throttle:api')->group(function () {
     // Health check
     Route::get('/health', HealthCheckController::class)
         ->name('api.v1.health');
@@ -39,6 +42,10 @@ Route::prefix('v1')->group(function () {
     Route::get('/catalog/products', [CatalogController::class, 'products'])
         ->name('api.v1.catalog.products');
 
+    // Catalog: productos destacados
+    Route::get('/catalog/featured', [CatalogController::class, 'featured'])
+        ->name('api.v1.catalog.featured');
+
     // Catalog API (externo) - Fase 1
     Route::get('/catalog/products/{id}', [CatalogApiController::class, 'product'])
         ->name('api.v1.catalog.product.show');
@@ -46,6 +53,15 @@ Route::prefix('v1')->group(function () {
     // Catalog API (externo) - Fase 2
     Route::get('/catalog/categories', [CatalogApiController::class, 'categories'])
         ->name('api.v1.catalog.categories');
+
+    // Payment webhook (público - notificación externa)
+    Route::post('/payments/webhook', PaymentWebhookController::class)
+        ->withoutMiddleware('throttle:api')
+        ->name('api.v1.payments.webhook');
+
+    // Search - Fase 5 (público)
+    Route::post('/catalog/search', SearchController::class)
+        ->name('api.v1.catalog.search');
 
     // Orders - Fase 5-8 (protegido)
     Route::middleware('auth.api')->group(function () {
@@ -59,8 +75,18 @@ Route::prefix('v1')->group(function () {
             ->name('api.v1.orders.cancel');
 
         // Cart - Fase 9 (protegido)
+        Route::get('/cart', [CartApiController::class, 'show'])
+            ->name('api.v1.cart.show');
         Route::post('/cart', CartApiController::class)
             ->name('api.v1.cart');
+
+        // Wishlist - Fase 6 (protegido)
+        Route::get('/wishlist', [WishlistController::class, 'index'])
+            ->name('api.v1.wishlist.index');
+        Route::post('/wishlist', [WishlistController::class, 'store'])
+            ->name('api.v1.wishlist.store');
+        Route::delete('/wishlist/{id}', [WishlistController::class, 'destroy'])
+            ->name('api.v1.wishlist.destroy');
 
         // Discount - Fase 10 (protegido)
         Route::post('/discounts/validate', [DiscountApiController::class, 'validate'])
