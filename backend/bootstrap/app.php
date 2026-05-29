@@ -1,12 +1,9 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
-use App\Http\Middleware\Api\AcceptJsonHeaderMiddleware;
 use App\Http\Middleware\Api\AuthenticateApiToken;
-use App\Http\Middleware\Api\ForceJsonResponseMiddleware;
 use App\Http\Middleware\ShareSettingsMiddleware;
 use App\Providers\AppServiceProvider;
-use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
@@ -48,8 +45,6 @@ return Application::configure(basePath: dirname(__DIR__))
             PreventRequestsDuringMaintenance::class,
             HandleCors::class,
             SubstituteBindings::class,
-            AcceptJsonHeaderMiddleware::class,
-            ForceJsonResponseMiddleware::class,
         ]);
 
         // Add custom middleware aliases
