@@ -187,8 +187,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "type": "array",
-                                                "items": {}
+                                                "type": "object"
                                             }
                                         },
                                         "meta": {
@@ -422,8 +421,7 @@
                                             "const": "Orden creada exitosamente"
                                         },
                                         "data": {
-                                            "type": "array",
-                                            "items": {}
+                                            "type": "object"
                                         },
                                         "meta": {
                                             "type": "object"
@@ -441,28 +439,6 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
-                    },
-                    "401": {
-                        "description": "No autenticado",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
                     }
                 }
             },
@@ -492,7 +468,7 @@
                                             "items": {}
                                         },
                                         "meta": {
-                                            "type": "string"
+                                            "type": "object"
                                         }
                                     },
                                     "required": [
@@ -500,6 +476,124 @@
                                         "message",
                                         "data",
                                         "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/orders/{id}": {
+            "get": {
+                "operationId": "v1.orders.show",
+                "description": "Obtener detalle de una orden espec\u00edfica del cliente autenticado.",
+                "summary": "GET /api/v1/orders/{id}",
+                "tags": [
+                    "OrderApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Orden encontrada"
+                                        },
+                                        "data": {
+                                            "type": [
+                                                "array",
+                                                "null"
+                                            ],
+                                            "items": {}
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "No tiene permiso para ver esta orden."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Orden no encontrada."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message"
                                     ]
                                 }
                             }

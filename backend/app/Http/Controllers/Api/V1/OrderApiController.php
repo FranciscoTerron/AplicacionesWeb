@@ -190,4 +190,71 @@ class OrderApiController extends Controller
             message: 'Órdenes encontradas: '.count($orders)
         );
     }
+
+    /**
+     * GET /api/v1/orders/{id}
+     *
+     * Obtener detalle de una orden específica del cliente autenticado.
+     */
+    #[OA\Get(
+        path: '/api/v1/orders/{id}',
+        operationId: 'getOrder',
+        tags: ['Orders'],
+        security: [new OA\Security(name: 'BearerAuth')],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'ID de la orden',
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Orden encontrada',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean'),
+                        new OA\Property(property: 'data', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'No autenticado'
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Orden no encontrada'
+            ),
+        ]
+    )]
+    public function show(string $id, Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $order = $this->firestore->getDocument('orders', $id);
+
+        if (! $order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Orden no encontrada.',
+            ], 404);
+        }
+
+        // Verificar que la orden pertenece al usuario autenticado
+        if (($order['user_id'] ?? null) !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tiene permiso para ver esta orden.',
+            ], 404);
+        }
+
+        return ApiResponse::success(
+            data: $order,
+            message: 'Orden encontrada'
+        );
+    }
 }

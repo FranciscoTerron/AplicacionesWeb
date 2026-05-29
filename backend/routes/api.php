@@ -45,12 +45,14 @@ Route::prefix('v1')->group(function () {
     Route::get('/catalog/categories', [CatalogApiController::class, 'categories'])
         ->name('api.v1.catalog.categories');
 
-    // Orders - Fase 5 y 6 (protegido)
+    // Orders - Fase 5-7 (protegido)
     Route::middleware('auth.api')->group(function () {
         Route::post('/orders', [OrderApiController::class, 'store'])
             ->name('api.v1.orders.store');
         Route::get('/orders', [OrderApiController::class, 'index'])
             ->name('api.v1.orders.index');
+        Route::get('/orders/{id}', [OrderApiController::class, 'show'])
+            ->name('api.v1.orders.show');
     });
 });
 
