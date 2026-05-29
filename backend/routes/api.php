@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AuthApiController;
 use App\Http\Controllers\Api\V1\CatalogApiController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\HealthCheckController;
@@ -26,6 +27,10 @@ Route::prefix('v1')->group(function () {
     // Health check
     Route::get('/health', HealthCheckController::class)
         ->name('api.v1.health');
+
+    // Auth - Fase 3 (público)
+    Route::post('/auth/login', [AuthApiController::class, 'login'])
+        ->name('api.v1.auth.login');
 
     // Catalog: productos activos (consumido por el frontend e-commerce)
     Route::get('/catalog/products', [CatalogController::class, 'products'])

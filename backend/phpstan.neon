@@ -9,3 +9,7 @@ parameters:
     paths:
         - app
 
+    ignoreErrors:
+        - '#Attribute class OpenApi\\Attributes#'
+        - '#Instantiated class OpenApi\\Attributes#'
+

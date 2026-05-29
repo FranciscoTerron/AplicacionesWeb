@@ -128,9 +128,9 @@ return [
     'flatten_deep_query_parameters' => true,
 
     'middleware' => [
-    'web',
-    \Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess::class,
-],
+        'web',
+        RestrictedDocsAccess::class,
+    ],
 
     'extensions' => [],
 ];

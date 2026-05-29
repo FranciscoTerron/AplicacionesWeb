@@ -33,7 +33,7 @@ class CatalogApiController extends Controller
                 in: 'query',
                 description: 'ID de categoría para filtrar',
                 schema: new OA\Schema(type: 'string')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -42,10 +42,10 @@ class CatalogApiController extends Controller
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'success', type: 'boolean'),
-                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
                     ]
                 )
-            )
+            ),
         ]
     )]
     public function products(Request $request): JsonResponse
@@ -98,7 +98,7 @@ class CatalogApiController extends Controller
                 required: true,
                 description: 'ID del producto',
                 schema: new OA\Schema(type: 'string')
-            )
+            ),
         ],
         responses: [
             new OA\Response(
@@ -107,14 +107,14 @@ class CatalogApiController extends Controller
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'success', type: 'boolean'),
-                        new OA\Property(property: 'data', type: 'object')
+                        new OA\Property(property: 'data', type: 'object'),
                     ]
                 )
             ),
             new OA\Response(
                 response: 404,
                 description: 'Producto no disponible o no encontrado'
-            )
+            ),
         ]
     )]
     public function product(string $id): JsonResponse
@@ -152,10 +152,10 @@ class CatalogApiController extends Controller
                 content: new OA\JsonContent(
                     properties: [
                         new OA\Property(property: 'success', type: 'boolean'),
-                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object'))
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
                     ]
                 )
-            )
+            ),
         ]
     )]
     public function categories(): JsonResponse
