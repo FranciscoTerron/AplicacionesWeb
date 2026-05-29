@@ -22,14 +22,10 @@
             "src": "/api-docs.json",
             "dest": "/public/api-docs.json"
         },
-        {
-            "src": "/docs/api",
-            "dest": "/public/docs/api.html"
-        },
-        {
-            "src": "/docs/api.html",
-            "dest": "/public/docs/api.html"
-        },
+            {
+                "src": "/docs/api/?$",
+                "dest": "/public/api.html"
+            },
         {
             "src": "/favicon.(.*)",
             "dest": "/public/favicon.$1"
