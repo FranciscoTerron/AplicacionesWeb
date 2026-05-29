@@ -438,6 +438,65 @@ Content-Type: application/json
 
 ---
 
+### 9. POST /api/v1/discounts/validate
+
+Valida un código de descuento. Verifica existencia, estado activo, fechas de validez y aplicabilidad. Requiere autenticación.
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "code": "VERANO20",
+  "product_id": "prod-123",
+  "category_id": "cat-1"
+}
+```
+
+**Request Fields:**
+- `code` (string, requerido) - Código de descuento. Máximo 50 caracteres.
+- `product_id` (string, opcional) - ID del producto para verificar aplicabilidad específica.
+- `category_id` (string, opcional) - ID de la categoría para verificar aplicabilidad.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Código de descuento válido",
+  "data": {
+    "id": "discount-123",
+    "code": "VERANO20",
+    "name": "Descuento Verano 20%",
+    "description": "20% de descuento en productos seleccionados",
+    "discount_type": "percentage",
+    "value": 20,
+    "applies_to": "product"
+  }
+}
+```
+
+**Response 401:**
+```json
+{
+  "success": false,
+  "message": "Unauthenticated."
+}
+```
+
+**Response 404:**
+```json
+{
+  "success": false,
+  "message": "Código de descuento no encontrado."
+}
+```
+
+---
+
 ## Testing
 
 Para probar los endpoints:
@@ -483,6 +542,18 @@ curl -X POST http://localhost:8000/api/v1/cart \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"action": "add", "product_id": "prod-123", "quantity": 2}'
+
+# Validar descuento (requiere token)
+curl -X POST http://localhost:8000/api/v1/discounts/validate \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"code": "VERANO20"}'
+
+# Validar descuento con producto específico
+curl -X POST http://localhost:8000/api/v1/discounts/validate \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"code": "VERANO20", "product_id": "prod-123"}'
 ```
 
 # Acceder a documentación interactiva
