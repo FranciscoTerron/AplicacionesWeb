@@ -120,18 +120,10 @@
                                 "properties": {
                                     "action": {
                                         "type": "string",
-                                        "default": "add",
-                                        "enum": [
-                                            "add",
-                                            "update",
-                                            "remove"
-                                        ]
+                                        "default": "add"
                                     },
                                     "product_id": {
                                         "type": "string"
-                                    },
-                                    "quantity": {
-                                        "type": "integer"
                                     }
                                 }
                             }
@@ -154,61 +146,18 @@
                                             "const": "Carrito actualizado"
                                         },
                                         "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
-                                        "message",
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "No autenticado",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
+                                            "type": "array",
+                                            "items": {}
                                         },
-                                        "message": {
+                                        "meta": {
                                             "type": "string"
                                         }
                                     },
                                     "required": [
                                         "success",
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "required": [
-                                        "success",
                                         "message",
-                                        "errors"
+                                        "data",
+                                        "meta"
                                     ]
                                 }
                             }
@@ -446,6 +395,187 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/v1/discounts/validate": {
+            "post": {
+                "operationId": "v1.discounts.validate",
+                "description": "Valida un c\u00f3digo de descuento.",
+                "summary": "POST /api/v1/discounts/validate",
+                "tags": [
+                    "DiscountApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ValidateDiscountRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "C\u00f3digo de descuento v\u00e1lido"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {},
+                                                "code": {},
+                                                "name": {},
+                                                "description": {},
+                                                "discount_type": {},
+                                                "value": {},
+                                                "applies_to": {}
+                                            },
+                                            "required": [
+                                                "id",
+                                                "code",
+                                                "name",
+                                                "description",
+                                                "discount_type",
+                                                "value",
+                                                "applies_to"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "El c\u00f3digo de descuento no aplica a este producto/categor\u00eda."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "El c\u00f3digo de descuento ha alcanzado su l\u00edmite de usos."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "El c\u00f3digo de descuento ha expirado."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "El c\u00f3digo de descuento a\u00fan no es v\u00e1lido."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "El c\u00f3digo de descuento no est\u00e1 activo."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "C\u00f3digo de descuento no encontrado."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     }
                 }
             }
@@ -908,6 +1038,26 @@
                     "items"
                 ],
                 "title": "StoreOrderRequest"
+            },
+            "ValidateDiscountRequest": {
+                "type": "object",
+                "description": "POST /api/v1/discounts/validate\n\nValida un c\u00f3digo de descuento.\nOpcionalmente verifica si aplica a un producto o categor\u00eda espec\u00edfica.\nAuth: Requerido (cliente autenticado)",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "maxLength": 50
+                    },
+                    "product_id": {
+                        "type": "string"
+                    },
+                    "category_id": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "code"
+                ],
+                "title": "ValidateDiscountRequest"
             }
         },
         "responses": {

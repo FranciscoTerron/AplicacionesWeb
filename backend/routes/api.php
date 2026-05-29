@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthApiController;
 use App\Http\Controllers\Api\V1\CartApiController;
 use App\Http\Controllers\Api\V1\CatalogApiController;
 use App\Http\Controllers\Api\V1\CatalogController;
+use App\Http\Controllers\Api\V1\DiscountApiController;
 use App\Http\Controllers\Api\V1\HealthCheckController;
 use App\Http\Controllers\Api\V1\OrderApiController;
 use Illuminate\Support\Facades\Route;
@@ -60,6 +61,10 @@ Route::prefix('v1')->group(function () {
         // Cart - Fase 9 (protegido)
         Route::post('/cart', CartApiController::class)
             ->name('api.v1.cart');
+
+        // Discount - Fase 10 (protegido)
+        Route::post('/discounts/validate', [DiscountApiController::class, 'validate'])
+            ->name('api.v1.discounts.validate');
     });
 });
 
