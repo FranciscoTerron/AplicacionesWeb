@@ -104,6 +104,119 @@
                 }
             }
         },
+        "/v1/cart": {
+            "post": {
+                "operationId": "v1.cart",
+                "description": "Operaciones de carrito (add, update, remove).",
+                "summary": "POST /api/v1/cart",
+                "tags": [
+                    "CartApi"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "action": {
+                                        "type": "string",
+                                        "default": "add",
+                                        "enum": [
+                                            "add",
+                                            "update",
+                                            "remove"
+                                        ]
+                                    },
+                                    "product_id": {
+                                        "type": "string"
+                                    },
+                                    "quantity": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Carrito actualizado"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "No autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "errors"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/v1/catalog/products": {
             "get": {
                 "operationId": "v1.catalog.products",
@@ -187,7 +300,8 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "type": "array",
+                                                "items": {}
                                             }
                                         },
                                         "meta": {
@@ -422,13 +536,18 @@
                                             "const": "Orden creada exitosamente"
                                         },
                                         "data": {
-                                            "type": "object"
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
                                         }
                                     },
                                     "required": [
                                         "success",
                                         "message",
-                                        "data"
+                                        "data",
+                                        "meta"
                                     ]
                                 }
                             }
@@ -615,13 +734,18 @@
                                             "const": "Orden cancelada exitosamente"
                                         },
                                         "data": {
-                                            "type": "object"
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
                                         }
                                     },
                                     "required": [
                                         "success",
                                         "message",
-                                        "data"
+                                        "data",
+                                        "meta"
                                     ]
                                 }
                             }

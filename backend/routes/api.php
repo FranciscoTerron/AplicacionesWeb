@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthApiController;
+use App\Http\Controllers\Api\V1\CartApiController;
 use App\Http\Controllers\Api\V1\CatalogApiController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\HealthCheckController;
@@ -55,6 +56,10 @@ Route::prefix('v1')->group(function () {
             ->name('api.v1.orders.show');
         Route::put('/orders/{id}/cancel', [OrderApiController::class, 'cancel'])
             ->name('api.v1.orders.cancel');
+
+        // Cart - Fase 9 (protegido)
+        Route::post('/cart', CartApiController::class)
+            ->name('api.v1.cart');
     });
 });
 

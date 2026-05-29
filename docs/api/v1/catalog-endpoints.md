@@ -1,6 +1,6 @@
-# OpenAPI Documentation - Fase 1-8
+# OpenAPI Documentation - Fase 1-9
 
-Este archivo documenta los endpoints públicos del catálogo implementados en Fase 1 a la Fase 8 del proyecto.
+Este archivo documenta los endpoints públicos del catálogo implementados en Fase 1 a la Fase 9 del proyecto.
 
 ## Endpoints Documentados
 
@@ -386,6 +386,58 @@ Authorization: Bearer {token}
 
 ---
 
+### 8. POST /api/v1/cart
+
+Operaciones de carrito de compras (add, update, remove). Requiere autenticación.
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "action": "add",
+  "product_id": "prod-123",
+  "quantity": 2
+}
+```
+
+**Request Fields:**
+- `action` (string, requerido) - Acción: `add`, `update`, `remove`
+- `product_id` (string, requerido) - ID del producto
+- `quantity` (integer, opcional) - Cantidad. Default: 1
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Carrito actualizado",
+  "data": {
+    "name": "carts/cart-id",
+    "fields": {
+      "user_id": "user-123",
+      "items": [
+        {"product_id": "prod-123", "quantity": 2}
+      ],
+      "updated_at": "2026-05-29T14:00:00.000Z"
+    }
+  }
+}
+```
+
+**Response 401:**
+```json
+{
+  "success": false,
+  "message": "Unauthenticated."
+}
+```
+
+---
+
 ## Testing
 
 Para probar los endpoints:
@@ -425,6 +477,12 @@ curl http://localhost:8000/api/v1/orders/order-id \
 # Cancelar orden (requiere token)
 curl -X PUT http://localhost:8000/api/v1/orders/order-id/cancel \
   -H "Authorization: Bearer $TOKEN"
+
+# Operaciones de carrito (requiere token)
+curl -X POST http://localhost:8000/api/v1/cart \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"action": "add", "product_id": "prod-123", "quantity": 2}'
 ```
 
 # Acceder a documentación interactiva
