@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthApiController;
 use App\Http\Controllers\Api\V1\CatalogApiController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\HealthCheckController;
+use App\Http\Controllers\Api\V1\OrderApiController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -43,6 +44,12 @@ Route::prefix('v1')->group(function () {
     // Catalog API (externo) - Fase 2
     Route::get('/catalog/categories', [CatalogApiController::class, 'categories'])
         ->name('api.v1.catalog.categories');
+
+    // Orders - Fase 5 (protegido)
+    Route::middleware('auth.api')->group(function () {
+        Route::post('/orders', [OrderApiController::class, 'store'])
+            ->name('api.v1.orders.store');
+    });
 });
 
 /**
