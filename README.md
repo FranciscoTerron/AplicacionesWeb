@@ -114,6 +114,37 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 
 ---
 
+### Cuarta Entrega (PR) — 7 de Junio 2026
+**Módulo**: PR Final — Laravel + API Completa
+
+| Item | Estado | Observaciones |
+|------|--------|---------------|
+| Endpoint health | ✅ | Listo |
+| Endpoint Login | ✅ | Listo |
+| Endpoint obtener productos| ✅ | Listo |
+| Endpoint obtener producto | ✅ | Listo |
+| Endpoint obtener productos destacados | ⏳ | Falta implementar |
+| Endpoint obtener categorías | ✅ | Listo |
+| Endpoint validacion de descuento | ✅ | Listo |
+| Endpoint obtener pedidos | ✅ | Listo |
+| Endpoint obtener pedido | ✅ | Listo |
+| Endpoint crear pedido | ✅ | Listo |
+| Endpoint cancelar pedido | ✅ | Listo |
+| Endpoint crear carrito | ✅ | Listo |
+| Endpoint obtener carrito | ⏳ | Falta implementar |
+| Endpoint agregar al carrito | ✅ | Listo |
+| Rate limiting | ⏳ | Falta implementar |
+| Payment webhook | ⏳ | Falta implementar |
+| Search avanzado | ⏳ | Falta implementar |
+| Filtros avanzados | ⏳ | Falta implementar |
+| Sorting en productos | ⏳ | Falta implementar |
+| Schema OpenAPI | ⏳ | Incompleto |
+| Endpoint de wishlist | ⏳ | Falta implementar |
+
+**Conclusión**: La mayor parte de la API REST esta contriuida, documentada estaticamente para ser accedida desde vercel, tambien se implemento acceso a documentacion dinamica  y ademas un documento (catalog-endpoints.md) que tiene mas detalles de la API REST.
+
+---
+
 ## Cronograma de Entregas (PRs Obligatorios)
 
 | Fecha Límite | Hito | Estado |
@@ -121,7 +152,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | 20 de Abril | Deploy en Vercel (frontpage mínimo) | ✅ Completo PR |
 | 11 de Mayo | Avance Laravel (CRUDs parciales) | ✅ Completo PR |
 | 25 de Mayo | Avance Laravel (funcionalidades adicionales) | ✅ Completo PR |
-| 7 de Junio | PR Final — Laravel + API Completa | ⏳ Pendiente |
+| 7 de Junio | PR Final — Laravel + API Completa | ⏳ En proceso |
 
 *Las fechas corresponden al cronograma establecido por la catedra.*
 
