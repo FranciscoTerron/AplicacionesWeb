@@ -1,6 +1,6 @@
-# OpenAPI Documentation 
+# OpenAPI Documentation - Fase 1-8
 
-Este archivo documenta los endpoints públicos del catálogo implementados del proyecto.
+Este archivo documenta los endpoints públicos del catálogo implementados en Fase 1 a la Fase 8 del proyecto.
 
 ## Endpoints Documentados
 
@@ -341,6 +341,51 @@ Authorization: Bearer {token}
 
 ---
 
+### 7. PUT /api/v1/orders/{id}/cancel
+
+Cancela una orden si está en estado `pending` o `confirmed`.
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Path Parameters:**
+- `id` (string, requerido) - ID de la orden
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Orden cancelada exitosamente",
+  "data": {
+    "name": "orders/order-123",
+    "fields": {
+      "status": "cancelled",
+      "updated_at": "2026-05-29T14:00:00.000Z"
+    }
+  }
+}
+```
+
+**Response 401:**
+```json
+{
+  "success": false,
+  "message": "Unauthenticated."
+}
+```
+
+**Response 400:**
+```json
+{
+  "success": false,
+  "message": "La orden no se puede cancelar en su estado actual: processing"
+}
+```
+
+---
+
 ## Testing
 
 Para probar los endpoints:
@@ -375,6 +420,10 @@ curl "http://localhost:8000/api/v1/orders?status=pending&date_from=2026-01-01" \
 
 # Obtener orden por ID (requiere token)
 curl http://localhost:8000/api/v1/orders/order-id \
+  -H "Authorization: Bearer $TOKEN"
+
+# Cancelar orden (requiere token)
+curl -X PUT http://localhost:8000/api/v1/orders/order-id/cancel \
   -H "Authorization: Bearer $TOKEN"
 ```
 

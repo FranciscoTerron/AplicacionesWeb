@@ -261,7 +261,7 @@
                                             "type": "boolean"
                                         },
                                         "data": {
-                                            "type": "object"
+                                            "type": "string"
                                         }
                                     },
                                     "required": [
@@ -320,7 +320,8 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "type": "array",
+                                                "items": {}
                                             }
                                         }
                                     },
@@ -422,16 +423,12 @@
                                         },
                                         "data": {
                                             "type": "object"
-                                        },
-                                        "meta": {
-                                            "type": "object"
                                         }
                                     },
                                     "required": [
                                         "success",
                                         "message",
-                                        "data",
-                                        "meta"
+                                        "data"
                                     ]
                                 }
                             }
@@ -468,7 +465,7 @@
                                             "items": {}
                                         },
                                         "meta": {
-                                            "type": "object"
+                                            "type": "string"
                                         }
                                     },
                                     "required": [
@@ -523,12 +520,16 @@
                                                 "null"
                                             ],
                                             "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
                                         }
                                     },
                                     "required": [
                                         "success",
                                         "message",
-                                        "data"
+                                        "data",
+                                        "meta"
                                     ]
                                 }
                             }
@@ -576,9 +577,58 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/v1/orders/{id}/cancel": {
+            "put": {
+                "operationId": "v1.orders.cancel",
+                "description": "Cancelar una orden (solo si est\u00e1 en estado cancelable).",
+                "summary": "PUT /api/v1/orders/{id}/cancel",
+                "tags": [
+                    "OrderApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Orden cancelada exitosamente"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
                     },
-                    "401": {
-                        "description": "No autenticado",
+                    "400": {
+                        "description": "",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -594,6 +644,49 @@
                                     "required": [
                                         "success",
                                         "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "No tiene permiso para cancelar esta orden."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Orden no encontrada."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        }
                                     ]
                                 }
                             }
