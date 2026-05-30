@@ -1,6 +1,6 @@
-# OpenAPI Documentation - Fase 1-9
+# OpenAPI Documentation
 
-Este archivo documenta los endpoints públicos del catálogo implementados en Fase 1 a la Fase 9 del proyecto.
+Este archivo documenta los endpoints públicos del catálogo implementados del proyecto.
 
 ## Endpoints Documentados
 

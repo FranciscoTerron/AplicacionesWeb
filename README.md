@@ -151,7 +151,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | 20 de Abril | Deploy en Vercel (frontpage mínimo) | ✅ Completo PR |
 | 11 de Mayo | Avance Laravel (CRUDs parciales) | ✅ Completo PR |
 | 25 de Mayo | Avance Laravel (funcionalidades adicionales) | ✅ Completo PR |
-| 7 de Junio | PR Final — Laravel + API Completa | ⏳ En proceso |
+| 7 de Junio | PR Final — Laravel + API Completa |✅ Completo PR |
 
 *Las fechas corresponden al cronograma establecido por la catedra.*
 
