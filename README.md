@@ -140,7 +140,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Schema OpenAPI | ✅ | Listo (Scramble auto-generación) |
 | Endpoint de wishlist | ✅ | Listo |
 
-**Conclusión**: La mayor parte de la API REST esta contriuida, documentada estaticamente para ser accedida desde vercel, tambien se implemento acceso a documentacion dinamica  y ademas un documento (catalog-endpoints.md) que tiene mas detalles de la API REST.
+**Conclusión**: La API REST está 100% implementada y documentada. Todos los endpoints requeridos están disponibles: productos, categorías, carrito, wishlist, búsqueda avanzada, payment webhook con verificación HMAC de Mercado Pago, y rate limiting. La documentación OpenAPI está regenerada y disponible en `/docs/api` y en `backend/public/api-docs.json` para consumo desde Vercel.
 
 ---
 

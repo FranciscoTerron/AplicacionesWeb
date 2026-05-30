@@ -497,6 +497,250 @@ Content-Type: application/json
 
 ---
 
+### 10. GET /api/v1/catalog/featured
+
+Lista productos destacados activos.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Productos destacados encontrados: 3",
+  "data": [
+    {
+      "id": "prod-123",
+      "name": "Cloro Líquido 5L",
+      "sku": "CLR-5L",
+      "price": 2500.00,
+      "description": "Cloro de alta pureza",
+      "stock": 50,
+      "active": true,
+      "featured": true,
+      "category_id": "cat-1"
+    }
+  ]
+}
+```
+
+---
+
+### 11. POST /api/v1/catalog/search
+
+Búsqueda avanzada de productos con filtros múltiples.
+
+**Request Body:**
+```json
+{
+  "query": "cloro",
+  "category_id": "cat-1",
+  "min_price": 1000,
+  "max_price": 5000,
+  "min_rating": 4,
+  "in_stock": true,
+  "sort_by": "price",
+  "sort_order": "asc"
+}
+```
+
+**Request Fields:**
+- `query` (string, opcional) - Término de búsqueda full-text
+- `category_id` (string, opcional) - ID de categoría
+- `min_price` (number, opcional) - Precio mínimo
+- `max_price` (number, opcional) - Precio máximo
+- `min_rating` (number, opcional) - Rating mínimo (0-5)
+- `in_stock` (boolean, opcional) - Solo productos con stock > 0
+- `attributes` (object, opcional) - Filtros por atributos
+- `sort_by` (string, opcional) - Campo de ordenamiento: `price`, `name`, `rating`, `created_at`
+- `sort_order` (string, opcional) - Dirección: `asc`, `desc`
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Productos encontrados: 5",
+  "data": [
+    {
+      "id": "prod-123",
+      "name": "Cloro Líquido 5L",
+      "sku": "CLR-5L",
+      "price": 2500.00,
+      "rating": 4.5,
+      "stock": 50,
+      "active": true,
+      "featured": true
+    }
+  ]
+}
+```
+
+---
+
+### 12. GET /api/v1/cart
+
+Obtiene el carrito del usuario autenticado.
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Carrito obtenido",
+  "data": {
+    "name": "carts/cart-id",
+    "fields": {
+      "user_id": "user-123",
+      "items": [
+        {"product_id": "prod-123", "quantity": 2}
+      ],
+      "created_at": "2026-05-29T13:00:00.000Z",
+      "updated_at": "2026-05-29T13:00:00.000Z"
+    }
+  }
+}
+```
+
+**Response 401:**
+```json
+{
+  "success": false,
+  "message": "Unauthenticated."
+}
+```
+
+---
+
+### 13. GET /api/v1/wishlist
+
+Obtiene la lista de deseos del usuario autenticado.
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Wishlist obtenida",
+  "data": {
+    "name": "wishlists/wishlist-id",
+    "fields": {
+      "user_id": "user-123",
+      "items": ["prod-123", "prod-456"]
+    }
+  }
+}
+```
+
+---
+
+### 14. POST /api/v1/wishlist
+
+Agrega un producto a la lista de deseos del usuario.
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "product_id": "prod-123"
+}
+```
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Producto agregado a wishlist",
+  "data": {
+    "name": "wishlists/wishlist-id",
+    "fields": {
+      "user_id": "user-123",
+      "items": ["prod-123"]
+    }
+  }
+}
+```
+
+---
+
+### 15. DELETE /api/v1/wishlist/{id}
+
+Elimina un producto de la lista de deseos del usuario.
+
+**Headers:**
+```
+Authorization: Bearer {token}
+```
+
+**Path Parameters:**
+- `id` (string, requerido) - ID del producto a eliminar
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Producto eliminado de wishlist"
+}
+```
+
+---
+
+### 16. POST /api/v1/payments/webhook
+
+Webhook para Mercado Pago que actualiza el estado de pago de órdenes. Este endpoint NO requiere autenticación y está excluido del rate limiting.
+
+**Headers:**
+```
+x-signature-sha256: {hmac_signature}
+Content-Type: application/json
+```
+
+**Request Body (Mercado Pago):**
+```json
+{
+  "type": "payment",
+  "data": {
+    "id": "payment-id-123"
+  }
+}
+```
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "message": "Pago actualizado: approved"
+}
+```
+
+**Response 400:**
+```json
+{
+  "success": false,
+  "message": "Firma inválida"
+}
+```
+
+---
+
+## Rate Limiting
+
+Todos los endpoints públicos están protegidos con rate limiting: **60 requests por minuto** por IP.
+
+Los endpoints autenticados heredan este límite. El webhook de Mercado Pago está excluido.
+
+---
+
 ## Testing
 
 Para probar los endpoints:
@@ -554,8 +798,33 @@ curl -X POST http://localhost:8000/api/v1/discounts/validate \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"code": "VERANO20", "product_id": "prod-123"}'
+
+# Productos destacados
+curl http://localhost:8000/api/v1/catalog/featured
+
+# Búsqueda avanzada
+curl -X POST http://localhost:8000/api/v1/catalog/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "cloro", "min_price": 1000}'
+
+# Obtener carrito
+curl http://localhost:8000/api/v1/cart \
+  -H "Authorization: Bearer $TOKEN"
+
+# Wishlist
+curl http://localhost:8000/api/v1/wishlist \
+  -H "Authorization: Bearer $TOKEN"
+
+curl -X POST http://localhost:8000/api/v1/wishlist \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"product_id": "prod-123"}'
+
+curl -X DELETE http://localhost:8000/api/v1/wishlist/prod-123 \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 # Acceder a documentación interactiva
+```bash
 open http://localhost:8000/docs/api
 ```
