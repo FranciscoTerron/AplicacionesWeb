@@ -23,6 +23,7 @@ class StoreClientRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
+            'password' => 'nullable|string|min:8',
             'phone' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:500',
             'city' => 'nullable|string|max:100',
@@ -39,6 +40,7 @@ class StoreClientRequest extends FormRequest
             'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'El correo electrónico debe ser válido.',
             'email.max' => 'El correo no puede tener más de 255 caracteres.',
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
             'phone.max' => 'El teléfono no puede tener más de 50 caracteres.',
             'address.max' => 'La dirección no puede tener más de 500 caracteres.',
             'city.max' => 'La ciudad no puede tener más de 100 caracteres.',
