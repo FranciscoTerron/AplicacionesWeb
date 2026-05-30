@@ -122,7 +122,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Endpoint health | ✅ | Listo |
 | Endpoint Login | ✅ | Listo |
 | Endpoint register | ✅ | Listo |
-| Endpoint refresh | ✅ | Listo |
+| Endpoint refresh token | ✅ | Listo |
 | Endpoint obtener productos| ✅ | Listo |
 | Endpoint obtener producto | ✅ | Listo |
 | Endpoint obtener productos destacados | ✅ | Listo |
@@ -134,9 +134,6 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Endpoint cancelar pedido | ✅ | Listo |
 | Endpoint crear carrito | ✅ | Listo |
 | Endpoint obtener carrito | ✅ | Listo |
-| Auth login | ✅ | Listo (users + clients) |
-| Auth register | ✅ | Listo (crea cliente con password) |
-| Auth refresh | ✅ | Listo |
 | Rate limiting | ✅ | Listo |
 | Payment webhook | ✅ | Listo |
 | Search avanzado | ✅ | Listo |
@@ -145,7 +142,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Schema OpenAPI | ✅ | Listo (Scramble auto-generación) |
 | Endpoint de wishlist | ✅ | Listo |
 
-**Conclusión**: La API REST está 100% implementada. Arquitectura: `clients` es la colección única para usuarios e-commerce; `users` solo para admin/editor. El register crea cliente con password, el login busca en ambas colecciones. Refresh permite renovar tokens.
+**Conclusión**: La API REST está 100% implementada y documentada. Todos los endpoints requeridos están disponibles: productos, categorías, carrito, wishlist, búsqueda avanzada, payment webhook con verificación HMAC de Mercado Pago, y rate limiting. La documentación OpenAPI está regenerada y disponible en `/docs/api` y en `backend/public/api-docs.json` para consumo desde Vercel.
 
 ---
 
