@@ -733,6 +733,124 @@ Content-Type: application/json
 
 ---
 
+### 17. POST /api/v1/auth/register
+
+Registro de nuevos usuarios (clientes). Crea cliente con password + token API.
+
+**Request Body:**
+```json
+{
+  "name": "Juan Pérez",
+  "email": "juan@example.com",
+  "password": "password123",
+  "phone": "+54 11 1234-5678",
+  "address": "Calle Falsa 123, Ciudad"
+}
+```
+
+**Request Fields:**
+- `name` (string, requerido) - Nombre completo. Máximo 255 caracteres.
+- `email` (string, requerido) - Email único. Formato válido.
+- `password` (string, requerido) - Contraseña. Mínimo 8 caracteres.
+- `phone` (string, opcional) - Teléfono. Máximo 50 caracteres.
+- `address` (string, opcional) - Dirección. Máximo 500 caracteres.
+
+**Response 201:**
+```json
+{
+  "success": true,
+  "token": "sanctum-token...",
+  "user": {
+    "id": "user-abc123",
+    "name": "Juan Pérez",
+    "email": "juan@example.com",
+    "role": "cliente"
+  }
+}
+```
+
+**Response 422:**
+```json
+{
+  "success": false,
+  "message": "El email ya está registrado"
+}
+```
+
+---
+
+### 18. POST /api/v1/auth/refresh
+
+Renueva un token de acceso usando el token actual.
+
+**Request Body:**
+```json
+{
+  "refresh_token": "current-or-saved-token"
+}
+```
+
+**Request Fields:**
+- `refresh_token` (string, requerido) - Token actual del usuario.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "token": "new-sanctum-token..."
+}
+```
+
+**Response 401:**
+```json
+{
+  "success": false,
+  "message": "Refresh token inválido"
+}
+```
+
+---
+
+### 19. POST /api/v1/auth/login
+
+Autenticación de usuarios. Busca primero en `users` (admin/editor), luego en `clients` (e-commerce).
+
+**Request Body:**
+```json
+{
+  "email": "admin@example.com",
+  "password": "password"
+}
+```
+
+**Request Fields:**
+- `email` (string, requerido) - Email registrado.
+- `password` (string, requerido) - Contraseña.
+
+**Response 200:**
+```json
+{
+  "success": true,
+  "token": "sanctum-token...",
+  "user": {
+    "id": "user-123",
+    "name": "Admin",
+    "email": "admin@example.com",
+    "role": "admin"
+  }
+}
+```
+
+**Response 401:**
+```json
+{
+  "success": false,
+  "message": "Credenciales inválidas"
+}
+```
+
+---
+
 ## Rate Limiting
 
 Todos los endpoints públicos están protegidos con rate limiting: **60 requests por minuto** por IP.
@@ -748,6 +866,22 @@ Para probar los endpoints:
 ```bash
 # Iniciar servidor
 php artisan serve
+
+# Auth endpoints (públicos)
+# Registro
+curl -X POST http://localhost:8000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Juan Pérez", "email": "juan@example.com", "password": "password123"}'
+
+# Login
+curl -X POST http://localhost:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "juan@example.com", "password": "password123"}'
+
+# Refresh token (usa el token actual como refresh token)
+curl -X POST http://localhost:8000/api/v1/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{"refresh_token": "$TOKEN"}'
 
 # Probar endpoints con curl
 curl http://localhost:8000/api/v1/catalog/products
