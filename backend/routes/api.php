@@ -37,6 +37,10 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     // Auth - Fase 3 (público)
     Route::post('/auth/login', [AuthApiController::class, 'login'])
         ->name('api.v1.auth.login');
+    Route::post('/auth/register', [AuthApiController::class, 'register'])
+        ->name('api.v1.auth.register');
+    Route::post('/auth/refresh', [AuthApiController::class, 'refresh'])
+        ->name('api.v1.auth.refresh');
 
     // Catalog: productos activos (consumido por el frontend e-commerce)
     Route::get('/catalog/products', [CatalogController::class, 'products'])

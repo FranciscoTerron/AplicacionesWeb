@@ -48,6 +48,11 @@ class AuthenticateApiToken
 
         $userDoc = $this->firestore->getDocument('users', $userId);
 
+        // Try clients if not found in users
+        if (! $userDoc) {
+            $userDoc = $this->firestore->getDocument('clients', $userId);
+        }
+
         if (! $userDoc || ! ($userDoc['active'] ?? true)) {
             return response()->json([
                 'success' => false,
