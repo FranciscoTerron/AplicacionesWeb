@@ -105,6 +105,79 @@
             }
         },
         "/v1/cart": {
+            "get": {
+                "operationId": "v1.cart.show",
+                "description": "Obtiene el carrito del usuario autenticado.",
+                "summary": "GET /api/v1/cart",
+                "tags": [
+                    "CartApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Carrito obtenido"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "integer"
+                                                },
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0,
+                                                    "additionalItems": false
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "user_id",
+                                                "items",
+                                                "created_at",
+                                                "updated_at"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "operationId": "v1.cart",
                 "description": "Operaciones de carrito (add, update, remove).",
@@ -290,6 +363,51 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/catalog/featured": {
+            "get": {
+                "operationId": "v1.catalog.featured",
+                "description": "Lista productos destacados activos desde Firestore.",
+                "summary": "GET /api/v1/catalog/featured",
+                "tags": [
+                    "Catalog"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -949,6 +1067,119 @@
                 }
             }
         },
+        "/v1/payments/webhook": {
+            "post": {
+                "operationId": "v1.payments.webhook",
+                "description": "Webhook para actualizar estado de pago de \u00f3rdenes (Mercado Pago).",
+                "summary": "POST /api/v1/payments/webhook",
+                "tags": [
+                    "PaymentWebhook"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Orden no encontrada para el pago"
+                                                },
+                                                "data": {
+                                                    "type": "null"
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "data": {
+                                                    "type": "null"
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Tipo de notificaci\u00f3n no soportado"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Firma inv\u00e1lida"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/": {
             "get": {
                 "operationId": "routing.redirect",
@@ -963,6 +1194,264 @@
                             "application/json": {
                                 "schema": {
                                     "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/catalog/search": {
+            "post": {
+                "operationId": "v1.catalog.search",
+                "description": "B\u00fasqueda avanzada de productos con filtros.",
+                "summary": "POST /api/v1/catalog/search",
+                "tags": [
+                    "Search"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SearchRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "array",
+                                                "items": {}
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/wishlist": {
+            "get": {
+                "operationId": "v1.wishlist.index",
+                "description": "Obtiene la lista de deseos del usuario autenticado.",
+                "summary": "GET /api/v1/wishlist",
+                "tags": [
+                    "Wishlist"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Wishlist obtenida"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "integer"
+                                                },
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0,
+                                                    "additionalItems": false
+                                                }
+                                            },
+                                            "required": [
+                                                "user_id",
+                                                "items"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1.wishlist.store",
+                "description": "Agrega un producto a la lista de deseos del usuario.",
+                "summary": "POST /api/v1/wishlist",
+                "tags": [
+                    "Wishlist"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreWishlistRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Producto ya est\u00e1 en la wishlist",
+                                                "Producto agregado a wishlist"
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/wishlist/{productId}": {
+            "delete": {
+                "operationId": "v1.wishlist.destroy",
+                "description": "Elimina un producto de la lista de deseos del usuario.",
+                "summary": "DELETE /api/v1/wishlist/{id}",
+                "tags": [
+                    "Wishlist"
+                ],
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Producto eliminado de wishlist"
+                                                },
+                                                "data": {
+                                                    "type": "null"
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Wishlist vac\u00eda"
+                                                },
+                                                "data": {
+                                                    "type": "null"
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        }
+                                    ]
                                 }
                             }
                         }
@@ -989,6 +1478,59 @@
                     "password"
                 ],
                 "title": "LoginRequest"
+            },
+            "SearchRequest": {
+                "type": "object",
+                "description": "POST /api/v1/catalog/search\n\nB\u00fasqueda avanzada de productos con m\u00faltiples filtros.\nAuth: No requerido (p\u00fablico)",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "category_id": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "min_price": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "max_price": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "min_rating": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 5
+                    },
+                    "in_stock": {
+                        "type": "boolean"
+                    },
+                    "attributes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "sort_by": {
+                        "type": "string",
+                        "enum": [
+                            "price",
+                            "name",
+                            "rating",
+                            "created_at"
+                        ]
+                    },
+                    "sort_order": {
+                        "type": "string",
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ]
+                    }
+                },
+                "title": "SearchRequest"
             },
             "StoreOrderRequest": {
                 "type": "object",
@@ -1038,6 +1580,20 @@
                     "items"
                 ],
                 "title": "StoreOrderRequest"
+            },
+            "StoreWishlistRequest": {
+                "type": "object",
+                "description": "POST /api/v1/wishlist\n\nAgrega un producto a la wishlist del usuario autenticado.",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "product_id"
+                ],
+                "title": "StoreWishlistRequest"
             },
             "ValidateDiscountRequest": {
                 "type": "object",
