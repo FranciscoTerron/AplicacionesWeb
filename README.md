@@ -123,7 +123,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Endpoint Login | ✅ | Listo |
 | Endpoint obtener productos| ✅ | Listo |
 | Endpoint obtener producto | ✅ | Listo |
-| Endpoint obtener productos destacados | ⏳ | Falta implementar |
+| Endpoint obtener productos destacados | ✅ | Listo |
 | Endpoint obtener categorías | ✅ | Listo |
 | Endpoint validacion de descuento | ✅ | Listo |
 | Endpoint obtener pedidos | ✅ | Listo |
@@ -131,15 +131,14 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | Endpoint crear pedido | ✅ | Listo |
 | Endpoint cancelar pedido | ✅ | Listo |
 | Endpoint crear carrito | ✅ | Listo |
-| Endpoint obtener carrito | ⏳ | Falta implementar |
-| Endpoint agregar al carrito | ✅ | Listo |
-| Rate limiting | ⏳ | Falta implementar |
-| Payment webhook | ⏳ | Falta implementar |
-| Search avanzado | ⏳ | Falta implementar |
-| Filtros avanzados | ⏳ | Falta implementar |
-| Sorting en productos | ⏳ | Falta implementar |
-| Schema OpenAPI | ⏳ | Incompleto |
-| Endpoint de wishlist | ⏳ | Falta implementar |
+| Endpoint obtener carrito | ✅ | Listo |
+| Rate limiting | ✅ | Listo |
+| Payment webhook | ✅ | Listo |
+| Search avanzado | ✅ | Listo |
+| Filtros avanzados | ✅ | Listo |
+| Sorting en productos | ✅ | Listo |
+| Schema OpenAPI | ✅ | Listo (Scramble auto-generación) |
+| Endpoint de wishlist | ✅ | Listo |
 
 **Conclusión**: La mayor parte de la API REST esta contriuida, documentada estaticamente para ser accedida desde vercel, tambien se implemento acceso a documentacion dinamica  y ademas un documento (catalog-endpoints.md) que tiene mas detalles de la API REST.
 
