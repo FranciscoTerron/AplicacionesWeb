@@ -105,10 +105,12 @@ class CatalogController extends Controller
         $limit = (int) ($validated['limit'] ?? 20);
         $offset = ($page - 1) * $limit;
 
-        // Fetch documents con paginación
+        // Traer el dataset filtrable completo: el filtrado (active/search/
+        // categoría/precio) y la paginación se aplican en memoria, por lo que
+        // necesitamos todos los productos antes de calcular total y slice.
         $productsResult = $this->firestore->listDocuments(
             collection: 'products',
-            limit: $limit + 1,
+            limit: 1000,
         );
 
         $products = collect($productsResult['documents'] ?? [])

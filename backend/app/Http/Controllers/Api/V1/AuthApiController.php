@@ -8,11 +8,15 @@ use App\Http\Requests\Api\Auth\RegisterRequest;
 use App\Models\User;
 use App\Services\FirestoreService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
 
 class AuthApiController extends Controller
 {
+    /** Vigencia de un access token, en días. */
+    private const TOKEN_TTL_DAYS = 30;
+
     public function __construct(private readonly FirestoreService $firestore) {}
 
     /**
@@ -79,6 +83,7 @@ class AuthApiController extends Controller
             'name' => 'api-token',
             'abilities' => ['*'],
             'created_at' => now()->toISOString(),
+            'expires_at' => now()->addDays(self::TOKEN_TTL_DAYS)->toISOString(),
         ]);
 
         return response()->json([
@@ -174,6 +179,7 @@ class AuthApiController extends Controller
             'name' => 'api-token',
             'abilities' => ['*'],
             'created_at' => $now,
+            'expires_at' => now()->addDays(self::TOKEN_TTL_DAYS)->toISOString(),
         ]);
 
         return response()->json([
@@ -257,11 +263,46 @@ class AuthApiController extends Controller
         $this->firestore->updateDocument('api_tokens', (string) ($tokenData['id'] ?? ''), [
             'token' => hash('sha256', $plainTextToken),
             'updated_at' => $now,
+            'expires_at' => now()->addDays(self::TOKEN_TTL_DAYS)->toISOString(),
         ]);
 
         return response()->json([
             'success' => true,
             'token' => $plainTextToken,
+        ]);
+    }
+
+    /**
+     * POST /api/v1/auth/logout
+     *
+     * Revoca (elimina) el token con el que se autenticó la request.
+     */
+    #[OA\Post(
+        path: '/api/v1/auth/logout',
+        operationId: 'logout',
+        tags: ['Auth'],
+        security: [new OA\Security(name: 'BearerAuth')],
+        responses: [
+            new OA\Response(response: 200, description: 'Sesión cerrada'),
+            new OA\Response(response: 401, description: 'No autenticado'),
+        ]
+    )]
+    public function logout(Request $request): JsonResponse
+    {
+        $token = $request->bearerToken();
+
+        if ($token) {
+            $hashedToken = hash('sha256', $token);
+            $tokens = $this->firestore->query('api_tokens', ['token' => $hashedToken], 1);
+
+            if (! empty($tokens)) {
+                $this->firestore->deleteDocument('api_tokens', (string) ($tokens[0]['id'] ?? ''));
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Sesión cerrada',
         ]);
     }
 

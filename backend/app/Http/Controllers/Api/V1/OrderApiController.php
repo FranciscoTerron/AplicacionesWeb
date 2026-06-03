@@ -178,12 +178,9 @@ class OrderApiController extends Controller
     {
         $user = $request->user();
 
-        // Obtener todas las órdenes del usuario
-        $result = $this->firestore->listDocuments('orders', 100);
-        $orders = collect($result['documents'] ?? [])
-            ->where('user_id', $user->id)
-            ->values()
-            ->all();
+        // Filtrar por user_id server-side (evita perder órdenes fuera del
+        // primer lote y no depende de un orderBy global).
+        $orders = $this->firestore->query('orders', ['user_id' => $user->id], 200);
 
         // Filtro por estado
         if ($status = $request->get('status')) {

@@ -138,6 +138,27 @@ class OrderApiTest extends TestCase
         $this->assertSame(['o1', 'o3'], $ids);
     }
 
+    public function test_index_finds_own_order_beyond_first_page(): void
+    {
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+
+        // 120 órdenes de otros usuarios, luego la propia: con listDocuments(100)
+        // la propia quedaba fuera del lote. Debe encontrarse vía query server-side.
+        $foreign = [];
+        for ($i = 0; $i < 120; $i++) {
+            $foreign[] = ['id' => 'f'.$i, 'user_id' => 'other', 'status' => 'pending', 'created_at' => '2026-01-01'];
+        }
+        $this->firestore->seed('orders', $foreign);
+        $this->firestore->seed('orders', [
+            ['id' => 'mine', 'user_id' => 'user-1', 'status' => 'pending', 'created_at' => '2026-01-01'],
+        ]);
+
+        $response = $this->getJson('/api/v1/orders', $headers);
+
+        $response->assertStatus(200);
+        $this->assertSame(['mine'], collect($response->json('data'))->pluck('id')->all());
+    }
+
     public function test_index_filters_by_status(): void
     {
         $headers = $this->actingAsApiUser(['id' => 'user-1']);

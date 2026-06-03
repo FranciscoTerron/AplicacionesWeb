@@ -54,6 +54,27 @@ class CatalogApiTest extends TestCase
         $this->assertSame(['p1'], collect($response->json('data'))->pluck('id')->all());
     }
 
+    public function test_products_pagination_reports_correct_total(): void
+    {
+        $products = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $products[] = ['id' => 'p'.$i, 'name' => 'Prod '.$i, 'price' => $i * 100, 'active' => true];
+        }
+        $this->firestore->seed('products', $products);
+
+        // Página 1 (limit 2): total real debe ser 5, no el tamaño del lote.
+        $page1 = $this->getJson('/api/v1/catalog/products?page=1&limit=2');
+        $page1->assertStatus(200)
+            ->assertJsonPath('meta.total', 5)
+            ->assertJsonPath('meta.last_page', 3);
+        $this->assertCount(2, $page1->json('data'));
+
+        // Página 3: el último producto.
+        $page3 = $this->getJson('/api/v1/catalog/products?page=3&limit=2');
+        $page3->assertStatus(200);
+        $this->assertCount(1, $page3->json('data'));
+    }
+
     // --- GET /catalog/featured (CatalogController@featured) ---
 
     public function test_featured_lists_only_featured_active(): void

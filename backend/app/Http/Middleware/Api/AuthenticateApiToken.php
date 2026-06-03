@@ -4,6 +4,7 @@ namespace App\Http\Middleware\Api;
 
 use App\Models\User;
 use App\Services\FirestoreService;
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,6 +37,16 @@ class AuthenticateApiToken
         }
 
         $tokenData = $tokens[0];
+
+        $expiresAt = $tokenData['expires_at'] ?? null;
+        if ($expiresAt && now()->greaterThan(Carbon::parse($expiresAt))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+                'errors' => ['Token expired'],
+            ], 401);
+        }
+
         $userId = (string) ($tokenData['user_id'] ?? '');
 
         if ($userId === '') {

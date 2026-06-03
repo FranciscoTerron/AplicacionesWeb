@@ -67,8 +67,13 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::post('/catalog/search', SearchController::class)
         ->name('api.v1.catalog.search');
 
-    // Orders - Fase 5-8 (protegido)
+    // Rutas protegidas
     Route::middleware('auth.api')->group(function () {
+        // Auth protegido
+        Route::post('/auth/logout', [AuthApiController::class, 'logout'])
+            ->name('api.v1.auth.logout');
+
+        // Orders - Fase 5-8
         Route::post('/orders', [OrderApiController::class, 'store'])
             ->name('api.v1.orders.store');
         Route::get('/orders', [OrderApiController::class, 'index'])

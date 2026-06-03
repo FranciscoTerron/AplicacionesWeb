@@ -194,4 +194,58 @@ class AuthApiTest extends TestCase
             ->assertStatus(401)
             ->assertJson(['success' => false, 'message' => 'Refresh token inválido']);
     }
+
+    // --- EXPIRACIÓN / LOGOUT ---
+
+    public function test_login_token_has_expiration(): void
+    {
+        $this->firestore->seed('users', [[
+            'id' => 'admin-1',
+            'email' => 'admin@test.com',
+            'password' => bcrypt('secret123'),
+            'role' => 'admin',
+            'active' => true,
+        ]]);
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => 'admin@test.com',
+            'password' => 'secret123',
+        ])->assertStatus(200);
+
+        $token = $this->firestore->all('api_tokens')[0];
+        $this->assertArrayHasKey('expires_at', $token);
+        $this->assertNotNull($token['expires_at']);
+    }
+
+    public function test_expired_token_is_rejected(): void
+    {
+        $this->firestore->seed('clients', [[
+            'id' => 'u1', 'role' => 'cliente', 'active' => true,
+        ]]);
+        $this->firestore->seed('api_tokens', [[
+            'id' => 't1',
+            'user_id' => 'u1',
+            'token' => hash('sha256', 'expired-token'),
+            'expires_at' => now()->subDay()->toISOString(),
+        ]]);
+
+        $this->getJson('/api/v1/wishlist', ['Authorization' => 'Bearer expired-token'])
+            ->assertStatus(401);
+    }
+
+    public function test_logout_deletes_current_token(): void
+    {
+        $headers = $this->actingAsApiUser(['id' => 'u1']);
+
+        $this->postJson('/api/v1/auth/logout', [], $headers)
+            ->assertStatus(200)
+            ->assertJson(['success' => true]);
+
+        $this->assertCount(0, $this->firestore->all('api_tokens'));
+    }
+
+    public function test_logout_requires_authentication(): void
+    {
+        $this->postJson('/api/v1/auth/logout', [])->assertStatus(401);
+    }
 }
