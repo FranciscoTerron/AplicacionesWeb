@@ -56,19 +56,16 @@ class PaymentWebhookController extends Controller
     )]
     public function __invoke(Request $request): JsonResponse
     {
-        $signature = $request->header('x-signature-sha256');
-        $payload = $request->getContent();
+        $data = $request->all();
+        $type = $data['type'] ?? '';
+        $paymentId = (string) ($data['data']['id'] ?? '');
 
-        if (! $this->verifySignature($signature, $payload)) {
+        if (! $this->verifySignature($request, $paymentId)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Firma inválida',
             ], 400);
         }
-
-        $data = $request->all();
-        $type = $data['type'] ?? '';
-        $paymentId = $data['data']['id'] ?? '';
 
         if ($type !== 'payment' || $paymentId === '') {
             return response()->json([
@@ -77,59 +74,115 @@ class PaymentWebhookController extends Controller
             ], 400);
         }
 
-        $ordersResult = $this->firestore->listDocuments('orders', 100);
-        $orders = $ordersResult['documents'] ?? [];
+        // Consultar el pago real en MercadoPago (fuente de verdad del monto
+        // y la referencia externa, que NO debe inferirse del webhook).
+        $payment = $this->getPayment($paymentId);
 
-        foreach ($orders as $order) {
-            $externalReference = $order['external_reference'] ?? '';
-            if ($externalReference === $paymentId) {
-                $paymentStatus = $this->getPaymentStatus($paymentId);
-                $this->firestore->updateDocument('orders', $order['id'], [
-                    'payment_status' => $paymentStatus,
-                    'updated_at' => now()->toISOString(),
-                ]);
-
-                return ApiResponse::success(
-                    message: 'Pago actualizado: '.$paymentStatus
-                );
-            }
+        if ($payment === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo verificar el pago con MercadoPago',
+            ], 400);
         }
 
-        return ApiResponse::success(
-            message: 'Orden no encontrada para el pago'
-        );
+        $externalReference = (string) ($payment['external_reference'] ?? '');
+        $orders = $this->firestore->query('orders', ['external_reference' => $externalReference], 1);
+
+        if ($externalReference === '' || $orders === []) {
+            // Nada que conciliar; ACK para que MP no reintente.
+            return ApiResponse::success(message: 'Orden no encontrada para el pago');
+        }
+
+        $order = $orders[0];
+
+        // Validar que el monto pagado coincida con el total de la orden.
+        $paidAmount = $payment['transaction_amount'] ?? null;
+        if ($paidAmount !== null && (float) ($order['total_amount'] ?? 0) !== (float) $paidAmount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El monto del pago no coincide con la orden',
+            ], 400);
+        }
+
+        $paymentStatus = $this->mapStatus((string) ($payment['status'] ?? 'unknown'));
+        $this->firestore->updateDocument('orders', (string) $order['id'], [
+            'payment_status' => $paymentStatus,
+            'updated_at' => now()->toISOString(),
+        ]);
+
+        return ApiResponse::success(message: 'Pago actualizado: '.$paymentStatus);
     }
 
-    protected function verifySignature(?string $signature, string $payload): bool
+    /**
+     * Verifica la firma del webhook según el esquema de MercadoPago:
+     * header `x-signature` = "ts=<ts>,v1=<hmac>", donde el HMAC se calcula
+     * sobre el manifest `id:<data.id>;request-id:<x-request-id>;ts:<ts>;`.
+     */
+    protected function verifySignature(Request $request, string $dataId): bool
     {
         $secret = config('services.mercadopago.webhook_secret');
-        if (! $signature || ! $secret) {
+        $xSignature = $request->header('x-signature');
+
+        if (! $secret || ! $xSignature) {
             return false;
         }
 
-        $expectedSignature = hash_hmac('sha256', $payload, $secret);
+        $parts = [];
+        foreach (explode(',', $xSignature) as $part) {
+            $pair = array_pad(explode('=', trim($part), 2), 2, '');
+            $parts[trim($pair[0])] = trim($pair[1]);
+        }
 
-        return hash_equals($expectedSignature, $signature);
+        $ts = $parts['ts'] ?? '';
+        $v1 = $parts['v1'] ?? '';
+
+        if ($ts === '' || $v1 === '') {
+            return false;
+        }
+
+        // MP normaliza data.id a minúsculas si es alfanumérico.
+        $normalizedId = strtolower($dataId);
+        $requestId = $request->header('x-request-id');
+
+        $manifest = '';
+        if ($normalizedId !== '') {
+            $manifest .= 'id:'.$normalizedId.';';
+        }
+        if ($requestId) {
+            $manifest .= 'request-id:'.$requestId.';';
+        }
+        $manifest .= 'ts:'.$ts.';';
+
+        $expected = hash_hmac('sha256', $manifest, $secret);
+
+        return hash_equals($expected, $v1);
     }
 
-    protected function getPaymentStatus(string $paymentId): string
+    /**
+     * Obtiene el pago desde la API de MercadoPago.
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function getPayment(string $paymentId): ?array
     {
         $accessToken = config('services.mercadopago.access_token');
         if (! $accessToken) {
-            return 'unknown';
+            return null;
         }
 
-        $url = "https://api.mercadopago.com/v1/payments/{$paymentId}";
-        $response = Http::withToken($accessToken)->get($url);
+        $response = Http::withToken($accessToken)
+            ->get("https://api.mercadopago.com/v1/payments/{$paymentId}");
 
         if ($response->failed()) {
-            return 'error';
+            return null;
         }
 
-        $paymentData = $response->json();
-        $status = $paymentData['status'] ?? 'unknown';
+        return $response->json();
+    }
 
-        $statusMap = [
+    protected function mapStatus(string $status): string
+    {
+        return [
             'approved' => 'approved',
             'authorized' => 'approved',
             'pending' => 'pending',
@@ -137,8 +190,6 @@ class PaymentWebhookController extends Controller
             'rejected' => 'rejected',
             'cancelled' => 'rejected',
             'refunded' => 'refunded',
-        ];
-
-        return $statusMap[$status] ?? 'unknown';
+        ][$status] ?? 'unknown';
     }
 }
