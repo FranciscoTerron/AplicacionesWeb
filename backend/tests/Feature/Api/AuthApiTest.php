@@ -157,9 +157,11 @@ class AuthApiTest extends TestCase
 
     public function test_refresh_rotates_token(): void
     {
+        // id != name a propósito: el doc debe actualizarse por su id real,
+        // no por el campo `name` (que es 'api-token' para todos los tokens).
         $this->firestore->seed('api_tokens', [[
-            'id' => 'tok-1',
-            'name' => 'tok-1',
+            'id' => 'tok-real',
+            'name' => 'api-token',
             'user_id' => 'user-1',
             'token' => hash('sha256', 'old-token'),
         ]]);
@@ -171,6 +173,12 @@ class AuthApiTest extends TestCase
         $response->assertStatus(200)
             ->assertJson(['success' => true])
             ->assertJsonStructure(['success', 'token']);
+
+        // No debe crear un doc nuevo: rota el existente in-place.
+        $tokens = $this->firestore->all('api_tokens');
+        $this->assertCount(1, $tokens);
+        // El token hasheado cambió (ya no es el viejo).
+        $this->assertNotSame(hash('sha256', 'old-token'), $tokens[0]['token']);
     }
 
     public function test_refresh_requires_token(): void

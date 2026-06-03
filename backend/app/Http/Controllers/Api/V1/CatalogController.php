@@ -112,6 +112,7 @@ class CatalogController extends Controller
         );
 
         $products = collect($productsResult['documents'] ?? [])
+            ->map(fn (array $p) => $this->normalizeProduct($p))
             ->where('active', true)
             ->values();
 

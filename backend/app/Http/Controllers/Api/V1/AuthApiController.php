@@ -160,6 +160,7 @@ class AuthApiController extends Controller
             'password' => bcrypt($request->password),
             'phone' => $request->phone,
             'address' => $request->address,
+            'role' => 'cliente',
             'active' => true,
             'created_by' => $userId,
             'updated_by' => $userId,
@@ -253,7 +254,7 @@ class AuthApiController extends Controller
         $plainTextToken = $this->generateToken();
         $now = now()->toISOString();
 
-        $this->firestore->updateDocument('api_tokens', $tokenData['name'] ?? '', [
+        $this->firestore->updateDocument('api_tokens', (string) ($tokenData['id'] ?? ''), [
             'token' => hash('sha256', $plainTextToken),
             'updated_at' => $now,
         ]);
