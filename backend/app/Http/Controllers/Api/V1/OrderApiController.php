@@ -73,15 +73,42 @@ class OrderApiController extends Controller
         $user = $request->user();
         $validated = $request->validated();
 
-        // Calcular total
+        // Resolver precios server-side: el cliente NO define el precio.
+        $items = [];
         $totalAmount = 0;
         foreach ($validated['items'] as $item) {
-            $totalAmount += ($item['price'] * $item['quantity']);
+            $product = $this->firestore->getDocument('products', $item['product_id']);
+
+            if (! $product || ! ($product['active'] ?? false)) {
+                return ApiResponse::error(
+                    message: 'Producto no disponible: '.$item['product_id'],
+                    status: 422
+                );
+            }
+
+            $quantity = (int) $item['quantity'];
+            $stock = (int) ($product['stock'] ?? 0);
+
+            if ($stock < $quantity) {
+                return ApiResponse::error(
+                    message: 'Stock insuficiente para: '.$item['product_id'],
+                    status: 422
+                );
+            }
+
+            $price = (float) ($product['price'] ?? 0);
+            $items[] = [
+                'product_id' => $item['product_id'],
+                'name' => $product['name'] ?? null,
+                'quantity' => $quantity,
+                'price' => $price,
+            ];
+            $totalAmount += $price * $quantity;
         }
 
         $orderData = [
             'user_id' => $user->id,
-            'items' => $validated['items'],
+            'items' => $items,
             'shipping_address' => $validated['shipping_address'],
             'payment_method' => $validated['payment_method'],
             'total_amount' => $totalAmount,

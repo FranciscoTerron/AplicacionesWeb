@@ -27,14 +27,19 @@ class OrderApiTest extends TestCase
             ->assertJson(['success' => false, 'message' => 'Unauthenticated']);
     }
 
-    public function test_store_creates_order_with_computed_total(): void
+    public function test_store_computes_total_from_server_prices_ignoring_client(): void
     {
         $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('products', [
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10],
+            ['id' => 'p2', 'name' => 'Bomba', 'price' => 350, 'active' => true, 'stock' => 5],
+        ]);
 
         $response = $this->postJson('/api/v1/orders', [
             'items' => [
-                ['product_id' => 'p1', 'quantity' => 2, 'price' => 100],
-                ['product_id' => 'p2', 'quantity' => 1, 'price' => 350],
+                // price del cliente es basura a propósito: debe ignorarse.
+                ['product_id' => 'p1', 'quantity' => 2, 'price' => 1],
+                ['product_id' => 'p2', 'quantity' => 1, 'price' => 1],
             ],
             'shipping_address' => 'Calle Falsa 123',
             'payment_method' => 'card',
@@ -45,13 +50,55 @@ class OrderApiTest extends TestCase
                 'success' => true,
                 'data' => [
                     'user_id' => 'user-1',
-                    'total_amount' => 550, // 2*100 + 1*350
+                    'total_amount' => 550, // 2*100 + 1*350 desde Firestore
                     'status' => 'pending',
                     'payment_status' => 'pending',
                 ],
             ]);
 
+        // El precio guardado en el item es el del servidor, no el del cliente.
+        $this->assertEquals(100, $response->json('data.items.0.price'));
         $this->assertCount(1, $this->firestore->all('orders'));
+    }
+
+    public function test_store_rejects_unknown_or_inactive_product(): void
+    {
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('products', [
+            ['id' => 'p1', 'name' => 'Inactivo', 'price' => 100, 'active' => false, 'stock' => 10],
+        ]);
+
+        // Producto inexistente.
+        $this->postJson('/api/v1/orders', [
+            'items' => [['product_id' => 'no-existe', 'quantity' => 1]],
+            'shipping_address' => 'x',
+            'payment_method' => 'cash',
+        ], $headers)->assertStatus(422);
+
+        // Producto inactivo.
+        $this->postJson('/api/v1/orders', [
+            'items' => [['product_id' => 'p1', 'quantity' => 1]],
+            'shipping_address' => 'x',
+            'payment_method' => 'cash',
+        ], $headers)->assertStatus(422);
+
+        $this->assertCount(0, $this->firestore->all('orders'));
+    }
+
+    public function test_store_rejects_insufficient_stock(): void
+    {
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('products', [
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 2],
+        ]);
+
+        $this->postJson('/api/v1/orders', [
+            'items' => [['product_id' => 'p1', 'quantity' => 5]],
+            'shipping_address' => 'x',
+            'payment_method' => 'cash',
+        ], $headers)->assertStatus(422);
+
+        $this->assertCount(0, $this->firestore->all('orders'));
     }
 
     public function test_store_validation_errors(): void
@@ -66,7 +113,7 @@ class OrderApiTest extends TestCase
 
         // payment_method inválido.
         $this->postJson('/api/v1/orders', [
-            'items' => [['product_id' => 'p1', 'quantity' => 1, 'price' => 10]],
+            'items' => [['product_id' => 'p1', 'quantity' => 1]],
             'shipping_address' => 'x',
             'payment_method' => 'bitcoin',
         ], $headers)->assertStatus(422);

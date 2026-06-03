@@ -26,7 +26,8 @@ class StoreOrderRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'string'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.price' => ['required', 'numeric', 'min:0'],
+            // El precio NO se acepta del cliente: se resuelve server-side
+            // contra Firestore para evitar manipulación del total.
             'shipping_address' => ['required', 'string', 'max:500'],
             'payment_method' => ['required', 'string', 'in:cash,card,transfer'],
         ];
