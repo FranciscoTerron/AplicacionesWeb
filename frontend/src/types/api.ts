@@ -31,6 +31,7 @@ export interface Product {
   stock: number;
   min_stock?: number;
   images: ProductImage[];
+  main_image?: string | null;
   active: boolean;
   featured: boolean;
   dimensions?: Record<string, unknown> | null;
