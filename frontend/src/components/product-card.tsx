@@ -1,62 +1,69 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, productImage, toNum } from "@/lib/utils";
 import { AddToCartButton } from "./add-to-cart-button";
 import type { Product } from "@/types/api";
 
 export function ProductCard({ product }: { product: Product }) {
-  const img = product.images?.[0]?.url;
-  const outOfStock = product.stock <= 0;
+  const img = productImage(product);
+  const stock = toNum(product.stock);
+  const minStock = toNum(product.min_stock);
+  const outOfStock = stock <= 0;
+  const lowStock = !outOfStock && minStock > 0 && stock <= minStock;
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-md">
+    <div className="group relative flex flex-col overflow-hidden rounded-xl border bg-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
       <Link
         href={`/productos/${product.id}`}
-        className="relative block aspect-square overflow-hidden bg-muted"
+        className="relative block aspect-square overflow-hidden bg-gradient-to-br from-sky-50 to-cyan-50"
       >
         {img ? (
           <Image
             src={img}
             alt={product.name}
             fill
-            sizes="(max-width: 768px) 50vw, 25vw"
-            className="object-cover transition-transform group-hover:scale-105"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground">
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
             Sin imagen
           </div>
         )}
-        {product.featured && (
-          <Badge className="absolute left-2 top-2 bg-brand-yellow text-brand-yellow-foreground">
-            Destacado
-          </Badge>
-        )}
+        <div className="absolute left-2 top-2 flex flex-col gap-1">
+          {product.featured && (
+            <Badge className="bg-brand-accent text-brand-accent-foreground shadow-sm">
+              ★ Destacado
+            </Badge>
+          )}
+        </div>
         {outOfStock && (
-          <Badge variant="destructive" className="absolute right-2 top-2">
-            Sin stock
-          </Badge>
+          <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
+            <Badge variant="destructive">Sin stock</Badge>
+          </div>
         )}
       </Link>
 
-      <div className="flex flex-1 flex-col gap-2 p-3">
+      <div className="flex flex-1 flex-col gap-1.5 p-3">
         <Link href={`/productos/${product.id}`} className="flex-1">
-          <h3 className="line-clamp-2 text-sm font-medium hover:text-primary">
+          <h3 className="line-clamp-2 text-sm font-medium leading-snug text-foreground/90 transition-colors group-hover:text-primary">
             {product.name}
           </h3>
         </Link>
-        <p className="text-xl font-bold">{formatPrice(product.price)}</p>
-        {!outOfStock && product.stock <= (product.min_stock ?? 0) && (
-          <p className="text-xs text-destructive">
-            ¡Últimas {product.stock} unidades!
+        <p className="text-lg font-bold tracking-tight">
+          {formatPrice(product.price)}
+        </p>
+        {lowStock && (
+          <p className="text-xs font-medium text-orange-600">
+            ¡Quedan {stock}!
           </p>
         )}
         <AddToCartButton
           productId={product.id}
           disabled={outOfStock}
           size="sm"
-          className="w-full"
+          className="mt-1 w-full"
           label={outOfStock ? "Sin stock" : "Agregar"}
         />
       </div>
