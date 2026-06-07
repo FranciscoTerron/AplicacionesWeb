@@ -48,9 +48,17 @@ export default async function ProductsPage({
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
-      <h1 className="mb-4 text-2xl font-bold">
-        {sp.search ? `Resultados para "${sp.search}"` : "Productos"}
-      </h1>
+      <div className="mb-4 flex items-baseline justify-between gap-3 border-b pb-3">
+        <h1 className="text-2xl font-bold">
+          {sp.search ? `Resultados para "${sp.search}"` : "Productos"}
+        </h1>
+        {meta && (
+          <p className="shrink-0 text-sm text-muted-foreground">
+            {meta.total} producto{meta.total === 1 ? "" : "s"} encontrado
+            {meta.total === 1 ? "" : "s"}
+          </p>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-[220px_1fr]">
         <FiltersSidebar categories={categories} />
@@ -62,12 +70,6 @@ export default async function ProductsPage({
             </div>
           ) : (
             <>
-              {meta && (
-                <p className="mb-3 text-sm text-muted-foreground">
-                  {meta.total} producto{meta.total === 1 ? "" : "s"} encontrado
-                  {meta.total === 1 ? "" : "s"}
-                </p>
-              )}
               <ProductGrid products={products} />
               {meta && (
                 <Pagination page={meta.page} lastPage={meta.last_page} />
