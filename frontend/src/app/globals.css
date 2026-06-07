@@ -13,9 +13,10 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);
 
-  /* Brand: azul Mercado Libre-ish */
-  --primary: oklch(0.546 0.215 262.881);
-  --primary-foreground: oklch(0.985 0 0);
+  /* Brand: sky/cyan (igual que el backend — tema agua/piscina) */
+  --primary: #0284c7;
+  --primary-foreground: #ffffff;
+  --primary-dark: #075985;
 
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
@@ -29,11 +30,11 @@
 
   --border: oklch(0.92 0.004 286.32);
   --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.546 0.215 262.881);
+  --ring: #0284c7;
 
-  /* Acento amarillo tipo ML para detalles */
-  --brand-yellow: oklch(0.905 0.182 98.111);
-  --brand-yellow-foreground: oklch(0.21 0.006 285.885);
+  /* Acento cyan del backend para detalles (destacados, badges) */
+  --brand-accent: #06b6d4;
+  --brand-accent-foreground: #ffffff;
 }
 
 .dark {
@@ -44,8 +45,9 @@
   --popover: oklch(0.21 0.006 285.885);
   --popover-foreground: oklch(0.985 0 0);
 
-  --primary: oklch(0.623 0.214 259.815);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: #38bdf8;
+  --primary-foreground: #0f172a;
+  --primary-dark: #075985;
 
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
@@ -59,10 +61,10 @@
 
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.623 0.214 259.815);
+  --ring: #38bdf8;
 
-  --brand-yellow: oklch(0.852 0.16 98);
-  --brand-yellow-foreground: oklch(0.21 0.006 285.885);
+  --brand-accent: #22d3ee;
+  --brand-accent-foreground: #0f172a;
 }
 
 @theme inline {
@@ -85,8 +87,9 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-brand-yellow: var(--brand-yellow);
-  --color-brand-yellow-foreground: var(--brand-yellow-foreground);
+  --color-primary-dark: var(--primary-dark);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-foreground: var(--brand-accent-foreground);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
