@@ -205,6 +205,7 @@
                     <ul>
                         <li><a href="{{ route('home') }}#categorias">Categorías</a></li>
                         <li><a href="{{ route('login') }}">Panel admin</a></li>
+                        <li><a href="/docs/api">Documentación API</a></li>
                     </ul>
                 </div>
                 <div>

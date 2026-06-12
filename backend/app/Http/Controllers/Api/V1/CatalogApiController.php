@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\FirestoreService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class CatalogApiController extends Controller
 {
@@ -16,6 +17,37 @@ class CatalogApiController extends Controller
      *
      * Lista productos publicos activos desde Firestore.
      */
+    #[OA\Get(
+        path: '/api/v1/catalog/products',
+        operationId: 'listProducts',
+        tags: ['Catalog'],
+        parameters: [
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                description: 'Buscar por nombre, SKU o descripción',
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'category',
+                in: 'query',
+                description: 'ID de categoría para filtrar',
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Lista de productos',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean'),
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
+                    ]
+                )
+            ),
+        ]
+    )]
     public function products(Request $request): JsonResponse
     {
         $search = $request->get('search');
@@ -55,6 +87,36 @@ class CatalogApiController extends Controller
      *
      * Devuelve un producto publico activo por ID desde Firestore.
      */
+    #[OA\Get(
+        path: '/api/v1/catalog/products/{id}',
+        operationId: 'getProduct',
+        tags: ['Catalog'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'ID del producto',
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Producto encontrado',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean'),
+                        new OA\Property(property: 'data', type: 'object'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Producto no disponible o no encontrado'
+            ),
+        ]
+    )]
     public function product(string $id): JsonResponse
     {
         $product = $this->firestore->getDocument('products', $id);
@@ -79,6 +141,23 @@ class CatalogApiController extends Controller
      *
      * Lista categorias publicas activas desde Firestore.
      */
+    #[OA\Get(
+        path: '/api/v1/catalog/categories',
+        operationId: 'listCategories',
+        tags: ['Catalog'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Lista de categorías',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean'),
+                        new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object')),
+                    ]
+                )
+            ),
+        ]
+    )]
     public function categories(): JsonResponse
     {
         $result = $this->firestore->listDocuments('categories', 100);

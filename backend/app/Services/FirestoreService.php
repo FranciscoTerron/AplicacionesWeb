@@ -384,13 +384,14 @@ class FirestoreService
             ];
         }
 
-        \Log::info('Firestore listDocuments called', [
-            'collection' => $collection,
-            'limit' => $limit,
-            'startAfter' => $startAfter,
-            'orderBy' => $orderBy,
-            'body' => $structuredQuery,
-        ]);
+        if (config('app.debug')) {
+            \Log::debug('Firestore listDocuments called', [
+                'collection' => $collection,
+                'limit' => $limit,
+                'startAfter' => $startAfter,
+                'orderBy' => $orderBy,
+            ]);
+        }
 
         $response = Http::withToken($this->accessToken)->asJson()->post($url, $structuredQuery);
 

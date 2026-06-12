@@ -1,0 +1,1839 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "MA Piscinas",
+        "version": "0.0.1"
+    },
+    "servers": [
+        {
+            "url": "http://localhost/api"
+        }
+    ],
+    "paths": {
+        "/v1/auth/login": {
+            "post": {
+                "operationId": "v1.auth.login",
+                "description": "Autenticaci\u00f3n de usuarios (admin/editor) con token personal.",
+                "summary": "POST /api/v1/auth/login",
+                "tags": [
+                    "AuthApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "user": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "email": {
+                                                    "type": "string"
+                                                },
+                                                "role": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "email",
+                                                "role"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "token",
+                                        "user"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Credenciales inv\u00e1lidas"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/auth/register": {
+            "post": {
+                "operationId": "v1.auth.register",
+                "description": "Registro de nuevos usuarios (clientes).",
+                "summary": "POST /api/v1/auth/register",
+                "tags": [
+                    "AuthApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegisterRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "user": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "email": {
+                                                    "type": "string"
+                                                },
+                                                "role": {
+                                                    "type": "string",
+                                                    "const": "cliente"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "name",
+                                                "email",
+                                                "role"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "token",
+                                        "user"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/auth/refresh": {
+            "post": {
+                "operationId": "v1.auth.refresh",
+                "description": "Renueva un token expirado usando refresh token.",
+                "summary": "POST /api/v1/auth/refresh",
+                "tags": [
+                    "AuthApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "token"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Refresh token inv\u00e1lido"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Refresh token requerido"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/cart": {
+            "get": {
+                "operationId": "v1.cart.show",
+                "description": "Obtiene el carrito del usuario autenticado.",
+                "summary": "GET /api/v1/cart",
+                "tags": [
+                    "CartApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Carrito obtenido"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "integer"
+                                                },
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0,
+                                                    "additionalItems": false
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "user_id",
+                                                "items",
+                                                "created_at",
+                                                "updated_at"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1.cart",
+                "description": "Operaciones de carrito (add, update, remove).",
+                "summary": "POST /api/v1/cart",
+                "tags": [
+                    "CartApi"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "action": {
+                                        "type": "string",
+                                        "default": "add"
+                                    },
+                                    "product_id": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Carrito actualizado"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/catalog/products": {
+            "get": {
+                "operationId": "v1.catalog.products",
+                "description": "Lista productos activos de Firestore con filtros opcionales y paginaci\u00f3n.\nRespuestas JSON consistentes para consumo por React.",
+                "summary": "GET /api/v1/catalog/products",
+                "tags": [
+                    "Catalog"
+                ],
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 255
+                        }
+                    },
+                    {
+                        "name": "featured",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "min_price",
+                        "in": "query",
+                        "schema": {
+                            "type": "number",
+                            "minimum": 0
+                        }
+                    },
+                    {
+                        "name": "max_price",
+                        "in": "query",
+                        "schema": {
+                            "type": "number",
+                            "minimum": 0
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "array",
+                                                "items": {}
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer",
+                                                    "minimum": 0
+                                                },
+                                                "page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "total",
+                                                "page",
+                                                "last_page",
+                                                "per_page"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/catalog/featured": {
+            "get": {
+                "operationId": "v1.catalog.featured",
+                "description": "Lista productos destacados activos desde Firestore.",
+                "summary": "GET /api/v1/catalog/featured",
+                "tags": [
+                    "Catalog"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/catalog/products/{id}": {
+            "get": {
+                "operationId": "v1.catalog.product.show",
+                "description": "Devuelve un producto publico activo por ID desde Firestore.",
+                "summary": "GET /api/v1/catalog/products/{id}",
+                "tags": [
+                    "CatalogApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Producto no disponible."
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/catalog/categories": {
+            "get": {
+                "operationId": "v1.catalog.categories",
+                "description": "Lista categorias publicas activas desde Firestore.",
+                "summary": "GET /api/v1/catalog/categories",
+                "tags": [
+                    "CatalogApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "array",
+                                                "items": {}
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/discounts/validate": {
+            "post": {
+                "operationId": "v1.discounts.validate",
+                "description": "Valida un c\u00f3digo de descuento.",
+                "summary": "POST /api/v1/discounts/validate",
+                "tags": [
+                    "DiscountApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ValidateDiscountRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "C\u00f3digo de descuento v\u00e1lido"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {},
+                                                "code": {},
+                                                "name": {},
+                                                "description": {},
+                                                "discount_type": {},
+                                                "value": {},
+                                                "applies_to": {}
+                                            },
+                                            "required": [
+                                                "id",
+                                                "code",
+                                                "name",
+                                                "description",
+                                                "discount_type",
+                                                "value",
+                                                "applies_to"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "El c\u00f3digo de descuento no aplica a este producto/categor\u00eda."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "El c\u00f3digo de descuento ha alcanzado su l\u00edmite de usos."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "El c\u00f3digo de descuento ha expirado."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "El c\u00f3digo de descuento a\u00fan no es v\u00e1lido."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "El c\u00f3digo de descuento no est\u00e1 activo."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "C\u00f3digo de descuento no encontrado."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/health": {
+            "get": {
+                "operationId": "v1.health",
+                "description": "Delgado: delega toda la logica al servicio.\nUsa resolve() para garantizar que se toma el binding del contenedor,\nlo que permite sobreescritura en tests via $this->app->instance().",
+                "summary": "GET /api/v1/health",
+                "tags": [
+                    "HealthCheck"
+                ],
+                "responses": {
+                    "500": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Unexpected error while checking health"
+                                        },
+                                        "errors": {
+                                            "type": "null"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "errors"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/orders": {
+            "post": {
+                "operationId": "v1.orders.store",
+                "description": "Crea una nueva orden desde el frontend.",
+                "summary": "POST /api/v1/orders",
+                "tags": [
+                    "OrderApi"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreOrderRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Orden creada exitosamente"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "get": {
+                "operationId": "v1.orders.index",
+                "description": "Listar \u00f3rdenes del cliente autenticado con filtros opcionales.",
+                "summary": "GET /api/v1/orders",
+                "tags": [
+                    "OrderApi"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/orders/{id}": {
+            "get": {
+                "operationId": "v1.orders.show",
+                "description": "Obtener detalle de una orden espec\u00edfica del cliente autenticado.",
+                "summary": "GET /api/v1/orders/{id}",
+                "tags": [
+                    "OrderApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Orden encontrada"
+                                        },
+                                        "data": {
+                                            "type": [
+                                                "array",
+                                                "null"
+                                            ],
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "No tiene permiso para ver esta orden."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Orden no encontrada."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/orders/{id}/cancel": {
+            "put": {
+                "operationId": "v1.orders.cancel",
+                "description": "Cancelar una orden (solo si est\u00e1 en estado cancelable).",
+                "summary": "PUT /api/v1/orders/{id}/cancel",
+                "tags": [
+                    "OrderApi"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Orden cancelada exitosamente"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "No tiene permiso para cancelar esta orden."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Orden no encontrada."
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/payments/webhook": {
+            "post": {
+                "operationId": "v1.payments.webhook",
+                "description": "Webhook para actualizar estado de pago de \u00f3rdenes (Mercado Pago).",
+                "summary": "POST /api/v1/payments/webhook",
+                "tags": [
+                    "PaymentWebhook"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Orden no encontrada para el pago"
+                                                },
+                                                "data": {
+                                                    "type": "null"
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string"
+                                                },
+                                                "data": {
+                                                    "type": "null"
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Tipo de notificaci\u00f3n no soportado"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Firma inv\u00e1lida"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/": {
+            "get": {
+                "operationId": "routing.redirect",
+                "summary": "Invoke the controller method",
+                "tags": [
+                    "Redirect"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/catalog/search": {
+            "post": {
+                "operationId": "v1.catalog.search",
+                "description": "B\u00fasqueda avanzada de productos con filtros.",
+                "summary": "POST /api/v1/catalog/search",
+                "tags": [
+                    "Search"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SearchRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "array",
+                                                "items": {}
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/wishlist": {
+            "get": {
+                "operationId": "v1.wishlist.index",
+                "description": "Obtiene la lista de deseos del usuario autenticado.",
+                "summary": "GET /api/v1/wishlist",
+                "tags": [
+                    "Wishlist"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Wishlist obtenida"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "user_id": {
+                                                    "type": "integer"
+                                                },
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    },
+                                                    "minItems": 0,
+                                                    "maxItems": 0,
+                                                    "additionalItems": false
+                                                }
+                                            },
+                                            "required": [
+                                                "user_id",
+                                                "items"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1.wishlist.store",
+                "description": "Agrega un producto a la lista de deseos del usuario.",
+                "summary": "POST /api/v1/wishlist",
+                "tags": [
+                    "Wishlist"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreWishlistRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "enum": [
+                                                "Producto ya est\u00e1 en la wishlist",
+                                                "Producto agregado a wishlist"
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/wishlist/{productId}": {
+            "delete": {
+                "operationId": "v1.wishlist.destroy",
+                "description": "Elimina un producto de la lista de deseos del usuario.",
+                "summary": "DELETE /api/v1/wishlist/{id}",
+                "tags": [
+                    "Wishlist"
+                ],
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Producto eliminado de wishlist"
+                                                },
+                                                "data": {
+                                                    "type": "null"
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean"
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Wishlist vac\u00eda"
+                                                },
+                                                "data": {
+                                                    "type": "null"
+                                                },
+                                                "meta": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "success",
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "LoginRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "password": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "title": "LoginRequest"
+            },
+            "RegisterRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 255
+                    },
+                    "password": {
+                        "type": "string",
+                        "minLength": 8
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 50
+                    },
+                    "address": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    }
+                },
+                "required": [
+                    "name",
+                    "email",
+                    "password"
+                ],
+                "title": "RegisterRequest"
+            },
+            "SearchRequest": {
+                "type": "object",
+                "description": "POST /api/v1/catalog/search\n\nB\u00fasqueda avanzada de productos con m\u00faltiples filtros.\nAuth: No requerido (p\u00fablico)",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "category_id": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "min_price": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "max_price": {
+                        "type": "number",
+                        "minimum": 0
+                    },
+                    "min_rating": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 5
+                    },
+                    "in_stock": {
+                        "type": "boolean"
+                    },
+                    "attributes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "sort_by": {
+                        "type": "string",
+                        "enum": [
+                            "price",
+                            "name",
+                            "rating",
+                            "created_at"
+                        ]
+                    },
+                    "sort_order": {
+                        "type": "string",
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ]
+                    }
+                },
+                "title": "SearchRequest"
+            },
+            "StoreOrderRequest": {
+                "type": "object",
+                "description": "POST /api/v1/orders\n\nCrea una nueva orden desde el frontend.\nAuth: Requerido (cliente autenticado)",
+                "properties": {
+                    "shipping_address": {
+                        "type": "string",
+                        "maxLength": 500
+                    },
+                    "payment_method": {
+                        "type": "string",
+                        "enum": [
+                            "cash",
+                            "card",
+                            "transfer"
+                        ]
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "product_id": {
+                                    "type": "string"
+                                },
+                                "quantity": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                },
+                                "price": {
+                                    "type": "number",
+                                    "minimum": 0
+                                }
+                            },
+                            "required": [
+                                "product_id",
+                                "quantity",
+                                "price"
+                            ]
+                        },
+                        "minItems": 1
+                    }
+                },
+                "required": [
+                    "shipping_address",
+                    "payment_method",
+                    "items"
+                ],
+                "title": "StoreOrderRequest"
+            },
+            "StoreWishlistRequest": {
+                "type": "object",
+                "description": "POST /api/v1/wishlist\n\nAgrega un producto a la wishlist del usuario autenticado.",
+                "properties": {
+                    "product_id": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "product_id"
+                ],
+                "title": "StoreWishlistRequest"
+            },
+            "ValidateDiscountRequest": {
+                "type": "object",
+                "description": "POST /api/v1/discounts/validate\n\nValida un c\u00f3digo de descuento.\nOpcionalmente verifica si aplica a un producto o categor\u00eda espec\u00edfica.\nAuth: Requerido (cliente autenticado)",
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "maxLength": 50
+                    },
+                    "product_id": {
+                        "type": "string"
+                    },
+                    "category_id": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "code"
+                ],
+                "title": "ValidateDiscountRequest"
+            }
+        },
+        "responses": {
+            "ValidationException": {
+                "description": "Validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Errors overview."
+                                },
+                                "errors": {
+                                    "type": "object",
+                                    "description": "A detailed description of each field that failed validation.",
+                                    "additionalProperties": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "message",
+                                "errors"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

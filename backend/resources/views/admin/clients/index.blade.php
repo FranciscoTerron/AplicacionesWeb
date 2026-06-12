@@ -162,6 +162,11 @@
                     <div class="form-text" id="emailHelpEdit">Correo electrónico válido para contacto y acceso.</div>
                 </div>
                 <div class="mb-3">
+                    <label for="passwordInputEdit" class="form-label">Contraseña</label>
+                    <input type="password" name="password" class="form-control" id="passwordInputEdit" minlength="8" aria-describedby="passwordHelpEdit">
+                    <div class="form-text" id="passwordHelpEdit">Mínimo 8 caracteres. Dejar vacío para no cambiar.</div>
+                </div>
+                <div class="mb-3">
                     <label for="phoneInputEdit" class="form-label">Teléfono</label>
                     <input type="tel" name="phone" class="form-control" id="phoneInputEdit" value="${escapeHtml(client.phone || '')}" aria-describedby="phoneHelpEdit">
                     <div class="form-text" id="phoneHelpEdit">Número de teléfono de contacto (opcional).</div>
@@ -203,6 +208,11 @@
                     <label for="emailInputNew" class="form-label">Email <span class="text-danger">*</span></label>
                     <input type="email" name="email" class="form-control" id="emailInputNew" required aria-required="true" aria-describedby="emailHelpNew">
                     <div class="form-text" id="emailHelpNew">Correo electrónico válido para contacto y acceso.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="passwordInputNew" class="form-label">Contraseña</label>
+                    <input type="password" name="password" class="form-control" id="passwordInputNew" minlength="8" aria-describedby="passwordHelpNew">
+                    <div class="form-text" id="passwordHelpNew">Mínimo 8 caracteres. Dejar vacío si no requiere acceso e-commerce.</div>
                 </div>
                 <div class="mb-3">
                     <label for="phoneInputNew" class="form-label">Teléfono</label>

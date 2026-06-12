@@ -17,6 +17,7 @@
         "maatwebsite/excel": "^3.1"
     },
     "require-dev": {
+        "dedoc/scramble": "^0.13.23",
         "fakerphp/faker": "^1.23",
         "larastan/larastan": "^3.0",
         "laravel/pail": "^1.2.5",

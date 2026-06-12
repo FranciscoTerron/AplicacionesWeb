@@ -114,6 +114,38 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 
 ---
 
+### Cuarta Entrega (PR) — 7 de Junio 2026
+**Módulo**: PR Final — Laravel + API Completa
+
+| Item | Estado | Observaciones |
+|------|--------|---------------|
+| Endpoint health | ✅ | Listo |
+| Endpoint Login | ✅ | Listo |
+| Endpoint register | ✅ | Listo |
+| Endpoint refresh token | ✅ | Listo |
+| Endpoint obtener productos| ✅ | Listo |
+| Endpoint obtener producto | ✅ | Listo |
+| Endpoint obtener productos destacados | ✅ | Listo |
+| Endpoint obtener categorías | ✅ | Listo |
+| Endpoint validacion de descuento | ✅ | Listo |
+| Endpoint obtener pedidos | ✅ | Listo |
+| Endpoint obtener pedido | ✅ | Listo |
+| Endpoint crear pedido | ✅ | Listo |
+| Endpoint cancelar pedido | ✅ | Listo |
+| Endpoint crear carrito | ✅ | Listo |
+| Endpoint obtener carrito | ✅ | Listo |
+| Rate limiting | ✅ | Listo |
+| Payment webhook | ✅ | Listo |
+| Search avanzado | ✅ | Listo |
+| Filtros avanzados | ✅ | Listo |
+| Sorting en productos | ✅ | Listo |
+| Schema OpenAPI | ✅ | Listo (Scramble auto-generación) |
+| Endpoint de wishlist | ✅ | Listo |
+
+**Conclusión**: La API REST está 100% implementada y documentada. Todos los endpoints requeridos están disponibles: productos, categorías, carrito, wishlist, búsqueda avanzada, payment webhook con verificación HMAC de Mercado Pago, y rate limiting. La documentación OpenAPI está regenerada y disponible en `/docs/api` y en `backend/public/api-docs.json` para consumo desde Vercel.
+
+---
+
 ## Cronograma de Entregas (PRs Obligatorios)
 
 | Fecha Límite | Hito | Estado |
@@ -121,7 +153,7 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 | 20 de Abril | Deploy en Vercel (frontpage mínimo) | ✅ Completo PR |
 | 11 de Mayo | Avance Laravel (CRUDs parciales) | ✅ Completo PR |
 | 25 de Mayo | Avance Laravel (funcionalidades adicionales) | ✅ Completo PR |
-| 7 de Junio | PR Final — Laravel + API Completa | ⏳ Pendiente |
+| 7 de Junio | PR Final — Laravel + API Completa |✅ Completo PR |
 
 *Las fechas corresponden al cronograma establecido por la catedra.*
 

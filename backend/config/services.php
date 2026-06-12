@@ -43,4 +43,9 @@ return [
         'admin_emails' => array_filter(explode(',', (string) env('GOOGLE_ADMIN_EMAILS', 'franciscoterrondg19@gmail.com'))),
     ],
 
+    'mercadopago' => [
+        'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
+        'webhook_secret' => env('MERCADOPAGO_WEBHOOK_SECRET'),
+    ],
+
 ];

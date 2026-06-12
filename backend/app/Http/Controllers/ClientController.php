@@ -146,6 +146,11 @@ class ClientController extends Controller
         $validated['created_by'] = $userId;
         $validated['updated_by'] = $userId;
 
+        // Hashear password si se proporciona
+        if (! empty($validated['password'])) {
+            $validated['password'] = bcrypt($validated['password']);
+        }
+
         try {
             $this->firestore->createDocument($this->getCollectionName(), $validated);
 
@@ -189,6 +194,14 @@ class ClientController extends Controller
         // Auditoría
         $validated['updated_at'] = now()->toISOString();
         $validated['updated_by'] = auth()->id();
+
+        // Hashear password si se proporciona
+        if (! empty($validated['password'])) {
+            $validated['password'] = bcrypt($validated['password']);
+        } else {
+            // No sobrescribir password si viene vacío
+            unset($validated['password']);
+        }
 
         // Si el campo 'active' no se proporcionó, mantener el valor existente
         if (! $request->has('active')) {

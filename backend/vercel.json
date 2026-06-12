@@ -19,6 +19,14 @@
             "dest": "/public/build/assets/$1"
         },
         {
+            "src": "/api-docs.json",
+            "dest": "/public/api-docs.json"
+        },
+            {
+                "src": "/docs/api/?$",
+                "dest": "/public/api.html"
+            },
+        {
             "src": "/favicon.(.*)",
             "dest": "/public/favicon.$1"
         },
