@@ -59,8 +59,13 @@ export async function apiFetch<T>(
   }
 
   if (res.status === 401) {
-    // token inválido/expirado → limpiar (la UI decide redirigir)
+    // token inválido/expirado → limpiar y avisar a auth-context para cerrar
+    // la sesión completa (cookie + localStorage + estado) y redirigir a login.
+    // Sin esto, la cookie se borra pero el user persiste → UI "pegada" logueada.
     clearToken();
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("auth:expired"));
+    }
     throw new ApiError("Sesión expirada. Iniciá sesión de nuevo.", 401);
   }
 

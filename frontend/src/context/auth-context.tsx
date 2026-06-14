@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 import { getToken, setToken, clearToken } from "@/lib/cookies";
 import * as api from "@/lib/endpoints";
 import type { RegisterBody, User } from "@/types/api";
@@ -25,24 +26,40 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Restaurar sesión al montar: token en cookie + user en localStorage
+  // Restaurar sesión al montar: token en cookie + user en localStorage.
+  // Si hay user pero NO token (cookie vencida/borrada), descartar el user para
+  // no quedar "pegado" logueado con un token inexistente.
   useEffect(() => {
     const token = getToken();
-    if (token) {
-      const stored = localStorage.getItem(USER_KEY);
-      if (stored) {
-        try {
-          setUser(JSON.parse(stored) as User);
-        } catch {
-          localStorage.removeItem(USER_KEY);
-        }
+    const stored = localStorage.getItem(USER_KEY);
+    if (token && stored) {
+      try {
+        setUser(JSON.parse(stored) as User);
+      } catch {
+        localStorage.removeItem(USER_KEY);
       }
+    } else if (stored) {
+      localStorage.removeItem(USER_KEY);
     }
     setLoading(false);
   }, []);
+
+  // Recuperación ante 401: api.ts emite "auth:expired" cuando un recurso
+  // protegido devuelve 401. Cerramos la sesión completa y vamos a login.
+  useEffect(() => {
+    function onExpired() {
+      clearToken();
+      localStorage.removeItem(USER_KEY);
+      setUser(null);
+      router.push("/login");
+    }
+    window.addEventListener("auth:expired", onExpired);
+    return () => window.removeEventListener("auth:expired", onExpired);
+  }, [router]);
 
   const persist = useCallback((token: string, u: User) => {
     setToken(token);
