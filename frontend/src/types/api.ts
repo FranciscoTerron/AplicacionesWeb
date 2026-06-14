@@ -111,7 +111,7 @@ export type PaymentStatus =
   | "completed"
   | "failed";
 
-export type PaymentMethod = "cash" | "card" | "transfer";
+export type PaymentMethod = "cash" | "card" | "transfer" | "mercado_pago";
 
 export interface Order {
   id: string;

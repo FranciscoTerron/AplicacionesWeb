@@ -169,3 +169,12 @@ export async function cancelOrder(id: string) {
   });
   return data;
 }
+
+// Crea la preference de Mercado Pago y devuelve el init_point para redirigir.
+export async function payOrder(id: string) {
+  const { data } = await apiFetch<{ init_point: string; preference_id: string }>(
+    `/orders/${id}/pay`,
+    { method: "POST", auth: true }
+  );
+  return data;
+}

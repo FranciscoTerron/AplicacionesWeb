@@ -5,14 +5,19 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Order\StoreOrderRequest;
 use App\Services\FirestoreService;
+use App\Services\MercadoPagoService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
+use Throwable;
 
 class OrderApiController extends Controller
 {
-    public function __construct(private readonly FirestoreService $firestore) {}
+    public function __construct(
+        private readonly FirestoreService $firestore,
+        private readonly MercadoPagoService $mercadoPago,
+    ) {}
 
     /**
      * POST /api/v1/orders
@@ -366,6 +371,101 @@ class OrderApiController extends Controller
         return ApiResponse::success(
             data: $updatedOrder,
             message: 'Orden cancelada exitosamente'
+        );
+    }
+
+    /**
+     * POST /api/v1/orders/{id}/pay
+     *
+     * Crea una preference de Mercado Pago (Checkout Pro) para la orden y
+     * devuelve el init_point al que el frontend redirige al usuario.
+     */
+    #[OA\Post(
+        path: '/api/v1/orders/{id}/pay',
+        operationId: 'payOrder',
+        tags: ['Orders'],
+        security: [new OA\Security(name: 'BearerAuth')],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'ID de la orden',
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Preference creada',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean'),
+                        new OA\Property(property: 'data', type: 'object', properties: [
+                            new OA\Property(property: 'init_point', type: 'string'),
+                            new OA\Property(property: 'preference_id', type: 'string'),
+                        ]),
+                    ]
+                )
+            ),
+            new OA\Response(response: 403, description: 'La orden no pertenece al usuario'),
+            new OA\Response(response: 404, description: 'Orden no encontrada'),
+            new OA\Response(response: 422, description: 'La orden no admite pago en su estado actual'),
+            new OA\Response(response: 502, description: 'No se pudo iniciar el pago con Mercado Pago'),
+        ]
+    )]
+    public function pay(string $id, Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $order = $this->firestore->getDocument('orders', $id);
+
+        if (! $order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Orden no encontrada.',
+            ], 404);
+        }
+
+        if (($order['user_id'] ?? null) !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tiene permiso para pagar esta orden.',
+            ], 403);
+        }
+
+        // Solo se paga una orden pendiente cuyo pago no está aún aprobado.
+        $status = (string) ($order['status'] ?? 'pending');
+        $paymentStatus = (string) ($order['payment_status'] ?? 'pending');
+
+        if ($status !== 'pending' || ! in_array($paymentStatus, ['pending', 'rejected'], true)) {
+            return ApiResponse::error(
+                message: 'La orden no admite pago en su estado actual.',
+                status: 422
+            );
+        }
+
+        try {
+            $preference = $this->mercadoPago->createPreference($order);
+        } catch (Throwable $e) {
+            report($e);
+
+            return ApiResponse::error(
+                message: 'No se pudo iniciar el pago. Intentá nuevamente.',
+                status: 502
+            );
+        }
+
+        // external_reference = id de la orden: así el webhook concilia el pago.
+        $this->firestore->updateDocument('orders', $id, [
+            'external_reference' => $id,
+            'payment_preference_id' => $preference['preference_id'],
+            'updated_at' => now()->toISOString(),
+        ]);
+
+        return ApiResponse::success(
+            data: $preference,
+            message: 'Preference creada'
         );
     }
 }

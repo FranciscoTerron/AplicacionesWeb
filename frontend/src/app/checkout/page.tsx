@@ -18,11 +18,12 @@ import {
 import { RequireAuth } from "@/components/require-auth";
 import { useCart } from "@/context/cart-context";
 import { useEnrichedCart, cartSubtotal } from "@/hooks/use-enriched-cart";
-import { createOrder } from "@/lib/endpoints";
+import { createOrder, payOrder } from "@/lib/endpoints";
 import { formatPrice } from "@/lib/utils";
 import type { PaymentMethod } from "@/types/api";
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
+  mercado_pago: "Mercado Pago",
   transfer: "Transferencia bancaria",
   cash: "Efectivo / contra entrega",
   card: "Tarjeta",
@@ -57,6 +58,14 @@ function CheckoutContent() {
       });
       // Vaciar carrito tras crear la orden (el backend no lo limpia solo)
       await Promise.all(items.map((i) => remove(i.product_id).catch(() => {})));
+
+      // Mercado Pago: crear preference y redirigir al checkout externo.
+      if (method === "mercado_pago") {
+        const { init_point } = await payOrder(order.id);
+        window.location.href = init_point;
+        return;
+      }
+
       toast.success("¡Orden creada!");
       router.push(`/cuenta/ordenes/${order.id}?creada=1`);
     } catch (err) {

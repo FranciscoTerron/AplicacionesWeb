@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Loader2, CheckCircle2, ArrowLeft, Clock, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,9 @@ function OrderDetail() {
   const params = useParams<{ id: string }>();
   const search = useSearchParams();
   const justCreated = search.get("creada") === "1";
+  // Retorno de Mercado Pago (Checkout Pro): banner inmediato. El estado real
+  // del pago lo fija el webhook; al refrescar se ve el payment_status real.
+  const pago = search.get("pago");
 
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,10 +77,29 @@ function OrderDetail() {
 
   return (
     <div className="space-y-5">
-      {justCreated && (
+      {justCreated && !pago && (
         <div className="flex items-center gap-2 rounded-lg border border-green-300 bg-green-50 p-4 text-green-700">
           <CheckCircle2 className="size-5" />
           <span>¡Tu pedido se creó correctamente! Te avisaremos del pago.</span>
+        </div>
+      )}
+
+      {pago === "success" && (
+        <div className="flex items-center gap-2 rounded-lg border border-green-300 bg-green-50 p-4 text-green-700">
+          <CheckCircle2 className="size-5" />
+          <span>Pago recibido. Estamos confirmándolo, puede tardar unos minutos.</span>
+        </div>
+      )}
+      {pago === "pending" && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-700">
+          <Clock className="size-5" />
+          <span>Tu pago quedó pendiente. Te avisaremos cuando se acredite.</span>
+        </div>
+      )}
+      {pago === "failure" && (
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-destructive">
+          <XCircle className="size-5" />
+          <span>El pago fue rechazado. Podés intentar nuevamente desde el carrito.</span>
         </div>
       )}
 

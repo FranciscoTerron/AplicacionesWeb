@@ -82,6 +82,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
             ->name('api.v1.orders.show');
         Route::put('/orders/{id}/cancel', [OrderApiController::class, 'cancel'])
             ->name('api.v1.orders.cancel');
+        Route::post('/orders/{id}/pay', [OrderApiController::class, 'pay'])
+            ->name('api.v1.orders.pay');
 
         // Cart - Fase 9 (protegido)
         Route::get('/cart', [CartApiController::class, 'show'])
