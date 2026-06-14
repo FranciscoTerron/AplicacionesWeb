@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import {
@@ -13,10 +14,37 @@ import { ProductGallery } from "@/components/product-gallery";
 import { ProductPurchase } from "@/components/product-purchase";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { formatPrice, toNum } from "@/lib/utils";
+import { formatPrice, toNum, productImage } from "@/lib/utils";
 import type { Product, ProductImage } from "@/types/api";
 
 export const revalidate = 60;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const product = await getProduct(id);
+    const img = productImage(product);
+    const desc =
+      product.description?.slice(0, 160) ??
+      `${product.name} — ${formatPrice(product.price)} en MA Piscinas.`;
+    return {
+      title: `${product.name} — MA Piscinas`,
+      description: desc,
+      openGraph: {
+        title: product.name,
+        description: desc,
+        images: img ? [{ url: img }] : undefined,
+        type: "website",
+      },
+    };
+  } catch {
+    return { title: "Producto — MA Piscinas" };
+  }
+}
 
 export default async function ProductDetailPage({
   params,
