@@ -115,6 +115,12 @@ class CartApiController extends Controller
                 });
                 $items = array_values($items);
                 break;
+
+            case 'clear':
+                // Vaciar carrito completo en una sola escritura (evita el race
+                // de mandar N "remove" en paralelo tras crear la orden).
+                $items = [];
+                break;
         }
 
         // Guardar carrito en Firestore

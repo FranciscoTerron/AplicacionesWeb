@@ -113,6 +113,10 @@ class OrderApiController extends Controller
 
         $orderData = [
             'user_id' => $user->id,
+            // Identidad del cliente para que el panel admin muestre el nombre
+            // del registro y no un campo en blanco.
+            'client_id' => $user->id,
+            'client_name' => $user->name,
             'items' => $items,
             'shipping_address' => $validated['shipping_address'],
             'payment_method' => $validated['payment_method'],
