@@ -173,7 +173,10 @@ function CartContent() {
         </div>
 
         <Button asChild className="w-full" size="lg">
-          <Link href="/checkout">Continuar compra</Link>
+          <Link href="/checkout">Finalizar compra</Link>
+        </Button>
+        <Button asChild variant="outline" className="w-full">
+          <Link href="/productos">Seguir comprando</Link>
         </Button>
         {discount && (
           <p className="text-xs text-muted-foreground">

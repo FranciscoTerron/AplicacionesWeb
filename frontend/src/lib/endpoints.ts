@@ -120,6 +120,15 @@ export async function mutateCart(
   return data;
 }
 
+export async function clearCart() {
+  const { data } = await apiFetch<Cart>("/cart", {
+    method: "POST",
+    auth: true,
+    body: { action: "clear" },
+  });
+  return data;
+}
+
 // ---------- Descuentos (protegido) ----------
 
 export async function validateDiscount(

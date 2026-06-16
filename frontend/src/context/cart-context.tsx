@@ -19,6 +19,7 @@ interface CartContextValue {
   add: (productId: string, quantity?: number) => Promise<void>;
   update: (productId: string, quantity: number) => Promise<void>;
   remove: (productId: string) => Promise<void>;
+  clear: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -63,11 +64,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems(cart.items ?? []);
   }, []);
 
+  const clear = useCallback(async () => {
+    const cart = await api.clearCart();
+    setItems(cart.items ?? []);
+  }, []);
+
   const count = items.reduce((acc, it) => acc + (it.quantity ?? 0), 0);
 
   return (
     <CartContext.Provider
-      value={{ items, count, loading, refresh, add, update, remove }}
+      value={{ items, count, loading, refresh, add, update, remove, clear }}
     >
       {children}
     </CartContext.Provider>
