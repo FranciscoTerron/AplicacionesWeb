@@ -118,7 +118,10 @@ class CheckoutFlowApiTest extends TestCase
             ->assertStatus(200)
             ->assertJson(['success' => true]);
 
-        $this->assertSame('approved', $this->firestore->getDocument('orders', $orderId)['payment_status']);
+        $paid = $this->firestore->getDocument('orders', $orderId);
+        $this->assertSame('approved', $paid['payment_status']);
+        // Pago acreditado => la orden se confirma (ya no figura "Pendiente").
+        $this->assertSame('confirmed', $paid['status']);
     }
 
     public function test_webhook_with_wrong_amount_keeps_order_unpaid(): void
@@ -151,5 +154,32 @@ class CheckoutFlowApiTest extends TestCase
             ->assertStatus(400);
 
         $this->assertSame('pending', $this->firestore->getDocument('orders', $orderId)['payment_status']);
+    }
+
+    public function test_webhook_approval_does_not_override_fulfillment_status(): void
+    {
+        $this->firestore->seed('orders', [[
+            'id' => 'o-shipped',
+            'external_reference' => 'ref-shipped',
+            'total_amount' => 200,
+            'status' => 'shipped',
+            'payment_status' => 'pending',
+        ]]);
+
+        Http::fake([
+            'api.mercadopago.com/v1/payments/*' => Http::response([
+                'status' => 'approved',
+                'external_reference' => 'ref-shipped',
+                'transaction_amount' => 200,
+            ]),
+        ]);
+
+        $this->postWebhook(['type' => 'payment', 'data' => ['id' => self::PAYMENT_ID]])
+            ->assertStatus(200);
+
+        $order = $this->firestore->getDocument('orders', 'o-shipped');
+        $this->assertSame('approved', $order['payment_status']);
+        // No retrocede a "confirmed": el estado de envío manda.
+        $this->assertSame('shipped', $order['status']);
     }
 }

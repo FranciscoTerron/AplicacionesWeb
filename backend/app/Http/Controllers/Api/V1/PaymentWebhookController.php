@@ -105,10 +105,20 @@ class PaymentWebhookController extends Controller
         }
 
         $paymentStatus = $this->mapStatus((string) ($payment['status'] ?? 'unknown'));
-        $this->firestore->updateDocument('orders', (string) $order['id'], [
+
+        $update = [
             'payment_status' => $paymentStatus,
             'updated_at' => now()->toISOString(),
-        ]);
+        ];
+
+        // Pago aprobado sobre una orden recién creada => confirmarla, así el
+        // comprobante no queda "Pendiente" con el pago ya acreditado. No se
+        // pisan estados de fulfillment posteriores (shipped, delivered, etc.).
+        if ($paymentStatus === 'approved' && (string) ($order['status'] ?? 'pending') === 'pending') {
+            $update['status'] = 'confirmed';
+        }
+
+        $this->firestore->updateDocument('orders', (string) $order['id'], $update);
 
         return ApiResponse::success(message: 'Pago actualizado: '.$paymentStatus);
     }
