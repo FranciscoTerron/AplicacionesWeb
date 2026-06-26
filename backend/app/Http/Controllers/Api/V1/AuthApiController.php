@@ -158,7 +158,10 @@ class AuthApiController extends Controller
         $now = now()->toISOString();
         $plainTextToken = $this->generateToken();
 
-        $this->firestore->createDocument('clients', [
+        // createDocumentWithId fija el doc id de Firestore = $userId, de modo que
+        // el user_id guardado en el token resuelva con getDocument('clients', $userId).
+        // (createDocument autogenera otro doc id y rompía la autenticación posterior.)
+        $this->firestore->createDocumentWithId('clients', $userId, [
             'id' => $userId,
             'name' => $request->name,
             'email' => $request->email,

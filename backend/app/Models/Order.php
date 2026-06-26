@@ -28,6 +28,8 @@ class Order extends Model
         'total_amount',
         'payment_method',
         'payment_status',
+        'external_reference',
+        'payment_preference_id',
         'shipping_address',
         'tracking_number',
         'created_by',
