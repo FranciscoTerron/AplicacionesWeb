@@ -43,6 +43,26 @@ function OrderDetail() {
       .finally(() => setLoading(false));
   }, [params.id]);
 
+  // Al volver de Mercado Pago (?pago=success) el webhook concilia el pago de
+  // forma asíncrona. Si la orden sigue "pending", refrescamos solo cada 3s
+  // (hasta 5 veces) para mostrar "Pago aprobado" sin recargar a mano.
+  useEffect(() => {
+    if (pago !== "success" || !params.id) return;
+    if (order && order.payment_status !== "pending") return;
+    let tries = 0;
+    const iv = setInterval(async () => {
+      tries++;
+      try {
+        const fresh = await getOrder(params.id);
+        setOrder(fresh);
+        if (fresh.payment_status !== "pending" || tries >= 5) clearInterval(iv);
+      } catch {
+        clearInterval(iv);
+      }
+    }, 3000);
+    return () => clearInterval(iv);
+  }, [pago, params.id, order?.payment_status]);
+
   async function handleCancel() {
     if (!order) return;
     setCancelling(true);
