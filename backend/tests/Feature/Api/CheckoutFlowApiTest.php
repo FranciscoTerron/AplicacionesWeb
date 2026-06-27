@@ -124,6 +124,28 @@ class CheckoutFlowApiTest extends TestCase
         $this->assertSame('confirmed', $paid['status']);
     }
 
+    public function test_creating_order_empties_the_user_cart(): void
+    {
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('products', [
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10],
+        ]);
+        $this->firestore->seed('carts', [[
+            'id' => 'cart-1',
+            'user_id' => 'user-1',
+            'items' => [['product_id' => 'p1', 'quantity' => 2]],
+        ]]);
+
+        $this->postJson('/api/v1/orders', [
+            'items' => [['product_id' => 'p1', 'quantity' => 2]],
+            'shipping_address' => 'x',
+            'payment_method' => 'mercado_pago',
+        ], $headers)->assertStatus(201);
+
+        // El carrito del usuario queda vacío tras crear la orden.
+        $this->assertSame([], $this->firestore->getDocument('carts', 'cart-1')['items']);
+    }
+
     public function test_webhook_with_wrong_amount_keeps_order_unpaid(): void
     {
         $headers = $this->actingAsApiUser(['id' => 'user-1']);

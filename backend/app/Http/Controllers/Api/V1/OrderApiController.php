@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Order\StoreOrderRequest;
+use App\Services\DiscountService;
 use App\Services\FirestoreService;
 use App\Services\MercadoPagoService;
 use App\Support\ApiResponse;
@@ -17,6 +18,7 @@ class OrderApiController extends Controller
     public function __construct(
         private readonly FirestoreService $firestore,
         private readonly MercadoPagoService $mercadoPago,
+        private readonly DiscountService $discounts,
     ) {}
 
     /**
@@ -79,8 +81,10 @@ class OrderApiController extends Controller
         $validated = $request->validated();
 
         // Resolver precios server-side: el cliente NO define el precio.
+        // El descuento automático del producto se aplica acá, no del lado del cliente.
         $items = [];
-        $totalAmount = 0;
+        $subtotal = 0;     // suma de precios base (sin descuento)
+        $totalAmount = 0;  // suma de precios finales (con descuento)
         foreach ($validated['items'] as $item) {
             $product = $this->firestore->getDocument('products', $item['product_id']);
 
@@ -101,14 +105,26 @@ class OrderApiController extends Controller
                 );
             }
 
-            $price = (float) ($product['price'] ?? 0);
+            $base = (float) ($product['price'] ?? 0);
+            $best = $this->discounts->bestForProduct($product);
+            $unit = $best['final'] ?? $base;
+
             $items[] = [
                 'product_id' => $item['product_id'],
                 'name' => $product['name'] ?? null,
                 'quantity' => $quantity,
-                'price' => $price,
+                // 'price' = precio cobrado por unidad (ya con descuento aplicado).
+                'price' => $unit,
+                'base_price' => round($base, 2),
+                'discount' => $best ? [
+                    'id' => $best['discount']['id'] ?? null,
+                    'code' => $best['discount']['code'] ?? null,
+                    'name' => $best['discount']['name'] ?? null,
+                    'amount' => $best['amount'],
+                ] : null,
             ];
-            $totalAmount += $price * $quantity;
+            $subtotal += $base * $quantity;
+            $totalAmount += $unit * $quantity;
         }
 
         $orderData = [
@@ -120,7 +136,9 @@ class OrderApiController extends Controller
             'items' => $items,
             'shipping_address' => $validated['shipping_address'],
             'payment_method' => $validated['payment_method'],
-            'total_amount' => $totalAmount,
+            'subtotal' => round($subtotal, 2),
+            'discount_total' => round($subtotal - $totalAmount, 2),
+            'total_amount' => round($totalAmount, 2),
             'status' => 'pending',
             'payment_status' => 'pending',
             'created_at' => now()->toISOString(),
@@ -128,6 +146,17 @@ class OrderApiController extends Controller
         ];
 
         $order = $this->firestore->createDocument('orders', $orderData);
+
+        // Vaciar el carrito del usuario en el backend (fuente de verdad) en la
+        // misma operación que crea la orden. Antes dependía de que el cliente
+        // lo limpiara, y si esa llamada fallaba quedaban ítems colgados.
+        $carts = $this->firestore->query('carts', ['user_id' => $user->id], 1);
+        if ($carts !== []) {
+            $this->firestore->updateDocument('carts', (string) $carts[0]['id'], [
+                'items' => [],
+                'updated_at' => now()->toISOString(),
+            ]);
+        }
 
         return ApiResponse::success(
             data: $order,

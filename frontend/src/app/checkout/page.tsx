@@ -30,7 +30,7 @@ const PAYMENT_LABELS: Record<PaymentMethod, string> = {
 };
 
 function CheckoutContent() {
-  const { items, clear } = useCart();
+  const { items, clearLocal } = useCart();
   const { enriched, loading } = useEnrichedCart(items);
   const router = useRouter();
 
@@ -56,10 +56,9 @@ function CheckoutContent() {
         shipping_address: address,
         payment_method: method,
       });
-      // Vaciar carrito tras crear la orden en una sola escritura (el backend no
-      // lo limpia solo). Evita el race de mandar N "remove" en paralelo, que
-      // dejaba ítems colgados por lost-update sobre el mismo doc de carrito.
-      await clear().catch(() => {});
+      // El backend vacía el carrito al crear la orden (server-side, atómico).
+      // Acá solo sincronizamos la UI/badge al instante.
+      clearLocal();
 
       // Mercado Pago: crear preference y redirigir al checkout externo.
       if (method === "mercado_pago") {
