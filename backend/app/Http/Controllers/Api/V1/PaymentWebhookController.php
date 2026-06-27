@@ -116,11 +116,48 @@ class PaymentWebhookController extends Controller
         // pisan estados de fulfillment posteriores (shipped, delivered, etc.).
         if ($paymentStatus === 'approved' && (string) ($order['status'] ?? 'pending') === 'pending') {
             $update['status'] = 'confirmed';
+
+            // Descontar stock recién cuando el pago se acredita (no al crear la
+            // orden), así no se resta por órdenes pendientes o abandonadas.
+            // Idempotente: la bandera evita doble descuento si MP reintenta.
+            if (! ($order['stock_decremented'] ?? false)) {
+                $this->decrementStock($order['items'] ?? []);
+                $update['stock_decremented'] = true;
+            }
         }
 
         $this->firestore->updateDocument('orders', (string) $order['id'], $update);
 
         return ApiResponse::success(message: 'Pago actualizado: '.$paymentStatus);
+    }
+
+    /**
+     * Resta del stock de cada producto la cantidad comprada en la orden.
+     * El stock nunca baja de 0. Producto inexistente se ignora.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    protected function decrementStock(array $items): void
+    {
+        foreach ($items as $item) {
+            $productId = (string) ($item['product_id'] ?? '');
+            $quantity = (int) ($item['quantity'] ?? 0);
+
+            if ($productId === '' || $quantity <= 0) {
+                continue;
+            }
+
+            $product = $this->firestore->getDocument('products', $productId);
+            if ($product === null) {
+                continue;
+            }
+
+            $newStock = max(0, (int) ($product['stock'] ?? 0) - $quantity);
+            $this->firestore->updateDocument('products', $productId, [
+                'stock' => $newStock,
+                'updated_at' => now()->toISOString(),
+            ]);
+        }
     }
 
     /**

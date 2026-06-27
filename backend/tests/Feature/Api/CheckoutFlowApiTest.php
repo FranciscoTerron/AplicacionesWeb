@@ -156,6 +156,40 @@ class CheckoutFlowApiTest extends TestCase
         $this->assertSame('pending', $this->firestore->getDocument('orders', $orderId)['payment_status']);
     }
 
+    public function test_approved_payment_decrements_stock_once(): void
+    {
+        $this->firestore->seed('products', [
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10],
+        ]);
+        $this->firestore->seed('orders', [[
+            'id' => 'o-stock',
+            'external_reference' => 'ref-stock',
+            'total_amount' => 300,
+            'status' => 'pending',
+            'payment_status' => 'pending',
+            'items' => [['product_id' => 'p1', 'quantity' => 3]],
+        ]]);
+
+        Http::fake([
+            'api.mercadopago.com/v1/payments/*' => Http::response([
+                'status' => 'approved',
+                'external_reference' => 'ref-stock',
+                'transaction_amount' => 300,
+            ]),
+        ]);
+
+        // Primer webhook: 10 - 3 = 7
+        $this->postWebhook(['type' => 'payment', 'data' => ['id' => self::PAYMENT_ID]])
+            ->assertStatus(200);
+        $this->assertSame(7, $this->firestore->getDocument('products', 'p1')['stock']);
+        $this->assertTrue($this->firestore->getDocument('orders', 'o-stock')['stock_decremented']);
+
+        // Reintento de MP: NO debe volver a descontar (sigue en 7).
+        $this->postWebhook(['type' => 'payment', 'data' => ['id' => self::PAYMENT_ID]])
+            ->assertStatus(200);
+        $this->assertSame(7, $this->firestore->getDocument('products', 'p1')['stock']);
+    }
+
     public function test_webhook_approval_does_not_override_fulfillment_status(): void
     {
         $this->firestore->seed('orders', [[
