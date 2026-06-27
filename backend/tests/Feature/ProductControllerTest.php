@@ -52,6 +52,9 @@ class ProductControllerTest extends TestCase
                 ['subcategories', 100, null, 'name', [
                     'documents' => [],
                 ]],
+                ['discounts', 200, null, 'name', [
+                    'documents' => [],
+                ]],
             ]);
 
         $response = $this->get(route('admin.products.index'));

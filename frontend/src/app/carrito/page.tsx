@@ -36,9 +36,12 @@ function CartContent() {
     try {
       const d = await validateDiscount(code.trim());
       setDiscount(d);
+      // Persistir el cupón para que el checkout lo mande al crear la orden.
+      localStorage.setItem("discount_code", d.code);
       toast.success(`Descuento "${d.code}" aplicado`);
     } catch (e) {
       setDiscount(null);
+      localStorage.removeItem("discount_code");
       toast.error(e instanceof Error ? e.message : "Código inválido");
     } finally {
       setApplying(false);

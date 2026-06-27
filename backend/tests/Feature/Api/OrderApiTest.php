@@ -257,4 +257,35 @@ class OrderApiTest extends TestCase
 
         $this->putJson('/api/v1/orders/o1/cancel', [], $headers)->assertStatus(404);
     }
+
+    // --- Descuentos aplicados al cobrar ---
+
+    public function test_store_charges_discounted_total(): void
+    {
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('products', [
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10],
+        ]);
+        $this->firestore->seed('discounts', [
+            ['id' => 'd1', 'code' => 'ALL10', 'active' => true, 'applies_to' => 'all',
+                'discount_type' => 'percentage', 'value' => 10],
+        ]);
+
+        $response = $this->postJson('/api/v1/orders', [
+            'items' => [['product_id' => 'p1', 'quantity' => 2, 'price' => 1]],
+            'shipping_address' => 'Calle Falsa 123',
+            'payment_method' => 'card',
+        ], $headers);
+
+        $response->assertStatus(201)
+            ->assertJson(['data' => [
+                'subtotal' => 200,        // 2 * 100 base
+                'discount_total' => 20,   // 10% de 200
+                'total_amount' => 180,    // se cobra con descuento
+            ]]);
+
+        $this->assertEquals(90, $response->json('data.items.0.price'));      // unitario con descuento
+        $this->assertEquals(100, $response->json('data.items.0.base_price')); // unitario base
+        $this->assertEquals('ALL10', $response->json('data.items.0.discount.code'));
+    }
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthApiController;
 use App\Http\Controllers\Api\V1\CartApiController;
 use App\Http\Controllers\Api\V1\CatalogApiController;
 use App\Http\Controllers\Api\V1\CatalogController;
+use App\Http\Controllers\Api\V1\CronController;
 use App\Http\Controllers\Api\V1\DiscountApiController;
 use App\Http\Controllers\Api\V1\HealthCheckController;
 use App\Http\Controllers\Api\V1\OrderApiController;
@@ -62,6 +63,11 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::post('/payments/webhook', PaymentWebhookController::class)
         ->withoutMiddleware('throttle:api')
         ->name('api.v1.payments.webhook');
+
+    // Cron (Vercel) - protegido por Bearer CRON_SECRET dentro del controller
+    Route::get('/cron/expire-orders', [CronController::class, 'expireOrders'])
+        ->withoutMiddleware('throttle:api')
+        ->name('api.v1.cron.expire-orders');
 
     // Search - Fase 5 (público)
     Route::post('/catalog/search', SearchController::class)

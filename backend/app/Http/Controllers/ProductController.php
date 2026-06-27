@@ -8,6 +8,7 @@ use App\Http\Requests\Product\UpdateProductRequest;
 use App\Http\Traits\CrudActionsTrait;
 use App\Models\Product;
 use App\Services\CloudinaryService;
+use App\Services\DiscountService;
 use App\Services\FirestoreService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -21,10 +22,13 @@ class ProductController extends Controller
 
     protected CloudinaryService $cloudinary;
 
-    public function __construct(FirestoreService $firestore, CloudinaryService $cloudinary)
+    protected DiscountService $discounts;
+
+    public function __construct(FirestoreService $firestore, CloudinaryService $cloudinary, DiscountService $discounts)
     {
         $this->firestore = $firestore;
         $this->cloudinary = $cloudinary;
+        $this->discounts = $discounts;
     }
 
     /**
@@ -190,7 +194,8 @@ class ProductController extends Controller
         $totalFiltered = $items->count();
         $totalPages = intval(ceil($totalFiltered / $perPage));
         $offset = ($page - 1) * $perPage;
-        $pageItems = $items->slice($offset, $perPage)->values();
+        // Decorar solo la página visible: agrega final_price/discount para mostrar.
+        $pageItems = $this->discounts->decorateMany($items->slice($offset, $perPage)->values());
 
         return ViewFacade::make("{$this->getViewFolder()}.index", [
             'products' => $pageItems,

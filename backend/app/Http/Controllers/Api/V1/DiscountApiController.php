@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Discount\ValidateDiscountRequest;
+use App\Services\DiscountService;
 use App\Services\FirestoreService;
 use App\Support\ApiResponse;
 use Carbon\Carbon;
@@ -12,7 +13,10 @@ use OpenApi\Attributes as OA;
 
 class DiscountApiController extends Controller
 {
-    public function __construct(private readonly FirestoreService $firestore) {}
+    public function __construct(
+        private readonly FirestoreService $firestore,
+        private readonly DiscountService $discounts,
+    ) {}
 
     /**
      * POST /api/v1/discounts/validate
@@ -146,6 +150,33 @@ class DiscountApiController extends Controller
             }
         }
 
+        // Si hay producto, calcular precio final para que el front lo muestre.
+        // Regla: cupón y descuento automático NO se suman, gana el mejor.
+        $pricing = null;
+        if ($productId) {
+            $product = $this->firestore->getDocument('products', $productId);
+            if ($product) {
+                $base = (float) ($product['price'] ?? 0);
+                $couponFinal = DiscountService::applyValue(
+                    $base,
+                    (string) ($discount['discount_type'] ?? 'percentage'),
+                    (float) ($discount['value'] ?? 0),
+                );
+                $auto = $this->discounts->bestForProduct($product);
+                $autoFinal = $auto['final'] ?? $base;
+                $final = min($couponFinal, $autoFinal);
+
+                $pricing = [
+                    'base' => round($base, 2),
+                    'coupon_final' => $couponFinal,
+                    'auto_final' => $autoFinal,
+                    'final' => $final,
+                    'amount' => round($base - $final, 2),
+                    'applied' => $couponFinal <= $autoFinal ? 'coupon' : 'auto',
+                ];
+            }
+        }
+
         // Devolver descuento sin campos internos
         $responseData = [
             'id' => $discount['id'] ?? null,
@@ -155,6 +186,7 @@ class DiscountApiController extends Controller
             'discount_type' => $discount['discount_type'] ?? null,
             'value' => $discount['value'] ?? null,
             'applies_to' => $appliesTo,
+            'pricing' => $pricing,
         ];
 
         return ApiResponse::success(

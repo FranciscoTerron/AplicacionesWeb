@@ -127,6 +127,35 @@ class OrderApiController extends Controller
             $totalAmount += $unit * $quantity;
         }
 
+        // Cupón por código (opcional). Regla de negocio: NO se suma a los
+        // descuentos automáticos por producto — gana el que más baja el total.
+        $coupon = null;
+        $autoDiscount = round($subtotal - $totalAmount, 2);
+        $code = trim((string) ($validated['discount_code'] ?? ''));
+        if ($code !== '') {
+            $found = $this->discounts->couponByCode($code);
+            if ($found !== null) {
+                $couponAmount = $this->discounts->couponAmountForSubtotal($found, $subtotal);
+
+                if ($couponAmount > $autoDiscount) {
+                    // El cupón reemplaza a los descuentos automáticos: los ítems
+                    // vuelven a precio base y el descuento queda a nivel orden.
+                    $totalAmount = round($subtotal - $couponAmount, 2);
+                    foreach ($items as &$it) {
+                        $it['price'] = $it['base_price'];
+                        $it['discount'] = null;
+                    }
+                    unset($it);
+
+                    $coupon = [
+                        'code' => $found['code'] ?? $code,
+                        'name' => $found['name'] ?? null,
+                        'amount' => $couponAmount,
+                    ];
+                }
+            }
+        }
+
         $orderData = [
             'user_id' => $user->id,
             // Identidad del cliente para que el panel admin muestre el nombre
@@ -138,6 +167,7 @@ class OrderApiController extends Controller
             'payment_method' => $validated['payment_method'],
             'subtotal' => round($subtotal, 2),
             'discount_total' => round($subtotal - $totalAmount, 2),
+            'coupon' => $coupon,
             'total_amount' => round($totalAmount, 2),
             'status' => 'pending',
             'payment_status' => 'pending',

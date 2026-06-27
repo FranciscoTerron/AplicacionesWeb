@@ -3,6 +3,12 @@
     "regions": [
         "iad1"
     ],
+    "crons": [
+        {
+            "path": "/api/v1/cron/expire-orders",
+            "schedule": "0 4 * * *"
+        }
+    ],
     "builds": [
         {
             "src": "/api.php",

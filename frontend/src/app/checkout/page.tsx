@@ -48,6 +48,7 @@ function CheckoutContent() {
     }
     setSubmitting(true);
     try {
+      const couponCode = localStorage.getItem("discount_code") ?? undefined;
       const order = await createOrder({
         items: items.map((i) => ({
           product_id: i.product_id,
@@ -55,7 +56,10 @@ function CheckoutContent() {
         })),
         shipping_address: address,
         payment_method: method,
+        discount_code: couponCode,
       });
+      // Cupón consumido: no debe quedar pegado para la próxima compra.
+      localStorage.removeItem("discount_code");
       // El backend vacía el carrito al crear la orden (server-side, atómico).
       // Acá solo sincronizamos la UI/badge al instante.
       clearLocal();

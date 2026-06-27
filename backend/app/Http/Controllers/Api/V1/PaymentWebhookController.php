@@ -121,8 +121,13 @@ class PaymentWebhookController extends Controller
             // orden), así no se resta por órdenes pendientes o abandonadas.
             // Idempotente: la bandera evita doble descuento si MP reintenta.
             if (! ($order['stock_decremented'] ?? false)) {
-                $this->decrementStock($order['items'] ?? []);
+                $oversold = $this->decrementStock($order['items'] ?? []);
                 $update['stock_decremented'] = true;
+                // Si al acreditarse el pago el stock ya no alcanzaba (otra compra
+                // se adelantó), se marca la orden para revisión manual del admin.
+                if ($oversold) {
+                    $update['oversold'] = true;
+                }
             }
         }
 
@@ -134,11 +139,14 @@ class PaymentWebhookController extends Controller
     /**
      * Resta del stock de cada producto la cantidad comprada en la orden.
      * El stock nunca baja de 0. Producto inexistente se ignora.
+     * Devuelve true si algún producto no tenía stock suficiente (oversell).
      *
      * @param  array<int, array<string, mixed>>  $items
      */
-    protected function decrementStock(array $items): void
+    protected function decrementStock(array $items): bool
     {
+        $oversold = false;
+
         foreach ($items as $item) {
             $productId = (string) ($item['product_id'] ?? '');
             $quantity = (int) ($item['quantity'] ?? 0);
@@ -152,12 +160,18 @@ class PaymentWebhookController extends Controller
                 continue;
             }
 
-            $newStock = max(0, (int) ($product['stock'] ?? 0) - $quantity);
+            $current = (int) ($product['stock'] ?? 0);
+            if ($current < $quantity) {
+                $oversold = true;
+            }
+
             $this->firestore->updateDocument('products', $productId, [
-                'stock' => $newStock,
+                'stock' => max(0, $current - $quantity),
                 'updated_at' => now()->toISOString(),
             ]);
         }
+
+        return $oversold;
     }
 
     /**

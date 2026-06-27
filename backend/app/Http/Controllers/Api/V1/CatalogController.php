@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Catalog\ProductIndexRequest;
+use App\Services\DiscountService;
 use App\Services\FirestoreService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -11,7 +12,10 @@ use OpenApi\Attributes as OA;
 
 class CatalogController extends Controller
 {
-    public function __construct(private readonly FirestoreService $firestore) {}
+    public function __construct(
+        private readonly FirestoreService $firestore,
+        private readonly DiscountService $discounts,
+    ) {}
 
     /**
      * GET /api/v1/catalog/products
@@ -155,7 +159,8 @@ class CatalogController extends Controller
         $total = $products->count();
 
         // Aplicar paginación (offset/limit) sobre el array filtrado
-        $products = $products->slice($offset, $limit)->values();
+        // y decorar solo la página visible con precio final + descuento.
+        $products = $this->discounts->decorateMany($products->slice($offset, $limit)->values());
 
         $lastPage = (int) ceil($total / $limit);
 
@@ -199,7 +204,7 @@ class CatalogController extends Controller
         $products = collect($result['documents'] ?? [])
             ->where('active', true)
             ->where('featured', true)
-            ->map(fn (array $p) => $this->normalizeProduct($p))
+            ->map(fn (array $p) => $this->discounts->decorate($this->normalizeProduct($p)))
             ->values()
             ->all();
 

@@ -130,6 +130,7 @@ export interface CreateOrderBody {
   items: CartItem[];
   shipping_address: string;
   payment_method: PaymentMethod;
+  discount_code?: string;
 }
 
 export interface RegisterBody {
