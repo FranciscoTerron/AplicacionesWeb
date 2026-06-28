@@ -154,6 +154,10 @@ class DiscountController extends Controller
 
         $validated = $request->validated();
 
+        // El código se normaliza a mayúsculas para que la validación de duplicados
+        // (que compara contra strtoupper()) siga siendo válida después de guardar.
+        $validated['code'] = strtoupper($validated['code']);
+
         // Convert active to boolean
         $validated['active'] = filter_var($validated['active'], FILTER_VALIDATE_BOOLEAN);
 
@@ -191,6 +195,21 @@ class DiscountController extends Controller
             return redirect()->route($this->getRedirectRoute())->with('error', 'Registro no encontrado.');
         }
 
+        // El código y el tipo de descuento son inmutables una vez creado: se ignora
+        // cualquier valor enviado y se conserva el original, sin importar quién lo envíe.
+        $validated['code'] = $existing['code'] ?? $validated['code'];
+        $validated['discount_type'] = $existing['discount_type'] ?? $validated['discount_type'];
+
+        // El límite de usos nunca puede bajar de lo ya consumido.
+        $usedCount = (int) ($existing['used_count'] ?? 0);
+        if (isset($validated['max_uses']) && (int) $validated['max_uses'] < $usedCount) {
+            $error = "Los usos máximos no pueden ser menores a {$usedCount} (ya utilizado).";
+
+            return $request->ajax()
+                ? response()->json(['error' => $error, 'errors' => ['max_uses' => [$error]]], 422)
+                : back()->with('error', $error)->withInput();
+        }
+
         // Auditoría
         $validated['updated_at'] = now()->toISOString();
         $validated['updated_by'] = auth()->id();
@@ -211,12 +230,8 @@ class DiscountController extends Controller
      */
     public function activate(Request $request, string $id): RedirectResponse|JsonResponse
     {
-        $authUser = auth()->user();
-
-        // Only admins can activate discounts
-        if (! $authUser || $authUser->role !== 'admin') {
-            abort(403, 'No tienes permiso para realizar esta acción.');
-        }
+        $model = $this->getModelInstance($id);
+        $this->authorizeRequest('activate', $model);
 
         try {
             // Reactivate the discount

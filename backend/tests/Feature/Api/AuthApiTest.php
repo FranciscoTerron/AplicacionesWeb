@@ -153,6 +153,26 @@ class AuthApiTest extends TestCase
         $this->postJson('/api/v1/auth/register', [])->assertStatus(422);
     }
 
+    public function test_registered_client_can_use_token_on_protected_route(): void
+    {
+        // Regresión: el token emitido en register debe autenticar en rutas
+        // protegidas. En Firestore real createDocument autogenera el doc id
+        // (≠ campo `id`), por lo que el token guardaba un user_id que luego
+        // getDocument('clients', user_id) no encontraba → 401. Se fija con
+        // createDocumentWithId($userId) para que doc id == user_id == token.user_id.
+        $register = $this->postJson('/api/v1/auth/register', [
+            'name' => 'Cliente Reg',
+            'email' => 'reg@test.com',
+            'password' => 'password123',
+        ])->assertStatus(201);
+
+        $token = $register->json('token');
+
+        $this->getJson('/api/v1/cart', ['Authorization' => 'Bearer '.$token])
+            ->assertStatus(200)
+            ->assertJson(['success' => true]);
+    }
+
     // --- REFRESH ---
 
     public function test_refresh_rotates_token(): void

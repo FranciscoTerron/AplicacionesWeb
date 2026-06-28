@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property array<int,array{url:string,public_id:string}>|null $images
  * @property bool $active
  * @property bool $featured
+ * @property string|null $discount_id
  * @property array|null $dimensions
  * @property string $created_by
  * @property string $updated_by
@@ -39,6 +40,7 @@ class Product extends Model
         'images',
         'active',
         'featured',
+        'discount_id',
         'dimensions',
         'created_by',
         'updated_by',

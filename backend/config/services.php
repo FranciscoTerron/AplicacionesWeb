@@ -46,6 +46,14 @@ return [
     'mercadopago' => [
         'access_token' => env('MERCADOPAGO_ACCESS_TOKEN'),
         'webhook_secret' => env('MERCADOPAGO_WEBHOOK_SECRET'),
+        // URL del frontend para los back_urls del checkout (redirect post-pago).
+        'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+    ],
+
+    'cron' => [
+        // Secreto que Vercel Cron manda como Bearer. Sin esto, los endpoints
+        // de cron quedan deshabilitados (rechazan todo).
+        'secret' => env('CRON_SECRET'),
     ],
 
 ];

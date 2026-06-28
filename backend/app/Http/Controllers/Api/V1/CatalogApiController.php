@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Services\DiscountService;
 use App\Services\FirestoreService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -10,7 +11,10 @@ use OpenApi\Attributes as OA;
 
 class CatalogApiController extends Controller
 {
-    public function __construct(private readonly FirestoreService $firestore) {}
+    public function __construct(
+        private readonly FirestoreService $firestore,
+        private readonly DiscountService $discounts,
+    ) {}
 
     /**
      * GET /api/v1/catalog/products
@@ -56,7 +60,7 @@ class CatalogApiController extends Controller
         $result = $this->firestore->listDocuments('products', 200);
         $products = collect($result['documents'] ?? [])
             ->where('active', true)
-            ->map(fn (array $p) => $this->normalizeProduct($p))
+            ->map(fn (array $p) => $this->discounts->decorate($this->normalizeProduct($p)))
             ->values()
             ->all();
 
@@ -128,7 +132,7 @@ class CatalogApiController extends Controller
             ], 404);
         }
 
-        $product = $this->normalizeProduct($product);
+        $product = $this->discounts->decorate($this->normalizeProduct($product));
 
         return response()->json([
             'success' => true,

@@ -377,10 +377,14 @@ class FirestoreService
             ],
         ];
 
-        // Add startAfter cursor if provided (excludes the cursor document)
+        // Add startAfter cursor if provided (excludes the cursor document).
+        // Firestore REST no tiene campo "startAfter": el cursor se expresa con
+        // "startAt" y `before: false` => los resultados arrancan DESPUÉS del valor
+        // del cursor (exclusivo), que es la semántica de startAfter.
         if ($startAfter) {
-            $structuredQuery['structuredQuery']['startAfter'] = [
+            $structuredQuery['structuredQuery']['startAt'] = [
                 'values' => [$this->encodeValue($startAfter)],
+                'before' => false,
             ];
         }
 

@@ -46,6 +46,7 @@ class StoreProductRequest extends FormRequest
             'images.*.public_id' => 'required|string',
             'active' => 'boolean',
             'featured' => 'boolean',
+            'discount_id' => 'nullable|string',
             'dimensions' => 'nullable|array',
             'dimensions.weight_kg' => 'nullable|numeric|min:0',
             'dimensions.length_cm' => 'nullable|numeric|min:0',
@@ -77,9 +78,6 @@ class StoreProductRequest extends FormRequest
         ];
     }
 
-    /**
-     * Validación de existencia de category_id (activa) y subcategory_id.
-     */
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
@@ -98,6 +96,16 @@ class StoreProductRequest extends FormRequest
                     $validator->errors()->add('subcategory_id', 'La subcategoría seleccionada no existe.');
                 } elseif ($categoryId && ($subcategory['category_id'] ?? null) !== $categoryId) {
                     $validator->errors()->add('subcategory_id', 'La subcategoría no pertenece a la categoría seleccionada.');
+                }
+            }
+
+            $discountId = $this->input('discount_id');
+            if ($discountId) {
+                $discount = app(FirestoreService::class)->getDocument('discounts', $discountId);
+                if (! $discount) {
+                    $validator->errors()->add('discount_id', 'El descuento seleccionado no existe.');
+                } elseif (! ($discount['active'] ?? false)) {
+                    $validator->errors()->add('discount_id', 'El descuento seleccionado está inactivo.');
                 }
             }
         });

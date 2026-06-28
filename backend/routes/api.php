@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthApiController;
 use App\Http\Controllers\Api\V1\CartApiController;
 use App\Http\Controllers\Api\V1\CatalogApiController;
 use App\Http\Controllers\Api\V1\CatalogController;
+use App\Http\Controllers\Api\V1\CronController;
 use App\Http\Controllers\Api\V1\DiscountApiController;
 use App\Http\Controllers\Api\V1\HealthCheckController;
 use App\Http\Controllers\Api\V1\OrderApiController;
@@ -63,6 +64,11 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         ->withoutMiddleware('throttle:api')
         ->name('api.v1.payments.webhook');
 
+    // Cron (Vercel) - protegido por Bearer CRON_SECRET dentro del controller
+    Route::get('/cron/expire-orders', [CronController::class, 'expireOrders'])
+        ->withoutMiddleware('throttle:api')
+        ->name('api.v1.cron.expire-orders');
+
     // Search - Fase 5 (público)
     Route::post('/catalog/search', SearchController::class)
         ->name('api.v1.catalog.search');
@@ -82,6 +88,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
             ->name('api.v1.orders.show');
         Route::put('/orders/{id}/cancel', [OrderApiController::class, 'cancel'])
             ->name('api.v1.orders.cancel');
+        Route::post('/orders/{id}/pay', [OrderApiController::class, 'pay'])
+            ->name('api.v1.orders.pay');
 
         // Cart - Fase 9 (protegido)
         Route::get('/cart', [CartApiController::class, 'show'])

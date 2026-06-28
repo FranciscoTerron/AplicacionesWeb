@@ -4,15 +4,22 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Order\StoreOrderRequest;
+use App\Services\DiscountService;
 use App\Services\FirestoreService;
+use App\Services\MercadoPagoService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
+use Throwable;
 
 class OrderApiController extends Controller
 {
-    public function __construct(private readonly FirestoreService $firestore) {}
+    public function __construct(
+        private readonly FirestoreService $firestore,
+        private readonly MercadoPagoService $mercadoPago,
+        private readonly DiscountService $discounts,
+    ) {}
 
     /**
      * POST /api/v1/orders
@@ -74,8 +81,10 @@ class OrderApiController extends Controller
         $validated = $request->validated();
 
         // Resolver precios server-side: el cliente NO define el precio.
+        // El descuento automático del producto se aplica acá, no del lado del cliente.
         $items = [];
-        $totalAmount = 0;
+        $subtotal = 0;     // suma de precios base (sin descuento)
+        $totalAmount = 0;  // suma de precios finales (con descuento)
         foreach ($validated['items'] as $item) {
             $product = $this->firestore->getDocument('products', $item['product_id']);
 
@@ -96,22 +105,70 @@ class OrderApiController extends Controller
                 );
             }
 
-            $price = (float) ($product['price'] ?? 0);
+            $base = (float) ($product['price'] ?? 0);
+            $best = $this->discounts->discountForProduct($product);
+            $unit = $best ? DiscountService::applyValue($base, (string) ($best['discount_type'] ?? 'percentage'), (float) ($best['value'] ?? 0)) : $base;
+
             $items[] = [
                 'product_id' => $item['product_id'],
                 'name' => $product['name'] ?? null,
                 'quantity' => $quantity,
-                'price' => $price,
+                // 'price' = precio cobrado por unidad (ya con descuento aplicado).
+                'price' => $unit,
+                'base_price' => round($base, 2),
+                'discount' => $best ? [
+                    'id' => $best['id'] ?? null,
+                    'code' => $best['code'] ?? null,
+                    'name' => $best['name'] ?? null,
+                    'amount' => round($base - $unit, 2),
+                ] : null,
             ];
-            $totalAmount += $price * $quantity;
+            $subtotal += $base * $quantity;
+            $totalAmount += $unit * $quantity;
+        }
+
+        // Cupón por código (opcional). Regla de negocio: NO se suma a los
+        // descuentos automáticos por producto — gana el que más baja el total.
+        $coupon = null;
+        $autoDiscount = round($subtotal - $totalAmount, 2);
+        $code = trim((string) ($validated['discount_code'] ?? ''));
+        if ($code !== '') {
+            $found = $this->discounts->couponByCode($code);
+            if ($found !== null) {
+                $couponAmount = $this->discounts->couponAmountForSubtotal($found, $subtotal);
+
+                if ($couponAmount > $autoDiscount) {
+                    // El cupón reemplaza a los descuentos automáticos: los ítems
+                    // vuelven a precio base y el descuento queda a nivel orden.
+                    $totalAmount = round($subtotal - $couponAmount, 2);
+                    foreach ($items as &$it) {
+                        $it['price'] = $it['base_price'];
+                        $it['discount'] = null;
+                    }
+                    unset($it);
+
+                    $coupon = [
+                        'code' => $found['code'] ?? $code,
+                        'name' => $found['name'] ?? null,
+                        'amount' => $couponAmount,
+                    ];
+                }
+            }
         }
 
         $orderData = [
             'user_id' => $user->id,
+            // Identidad del cliente para que el panel admin muestre el nombre
+            // del registro y no un campo en blanco.
+            'client_id' => $user->id,
+            'client_name' => $user->name,
             'items' => $items,
             'shipping_address' => $validated['shipping_address'],
             'payment_method' => $validated['payment_method'],
-            'total_amount' => $totalAmount,
+            'subtotal' => round($subtotal, 2),
+            'discount_total' => round($subtotal - $totalAmount, 2),
+            'coupon' => $coupon,
+            'total_amount' => round($totalAmount, 2),
             'status' => 'pending',
             'payment_status' => 'pending',
             'created_at' => now()->toISOString(),
@@ -119,6 +176,17 @@ class OrderApiController extends Controller
         ];
 
         $order = $this->firestore->createDocument('orders', $orderData);
+
+        // Vaciar el carrito del usuario en el backend (fuente de verdad) en la
+        // misma operación que crea la orden. Antes dependía de que el cliente
+        // lo limpiara, y si esa llamada fallaba quedaban ítems colgados.
+        $carts = $this->firestore->query('carts', ['user_id' => $user->id], 1);
+        if ($carts !== []) {
+            $this->firestore->updateDocument('carts', (string) $carts[0]['id'], [
+                'items' => [],
+                'updated_at' => now()->toISOString(),
+            ]);
+        }
 
         return ApiResponse::success(
             data: $order,
@@ -366,6 +434,101 @@ class OrderApiController extends Controller
         return ApiResponse::success(
             data: $updatedOrder,
             message: 'Orden cancelada exitosamente'
+        );
+    }
+
+    /**
+     * POST /api/v1/orders/{id}/pay
+     *
+     * Crea una preference de Mercado Pago (Checkout Pro) para la orden y
+     * devuelve el init_point al que el frontend redirige al usuario.
+     */
+    #[OA\Post(
+        path: '/api/v1/orders/{id}/pay',
+        operationId: 'payOrder',
+        tags: ['Orders'],
+        security: [new OA\Security(name: 'BearerAuth')],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'ID de la orden',
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Preference creada',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean'),
+                        new OA\Property(property: 'data', type: 'object', properties: [
+                            new OA\Property(property: 'init_point', type: 'string'),
+                            new OA\Property(property: 'preference_id', type: 'string'),
+                        ]),
+                    ]
+                )
+            ),
+            new OA\Response(response: 403, description: 'La orden no pertenece al usuario'),
+            new OA\Response(response: 404, description: 'Orden no encontrada'),
+            new OA\Response(response: 422, description: 'La orden no admite pago en su estado actual'),
+            new OA\Response(response: 502, description: 'No se pudo iniciar el pago con Mercado Pago'),
+        ]
+    )]
+    public function pay(string $id, Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $order = $this->firestore->getDocument('orders', $id);
+
+        if (! $order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Orden no encontrada.',
+            ], 404);
+        }
+
+        if (($order['user_id'] ?? null) !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tiene permiso para pagar esta orden.',
+            ], 403);
+        }
+
+        // Solo se paga una orden pendiente cuyo pago no está aún aprobado.
+        $status = (string) ($order['status'] ?? 'pending');
+        $paymentStatus = (string) ($order['payment_status'] ?? 'pending');
+
+        if ($status !== 'pending' || ! in_array($paymentStatus, ['pending', 'rejected'], true)) {
+            return ApiResponse::error(
+                message: 'La orden no admite pago en su estado actual.',
+                status: 422
+            );
+        }
+
+        try {
+            $preference = $this->mercadoPago->createPreference($order);
+        } catch (Throwable $e) {
+            report($e);
+
+            return ApiResponse::error(
+                message: 'No se pudo iniciar el pago. Intentá nuevamente.',
+                status: 502
+            );
+        }
+
+        // external_reference = id de la orden: así el webhook concilia el pago.
+        $this->firestore->updateDocument('orders', $id, [
+            'external_reference' => $id,
+            'payment_preference_id' => $preference['preference_id'],
+            'updated_at' => now()->toISOString(),
+        ]);
+
+        return ApiResponse::success(
+            data: $preference,
+            message: 'Preference creada'
         );
     }
 }

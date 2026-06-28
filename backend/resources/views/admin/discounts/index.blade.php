@@ -40,8 +40,6 @@
                  <th>@include('admin.partials._sort_header', ['field' => 'name', 'label' => 'Nombre', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
                  <th>@include('admin.partials._sort_header', ['field' => 'discount_type', 'label' => 'Tipo', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
                  <th>@include('admin.partials._sort_header', ['field' => 'value', 'label' => 'Valor', 'sort' => $sort ?? '', 'order' => $order ?? ''])</th>
-                 <th>Válido Desde</th>
-                 <th>Válido Hasta</th>
                  <th>Estado</th>
                  <th class="text-end">Acciones</th>
              </tr>
@@ -54,7 +52,7 @@
                 @include('admin.discounts.partials._discount_row', ['discount' => $discount, 'isAdmin' => $isAdmin, 'isActive' => $isActive])
             @empty
                 <tr>
-                    <td colspan="8" class="text-center py-5 text-muted">
+                    <td colspan="6" class="text-center py-5 text-muted">
                         <i class="bi bi-percent display-6"></i>
                         <p class="lead mt-2">No hay descuentos registrados</p>
                         @if($isAdmin)
@@ -106,7 +104,7 @@
 
     // Multi-step form variables
     let currentStep = 1;
-    let totalSteps = 4;
+    let totalSteps = 2;
     let formData = {};
 
     function openModal(action, discount, triggerButton) {
@@ -136,55 +134,34 @@
             titleEl.textContent = `Detalles del Descuento: ${escapeHtml(discount.code)}`;
 
             // Información básica
-            const basicInfo = `
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <h6 class="text-primary mb-2"><i class="bi bi-tag"></i> Información Básica</h6>
-                        <p class="mb-1"><strong>Código:</strong> <code>${escapeHtml(discount.code)}</code></p>
-                        <p class="mb-1"><strong>Nombre:</strong> ${escapeHtml(discount.name || '-')}</p>
-                        <p class="mb-1"><strong>Descripción:</strong> ${discount.description ? escapeHtml(discount.description) : '<em class="text-muted">Sin descripción</em>'}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="text-primary mb-2"><i class="bi bi-graph-up"></i> Configuración del Descuento</h6>
-                        <p class="mb-1"><strong>Tipo:</strong> ${discount.discount_type === 'percentage' ?
-                            '<span class="badge bg-info">Porcentaje (%)</span>' :
-                            discount.discount_type === 'fixed' ?
-                            '<span class="badge bg-warning">Importe Fijo ($)</span>' :
-                            '<span class="badge bg-secondary">Desconocido</span>'}</p>
-                        <p class="mb-1"><strong>Valor:</strong> <span class="h5 text-success">${
-                            discount.discount_type === 'percentage' ?
-                                (discount.value || 0) + '%' :
-                                discount.discount_type === 'fixed' ?
-                                '$' + parseFloat(discount.value || 0).toFixed(2) :
-                                (discount.value || '-')
-                        }</span></p>
-                        <p class="mb-1"><strong>Estado:</strong> ${discount.active ?
-                            '<span class="badge bg-success">Activo</span>' :
-                            '<span class="badge bg-danger">Inactivo</span>'}</p>
-                    </div>
-                </div>
-            `;
-
-            // Información de aplicación
-            const applicationInfo = `
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <h6 class="text-primary mb-2"><i class="bi bi-calendar-check"></i> Vigencia</h6>
-                        <p class="mb-1"><strong>Válido Desde:</strong> ${formatDateTime(discount.valid_from).replace('No disponible', '<em class="text-muted">No especificado</em>')}</p>
-                        <p class="mb-1"><strong>Válido Hasta:</strong> ${formatDateTime(discount.valid_to).replace('No disponible', '<em class="text-muted">Sin límite</em>')}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <h6 class="text-primary mb-2"><i class="bi bi-shop"></i> Aplicación</h6>
-                        <p class="mb-1"><strong>Aplica a:</strong> ${getAppliesToText(discount.applies_to)}</p>
-                        ${discount.applies_to !== 'all' && discount.applicable_ids && discount.applicable_ids.length ?
-                            `<p class="mb-1"><strong>IDs Aplicables:</strong> <small class="text-muted">${discount.applicable_ids.join(', ')}</small></p>` :
-                            discount.applies_to !== 'all' ?
-                            `<p class="mb-1"><strong>IDs Aplicables:</strong> <em class="text-warning">Ninguno especificado</em></p>` :
-                            ''
-                        }
-                    </div>
-                </div>
-            `;
+const basicInfo = `
+                 <div class="row mb-3">
+                     <div class="col-md-6">
+                         <h6 class="text-primary mb-2"><i class="bi bi-tag"></i> Información Básica</h6>
+                         <p class="mb-1"><strong>Código:</strong> <code>${escapeHtml(discount.code)}</code></p>
+                         <p class="mb-1"><strong>Nombre:</strong> ${escapeHtml(discount.name || '-')}</p>
+                         <p class="mb-1"><strong>Descripción:</strong> ${discount.description ? escapeHtml(discount.description) : '<em class="text-muted">Sin descripción</em>'}</p>
+                     </div>
+                     <div class="col-md-6">
+                         <h6 class="text-primary mb-2"><i class="bi bi-graph-up"></i> Configuración del Descuento</h6>
+                         <p class="mb-1"><strong>Tipo:</strong> ${discount.discount_type === 'percentage' ?
+                             '<span class="badge bg-info">Porcentaje (%)</span>' :
+                             discount.discount_type === 'fixed' ?
+                             '<span class="badge bg-warning">Importe Fijo ($)</span>' :
+                             '<span class="badge bg-secondary">Desconocido</span>'}</p>
+                         <p class="mb-1"><strong>Valor:</strong> <span class="h5 text-success">${
+                             discount.discount_type === 'percentage' ?
+                                 (discount.value || 0) + '%' :
+                                 discount.discount_type === 'fixed' ?
+                                 '$' + parseFloat(discount.value || 0).toFixed(2) :
+                                 (discount.value || '-')
+                         }</span></p>
+                         <p class="mb-1"><strong>Estado:</strong> ${discount.active ?
+                             '<span class="badge bg-success">Activo</span>' :
+                             '<span class="badge bg-danger">Inactivo</span>'}</p>
+                     </div>
+                 </div>
+             `;
 
             // Información de uso
             const usageInfo = discount.max_uses || discount.used_count ? `
@@ -230,7 +207,6 @@
             bodyEl.innerHTML = `
                 <div class="discount-details">
                     ${basicInfo}
-                    ${applicationInfo}
                     ${usageInfo}
                     ${auditInfo}
                 </div>
@@ -246,7 +222,7 @@
         } else if (action === 'edit') {
             // Multi-step edit modal
             currentStep = 1;
-            totalSteps = 4;
+            totalSteps = 2;
             // Pre-load existing discount data
             formData = {
                 id: discount.id,
@@ -257,10 +233,7 @@
                 value: discount.value || '',
                 max_uses: discount.max_uses || '',
                 used_count: discount.used_count || 0,
-                valid_from: discount.valid_from ? new Date(discount.valid_from).toISOString().slice(0, 16) : '',
-                valid_to: discount.valid_to ? new Date(discount.valid_to).toISOString().slice(0, 16) : '',
-                applies_to: discount.applies_to || 'all',
-                applicable_ids: discount.applicable_ids || [],
+                // applies_to and applicable_ids removed - discount applied via product
                 active: discount.active !== false, // Default to true if undefined
                 created_at: discount.created_at,
                 updated_at: discount.updated_at
@@ -285,7 +258,7 @@
         } else if (action === 'new') {
             // Multi-step create modal
             currentStep = 1;
-            totalSteps = 4;
+            totalSteps = 2;
             formData = {
                 code: '',
                 name: '',
@@ -293,10 +266,6 @@
                 discount_type: 'percentage',
                 value: '',
                 max_uses: '',
-                valid_from: '',
-                valid_to: '',
-                applies_to: 'all',
-                applicable_ids: [],
                 active: true
             };
 
@@ -317,7 +286,7 @@
                 `Ha sido utilizado ${discount.used_count} ${discount.used_count === 1 ? 'vez' : 'veces'}.` :
                 'Aún no ha sido utilizado.';
 
-            const appliesToText = getAppliesToText(discount.applies_to);
+            
 
             bodyEl.innerHTML = `
                 <div class="deactivation-modal">
@@ -336,10 +305,6 @@
                                 <p class="mb-1"><strong>Valor:</strong> <span class="text-success fw-bold">${valueDisplay}</span></p>
                             </div>
                             <div class="col-md-6">
-                                <p class="mb-1"><strong>Aplica a:</strong> ${appliesToText}</p>
-                                <p class="mb-1"><strong>Vigencia:</strong> ${discount.valid_to ?
-                                    'Hasta ' + new Date(discount.valid_to).toLocaleDateString('es-ES') :
-                                    'Sin límite'}</p>
                                 <p class="mb-1"><strong>Estado de uso:</strong> ${usageText}</p>
                             </div>
                         </div>
@@ -386,15 +351,10 @@
                 `${discount.value}%` :
                 `$${parseFloat(discount.value || 0).toFixed(2)}`;
 
-            const appliesToText = getAppliesToText(discount.applies_to);
+            
             const usageText = discount.used_count ?
                 `Ha sido utilizado ${discount.used_count} ${discount.used_count === 1 ? 'vez' : 'veces'}.` :
                 'Aún no ha sido utilizado.';
-
-            // Check if discount is expired
-            const now = new Date();
-            const validTo = discount.valid_to ? new Date(discount.valid_to) : null;
-            const isExpired = validTo && validTo < now;
 
             bodyEl.innerHTML = `
                 <div class="activation-modal">
@@ -413,24 +373,10 @@
                                 <p class="mb-1"><strong>Valor:</strong> <span class="text-success fw-bold">${valueDisplay}</span></p>
                             </div>
                             <div class="col-md-6">
-                                <p class="mb-1"><strong>Aplica a:</strong> ${appliesToText}</p>
-                                <p class="mb-1"><strong>Vigencia:</strong> ${discount.valid_to ?
-                                    (isExpired ?
-                                        '<span class="text-danger">Expirado el ' + validTo.toLocaleDateString('es-ES') + '</span>' :
-                                        'Hasta ' + validTo.toLocaleDateString('es-ES')) :
-                                    'Sin límite'}</p>
                                 <p class="mb-1"><strong>Estado de uso:</strong> ${usageText}</p>
                             </div>
                         </div>
                     </div>
-
-                    ${isExpired ? `
-                        <div class="alert alert-warning" role="alert">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            <strong>Nota:</strong> Este descuento está configurado para expirar el ${validTo.toLocaleDateString('es-ES')}.
-                            Si lo reactivas ahora, seguirá funcionando hasta esa fecha.
-                        </div>
-                    ` : ''}
 
                     <div class="confirmation-section text-center border rounded p-3 bg-success bg-opacity-10">
                         <div class="mb-3">
@@ -471,15 +417,6 @@
             }
         }, 150);
     });
-
-    function getAppliesToText(appliesTo) {
-        switch(appliesTo) {
-            case 'all': return 'Todos los productos';
-            case 'categories': return 'Categorías específicas';
-            case 'products': return 'Productos específicos';
-            default: return appliesTo || 'Todos los productos';
-        }
-    }
 
     function formatDateTime(dateString) {
         if (!dateString) return 'No disponible';
@@ -524,28 +461,6 @@
                 break;
             case 2:
                 stepContent = renderStep2();
-                footerButtons = `
-                    <button type="button" class="btn btn-outline-secondary" onclick="prevStep()">
-                        <i class="bi bi-chevron-left"></i> Anterior
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="nextStep()">
-                        <i class="bi bi-chevron-right"></i> Siguiente
-                    </button>
-                `;
-                break;
-            case 3:
-                stepContent = renderStep3();
-                footerButtons = `
-                    <button type="button" class="btn btn-outline-secondary" onclick="prevStep()">
-                        <i class="bi bi-chevron-left"></i> Anterior
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="nextStep()">
-                        <i class="bi bi-chevron-right"></i> Siguiente
-                    </button>
-                `;
-                break;
-            case 4:
-                stepContent = renderStep4();
                 footerButtons = `
                     <button type="button" class="btn btn-outline-secondary" onclick="prevStep()">
                         <i class="bi bi-chevron-left"></i> Anterior
@@ -599,8 +514,6 @@
         switch(step) {
             case 1: return 'Información';
             case 2: return 'Configuración';
-            case 3: return 'Vigencia';
-            case 4: return 'Resumen';
             default: return '';
         }
     }
@@ -658,76 +571,16 @@
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Usos Máximos</label>
-                    <input type="number" name="max_uses" class="form-control" value="${formData.max_uses}"
-                           min="1" placeholder="Dejar vacío para usos ilimitados"
-                           aria-describedby="maxUsesStepHelp">
-                    <div class="form-text" id="maxUsesStepHelp">Número máximo de veces que se puede utilizar este descuento.</div>
-                </div>
+<div class="mb-3">
+                     <label class="form-label">Usos Máximos</label>
+                     <input type="number" name="max_uses" class="form-control" value="${formData.max_uses}"
+                            min="1" placeholder="Dejar vacío para usos ilimitados"
+                            aria-describedby="maxUsesStepHelp">
+                     <div class="form-text" id="maxUsesStepHelp">Número máximo de veces que se puede utilizar este descuento.</div>
+                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Aplicar a <span class="text-danger">*</span></label>
-                    <select name="applies_to" class="form-select" required aria-required="true" aria-label="Aplicación del descuento">
-                        <option value="all" ${formData.applies_to === 'all' ? 'selected' : ''}>Todos los productos</option>
-                        <option value="categories" ${formData.applies_to === 'categories' ? 'selected' : ''}>Categorías específicas</option>
-                        <option value="products" ${formData.applies_to === 'products' ? 'selected' : ''}>Productos específicos</option>
-                    </select>
-                </div>
-
-                <div class="mb-3 applies-to-details" style="${formData.applies_to === 'all' ? 'display: none;' : ''}">
-                    <label class="form-label">
-                        IDs Aplicables <span class="text-danger">*</span>
-                        <small class="text-muted">(${formData.applies_to === 'categories' ? 'IDs de categorías' : 'IDs de productos'})</small>
-                    </label>
-                    <textarea name="applicable_ids_text" class="form-control" rows="3"
-                              placeholder="Ingrese IDs separados por coma (ej: cat1, cat2, prod1)">${formData.applicable_ids.join(', ')}</textarea>
-                    <div class="form-text">Solo requerido cuando "Aplicar a" no es "Todos los productos".</div>
-                </div>
-            </div>
-        `;
-    }
-
-    function renderStep3() {
-        const now = new Date();
-        const tomorrow = new Date(now);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        const formatDateTime = (date) => {
-            return date.getFullYear() + '-' +
-                   String(date.getMonth() + 1).padStart(2, '0') + '-' +
-                   String(date.getDate()).padStart(2, '0') + 'T' +
-                   String(date.getHours()).padStart(2, '0') + ':' +
-                   String(date.getMinutes()).padStart(2, '0');
-        };
-
-        const defaultFrom = formData.valid_from || formatDateTime(now);
-        const defaultTo = formData.valid_to || formatDateTime(tomorrow);
-
-        return `
-            <div class="step-content">
-                <div class="alert alert-info">
-                    <i class="bi bi-info-circle"></i>
-                    Define el período de vigencia del descuento. Los clientes solo podrán utilizarlo durante estas fechas.
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Válido Desde <span class="text-danger">*</span></label>
-                    <input type="datetime-local" name="valid_from" class="form-control" value="${defaultFrom}" required aria-required="true"
-                           aria-describedby="validFromStepHelp">
-                    <div class="form-text" id="validFromStepHelp">Fecha y hora a partir de la cual el descuento estará disponible.</div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Válido Hasta <span class="text-danger">*</span></label>
-                    <input type="datetime-local" name="valid_to" class="form-control" value="${defaultTo}" required aria-required="true"
-                           aria-describedby="validToStepHelp">
-                    <div class="form-text" id="validToStepHelp">Fecha y hora hasta la cual el descuento estará disponible.</div>
-                </div>
-                </div>
-
-                <div class="mb-3">
-                    <div class="form-check">
+                     <div class="form-check">
                         <input type="checkbox" name="active" class="form-check-input" id="activeCheck" ${formData.active ? 'checked' : ''}>
                         <label class="form-check-label" for="activeCheck">
                             Activar descuento inmediatamente
@@ -739,54 +592,6 @@
         `;
     }
 
-    function renderStep4() {
-        const isPercentage = formData.discount_type === 'percentage';
-        const valueDisplay = isPercentage ?
-            `${formData.value}%` :
-            `$${parseFloat(formData.value || 0).toFixed(2)}`;
-
-        const appliesToText = getAppliesToText(formData.applies_to);
-
-        return `
-            <div class="step-content">
-                <div class="alert alert-success">
-                    <i class="bi bi-check-circle-fill"></i>
-                    Revisa la información antes de crear el descuento.
-                </div>
-
-                <div class="summary-card border rounded p-3 mb-3">
-                    <h6 class="text-primary mb-2"><i class="bi bi-tag"></i> Información Básica</h6>
-                    <p class="mb-1"><strong>Código:</strong> <code>${escapeHtml(formData.code.toUpperCase())}</code></p>
-                    <p class="mb-1"><strong>Nombre:</strong> ${escapeHtml(formData.name)}</p>
-                    ${formData.description ? `<p class="mb-1"><strong>Descripción:</strong> ${escapeHtml(formData.description)}</p>` : ''}
-                </div>
-
-                <div class="summary-card border rounded p-3 mb-3">
-                    <h6 class="text-primary mb-2"><i class="bi bi-graph-up"></i> Configuración</h6>
-                    <p class="mb-1"><strong>Tipo:</strong> ${isPercentage ? 'Porcentaje' : 'Importe Fijo'}</p>
-                    <p class="mb-1"><strong>Valor:</strong> <span class="h6 text-success">${valueDisplay}</span></p>
-                    ${formData.max_uses ? `<p class="mb-1"><strong>Usos Máximos:</strong> ${formData.max_uses}</p>` : ''}
-                    <p class="mb-1"><strong>Aplica a:</strong> ${appliesToText}</p>
-                    ${formData.applicable_ids.length > 0 ?
-                        `<p class="mb-1"><strong>IDs Aplicables:</strong> ${formData.applicable_ids.join(', ')}</p>` : ''}
-                </div>
-
-                <div class="summary-card border rounded p-3 mb-3">
-                    <h6 class="text-primary mb-2"><i class="bi bi-calendar-check"></i> Vigencia</h6>
-                    <p class="mb-1"><strong>Desde:</strong> ${formatDateTime(formData.valid_from)}</p>
-                    <p class="mb-1"><strong>Hasta:</strong> ${formatDateTime(formData.valid_to)}</p>
-                    <p class="mb-1"><strong>Estado Inicial:</strong> ${formData.active ?
-                        '<span class="badge bg-success">Activo</span>' :
-                        '<span class="badge bg-secondary">Inactivo</span>'}</p>
-                </div>
-
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle"></i>
-                    Una vez creado, podrás editar algunos campos pero no el código ni las condiciones de aplicación.
-                </div>
-            </div>
-        `;
-    }
 
     function nextStep() {
         if (!validateCurrentStep()) {
@@ -843,20 +648,6 @@
                     isValid = false;
                 }
             }
-
-            if (input.name === 'applicable_ids_text' && formData.applies_to !== 'all' && !input.value.trim()) {
-                showFieldError(input, 'Debes especificar al menos un ID aplicable.');
-                isValid = false;
-            }
-
-            if (input.name === 'valid_to' && formData.valid_from) {
-                const fromDate = new Date(formData.valid_from);
-                const toDate = new Date(formData.valid_to);
-                if (fromDate >= toDate) {
-                    showFieldError(input, 'La fecha de fin debe ser posterior a la fecha de inicio.');
-                    isValid = false;
-                }
-            }
         });
 
         return isValid;
@@ -867,10 +658,10 @@
         const formDataObj = new FormData(form);
 
         for (let [key, value] of formDataObj.entries()) {
-            if (key === 'applicable_ids_text') {
-                formData.applicable_ids = value ? value.split(',').map(id => id.trim()).filter(id => id) : [];
-            } else if (key === 'active') {
-                formData[key] = true; // Checkbox checked
+            if (key === 'active') {
+                // In 'new' this is a checkbox (presence = checked = true); in 'edit'
+                // it's a hidden field carrying the literal '1'/'0' state.
+                formData[key] = currentAction === 'new' ? true : value === '1';
             } else if (key === 'max_uses') {
                 formData[key] = value ? parseInt(value) : '';
             } else if (key === 'value') {
@@ -934,30 +725,8 @@
                     <button type="button" class="btn btn-outline-secondary" onclick="prevEditStep()">
                         <i class="bi bi-chevron-left"></i> Anterior
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="nextEditStep()">
-                        <i class="bi bi-chevron-right"></i> Siguiente
-                    </button>
-                `;
-                break;
-            case 3:
-                stepContent = renderEditStep3();
-                footerButtons = `
-                    <button type="button" class="btn btn-outline-secondary" onclick="prevEditStep()">
-                        <i class="bi bi-chevron-left"></i> Anterior
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="nextEditStep()">
-                        <i class="bi bi-chevron-right"></i> Siguiente
-                    </button>
-                `;
-                break;
-            case 4:
-                stepContent = renderEditStep4();
-                footerButtons = `
-                    <button type="button" class="btn btn-outline-secondary" onclick="prevEditStep()">
-                        <i class="bi bi-chevron-left"></i> Anterior
-                    </button>
                     <button type="submit" class="btn btn-success">
-                        <i class="bi bi-check-circle"></i> ${currentAction === 'new' ? 'Crear' : 'Actualizar'} Descuento
+                        <i class="bi bi-check-circle"></i> Actualizar Descuento
                     </button>
                 `;
                 break;
@@ -1012,6 +781,7 @@
     function renderEditStep2() {
         const isPercentage = formData.discount_type === 'percentage';
         const hasBeenUsed = formData.used_count > 0;
+        const changes = getChangesSummary();
 
         return `
             <div class="step-content">
@@ -1035,57 +805,18 @@
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Usos Máximos</label>
-                    <input type="number" name="max_uses" class="form-control" value="${formData.max_uses}"
-                           min="${hasBeenUsed ? formData.used_count : 1}" placeholder="Dejar vacío para usos ilimitados"
-                           aria-describedby="maxUsesEditHelp">
-                    <div class="form-text" id="maxUsesEditHelp">
-                        ${hasBeenUsed ?
-                            `Debe ser al menos ${formData.used_count} (ya utilizado).` :
-                            'Número máximo de veces que se puede utilizar este descuento.'
-                        }
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Aplicar a</label>
-                    <input type="text" class="form-control bg-light" value="${getAppliesToText(formData.applies_to)}" readonly>
-                    <div class="form-text text-muted">Las condiciones de aplicación no se pueden modificar.</div>
-                </div>
-
-                ${formData.applies_to !== 'all' ? `
-                    <div class="mb-3">
-                        <label class="form-label">IDs Aplicables</label>
-                        <textarea class="form-control bg-light" rows="3" readonly>${formData.applicable_ids.join(', ')}</textarea>
-                        <div class="form-text text-muted">Los IDs aplicables no se pueden modificar.</div>
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    }
-
-    function renderEditStep3() {
-        return `
-            <div class="step-content">
-                <div class="alert alert-info">
-                    <i class="bi bi-calendar-event"></i>
-                    Modifica las fechas de vigencia del descuento. Los cambios afectan inmediatamente.
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Válido Desde <span class="text-danger">*</span></label>
-                    <input type="datetime-local" name="valid_from" class="form-control" value="${formData.valid_from}" required aria-required="true"
-                           aria-describedby="validFromEditHelp">
-                    <div class="form-text" id="validFromEditHelp">Fecha y hora a partir de la cual el descuento estará disponible.</div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Válido Hasta <span class="text-danger">*</span></label>
-                    <input type="datetime-local" name="valid_to" class="form-control" value="${formData.valid_to}" required aria-required="true"
-                           aria-describedby="validToEditHelp">
-                    <div class="form-text" id="validToEditHelp">Fecha y hora hasta la cual el descuento estará disponible.</div>
-                </div>
+<div class="mb-3">
+                     <label class="form-label">Usos Máximos</label>
+                     <input type="number" name="max_uses" class="form-control" value="${formData.max_uses}"
+                            min="${hasBeenUsed ? formData.used_count : 1}" placeholder="Dejar vacío para usos ilimitados"
+                            aria-describedby="maxUsesEditHelp">
+                     <div class="form-text" id="maxUsesEditHelp">
+                         ${hasBeenUsed ?
+                             `Debe ser al menos ${formData.used_count} (ya utilizado).` :
+                             'Número máximo de veces que se puede utilizar este descuento.'
+                         }
+                     </div>
+                 </div>
 
                 <div class="mb-3">
                     <label class="form-label">Estado</label>
@@ -1093,26 +824,6 @@
                            aria-describedby="statusEditHelp">
                     <input type="hidden" name="active" value="${formData.active ? '1' : '0'}">
                     <div class="form-text" id="statusEditHelp">El estado se mantiene tal como estaba al abrir el editor.</div>
-                </div>
-            </div>
-        `;
-    }
-
-    function renderEditStep4() {
-        const isPercentage = formData.discount_type === 'percentage';
-        const valueDisplay = isPercentage ?
-            `${formData.value}%` :
-            `$${parseFloat(formData.value || 0).toFixed(2)}`;
-
-        const appliesToText = getAppliesToText(formData.applies_to);
-
-        const changes = getChangesSummary();
-
-        return `
-            <div class="step-content">
-                <div class="alert alert-success">
-                    <i class="bi bi-check-circle-fill"></i>
-                    Revisa los cambios antes de actualizar el descuento.
                 </div>
 
                 ${changes.length > 0 ? `
@@ -1129,34 +840,7 @@
                         No se detectaron cambios en los datos.
                     </div>
                 `}
-
-                <div class="summary-card border rounded p-3 mb-3">
-                    <h6 class="text-primary mb-2"><i class="bi bi-tag"></i> Información Básica</h6>
-                    <p class="mb-1"><strong>Código:</strong> <code>${escapeHtml(formData.code.toUpperCase())}</code></p>
-                    <p class="mb-1"><strong>Nombre:</strong> ${escapeHtml(formData.name)}</p>
-                    ${formData.description ? `<p class="mb-1"><strong>Descripción:</strong> ${escapeHtml(formData.description)}</p>` : ''}
-                </div>
-
-                <div class="summary-card border rounded p-3 mb-3">
-                    <h6 class="text-primary mb-2"><i class="bi bi-graph-up"></i> Configuración</h6>
-                    <p class="mb-1"><strong>Tipo:</strong> ${isPercentage ? 'Porcentaje' : 'Importe Fijo'}</p>
-                    <p class="mb-1"><strong>Valor:</strong> <span class="h6 text-success">${valueDisplay}</span></p>
-                    ${formData.max_uses ? `<p class="mb-1"><strong>Usos Máximos:</strong> ${formData.max_uses}</p>` : ''}
-                    ${formData.used_count ? `<p class="mb-1"><strong>Usos Realizados:</strong> ${formData.used_count}</p>` : ''}
-                    <p class="mb-1"><strong>Aplica a:</strong> ${appliesToText}</p>
-                    ${formData.applicable_ids.length > 0 ?
-                        `<p class="mb-1"><strong>IDs Aplicables:</strong> ${formData.applicable_ids.join(', ')}</p>` : ''}
-                </div>
-
-                <div class="summary-card border rounded p-3 mb-3">
-                    <h6 class="text-primary mb-2"><i class="bi bi-calendar-check"></i> Vigencia</h6>
-                    <p class="mb-1"><strong>Desde:</strong> ${formatDateTime(formData.valid_from)}</p>
-                    <p class="mb-1"><strong>Hasta:</strong> ${formatDateTime(formData.valid_to)}</p>
-                    <p class="mb-1"><strong>Estado:</strong> ${formData.active ?
-                        '<span class="badge bg-success">Activo</span>' :
-                        '<span class="badge bg-danger">Inactivo</span>'}</p>
-                </div>
-            </div>
+             </div>
         `;
     }
 
@@ -1175,12 +859,6 @@
         }
         if (formData.max_uses !== (currentDiscount.max_uses || '')) {
             changes.push(`Usos máximos: ${currentDiscount.max_uses || 'ilimitados'} → ${formData.max_uses || 'ilimitados'}`);
-        }
-        if (formData.valid_from !== (currentDiscount.valid_from ? new Date(currentDiscount.valid_from).toISOString().slice(0, 16) : '')) {
-            changes.push(`Fecha de inicio modificada`);
-        }
-        if (formData.valid_to !== (currentDiscount.valid_to ? new Date(currentDiscount.valid_to).toISOString().slice(0, 16) : '')) {
-            changes.push(`Fecha de fin modificada`);
         }
         if (formData.active !== (currentDiscount.active !== false)) {
             changes.push(`Estado: ${currentDiscount.active !== false ? 'Activo' : 'Inactivo'} → ${formData.active ? 'Activo' : 'Inactivo'}`);
@@ -1246,15 +924,6 @@
                     isValid = false;
                 }
             }
-
-            if (input.name === 'valid_to' && formData.valid_from) {
-                const fromDate = new Date(formData.valid_from);
-                const toDate = new Date(formData.valid_to);
-                if (fromDate >= toDate) {
-                    showFieldError(input, 'La fecha de fin debe ser posterior a la fecha de inicio.');
-                    isValid = false;
-                }
-            }
         });
 
         return isValid;
@@ -1278,17 +947,22 @@
             return;
         }
 
+        // Sync the values typed in the currently visible (last) step before reading them.
+        if (currentAction === 'new' || currentAction === 'edit') {
+            saveStepData();
+        }
+
         const form = e.target;
         const formDataObj = new FormData(form);
 
-        // Add multi-step data to form
+        // Add multi-step data to form. Use set() instead of append() so fields already
+        // present in the current step (e.g. value, max_uses) get overwritten instead of
+        // duplicated, which made the server see a stale/empty value for those fields.
         Object.keys(formData).forEach(key => {
-            if (key === 'applicable_ids') {
-                formDataObj.append('applicable_ids', JSON.stringify(formData.applicable_ids));
-            } else if (key === 'active') {
-                formDataObj.append('active', formData.active ? '1' : '0');
+            if (key === 'active') {
+                formDataObj.set('active', formData.active ? '1' : '0');
             } else {
-                formDataObj.append(key, formData[key]);
+                formDataObj.set(key, formData[key]);
             }
         });
 
@@ -1360,12 +1034,9 @@
                 if (data.errors.code || data.errors.name || data.errors.description || data.errors.discount_type) {
                     currentStep = 1;
                     renderFunction(1);
-                } else if (data.errors.value || data.errors.max_uses || data.errors.applies_to || data.errors.applicable_ids) {
+                } else if (data.errors.value || data.errors.max_uses || data.errors.active) {
                     currentStep = 2;
                     renderFunction(2);
-                } else if (data.errors.valid_from || data.errors.valid_to || data.errors.active) {
-                    currentStep = 3;
-                    renderFunction(3);
                 }
 
                 // After re-rendering the step, apply validation errors
