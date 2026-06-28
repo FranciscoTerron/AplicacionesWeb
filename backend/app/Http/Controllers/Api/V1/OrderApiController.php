@@ -177,15 +177,13 @@ class OrderApiController extends Controller
 
         $order = $this->firestore->createDocument('orders', $orderData);
 
-        // Vaciar el carrito del usuario en el backend (fuente de verdad) en la
-        // misma operación que crea la orden. Antes dependía de que el cliente
-        // lo limpiara, y si esa llamada fallaba quedaban ítems colgados.
-        $carts = $this->firestore->query('carts', ['user_id' => $user->id], 1);
-        if ($carts !== []) {
-            $this->firestore->updateDocument('carts', (string) $carts[0]['id'], [
-                'items' => [],
-                'updated_at' => now()->toISOString(),
-            ]);
+        // Vaciar el carrito SOLO para métodos sin redirect externo
+        // (transferencia/efectivo/tarjeta): ahí la orden queda en firme al
+        // crearse. Para Mercado Pago NO se vacía acá: el carrito se limpia
+        // recién cuando el webhook acredita el pago, así si el usuario vuelve
+        // atrás desde el checkout externo sin pagar no pierde el carrito.
+        if (($validated['payment_method'] ?? '') !== 'mercado_pago') {
+            $this->clearCartForUser((string) $user->id);
         }
 
         return ApiResponse::success(
@@ -193,6 +191,21 @@ class OrderApiController extends Controller
             message: 'Orden creada exitosamente',
             status: 201
         );
+    }
+
+    /**
+     * Vacía el carrito del usuario en el backend (fuente de verdad).
+     * No falla si el usuario no tiene carrito.
+     */
+    private function clearCartForUser(string $userId): void
+    {
+        $carts = $this->firestore->query('carts', ['user_id' => $userId], 1);
+        if ($carts !== []) {
+            $this->firestore->updateDocument('carts', (string) $carts[0]['id'], [
+                'items' => [],
+                'updated_at' => now()->toISOString(),
+            ]);
+        }
     }
 
     /**

@@ -129,11 +129,35 @@ class PaymentWebhookController extends Controller
                     $update['oversold'] = true;
                 }
             }
+
+            // Vaciar el carrito recién acá (pago acreditado), no al crear la
+            // orden: así volver atrás desde el checkout de MP sin pagar no deja
+            // el carrito vacío. Para métodos sin redirect ya se vació al crear.
+            $this->clearCartForUser((string) ($order['user_id'] ?? ''));
         }
 
         $this->firestore->updateDocument('orders', (string) $order['id'], $update);
 
         return ApiResponse::success(message: 'Pago actualizado: '.$paymentStatus);
+    }
+
+    /**
+     * Vacía el carrito del usuario en el backend (fuente de verdad).
+     * No falla si el user_id viene vacío o no tiene carrito.
+     */
+    protected function clearCartForUser(string $userId): void
+    {
+        if ($userId === '') {
+            return;
+        }
+
+        $carts = $this->firestore->query('carts', ['user_id' => $userId], 1);
+        if ($carts !== []) {
+            $this->firestore->updateDocument('carts', (string) $carts[0]['id'], [
+                'items' => [],
+                'updated_at' => now()->toISOString(),
+            ]);
+        }
     }
 
     /**

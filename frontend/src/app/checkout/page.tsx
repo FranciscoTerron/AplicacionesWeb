@@ -88,17 +88,20 @@ function CheckoutContent() {
       });
       // Cupón consumido: no debe quedar pegado para la próxima compra.
       localStorage.removeItem("discount_code");
-      // El backend vacía el carrito al crear la orden (server-side, atómico).
-      // Acá solo sincronizamos la UI/badge al instante.
-      clearLocal();
 
-      // Mercado Pago: crear preference y redirigir al checkout externo.
+      // Mercado Pago: crear preference y redirigir al checkout externo. NO se
+      // vacía el carrito todavía: el backend lo limpia recién cuando el webhook
+      // acredita el pago. Así, si el usuario vuelve atrás desde el checkout de
+      // MP sin pagar, el carrito sigue intacto.
       if (method === "mercado_pago") {
         const { init_point } = await payOrder(order.id);
         window.location.href = init_point;
         return;
       }
 
+      // Métodos sin redirect: el backend ya vació el carrito al crear la orden.
+      // Acá solo sincronizamos la UI/badge al instante.
+      clearLocal();
       toast.success("¡Orden creada!");
       router.push(`/cuenta/ordenes/${order.id}?creada=1`);
     } catch (err) {
