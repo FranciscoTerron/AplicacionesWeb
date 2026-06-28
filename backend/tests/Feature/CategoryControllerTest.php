@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Services\CloudinaryService;
 use App\Services\FirestoreService;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Tests\TestCase;
 
+#[AllowMockObjectsWithoutExpectations]
 class CategoryControllerTest extends TestCase
 {
     protected FirestoreService $firestoreMock;

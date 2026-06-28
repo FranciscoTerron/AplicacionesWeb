@@ -126,33 +126,6 @@ class DiscountApiController extends Controller
             }
         }
 
-        // Si hay producto, calcular precio final para que el front lo muestre.
-        // Regla: cupón y descuento automático NO se suman, gana el mejor.
-        $pricing = null;
-        if ($productId) {
-            $product = $this->firestore->getDocument('products', $productId);
-            if ($product) {
-                $base = (float) ($product['price'] ?? 0);
-                $couponFinal = DiscountService::applyValue(
-                    $base,
-                    (string) ($discount['discount_type'] ?? 'percentage'),
-                    (float) ($discount['value'] ?? 0),
-                );
-                $auto = $this->discounts->bestForProduct($product);
-                $autoFinal = $auto['final'] ?? $base;
-                $final = min($couponFinal, $autoFinal);
-
-                $pricing = [
-                    'base' => round($base, 2),
-                    'coupon_final' => $couponFinal,
-                    'auto_final' => $autoFinal,
-                    'final' => $final,
-                    'amount' => round($base - $final, 2),
-                    'applied' => $couponFinal <= $autoFinal ? 'coupon' : 'auto',
-                ];
-            }
-        }
-
         // Devolver descuento sin campos internos
         $responseData = [
             'id' => $discount['id'] ?? null,

@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Auth;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Tests\TestCase;
 
+#[AllowMockObjectsWithoutExpectations]
 class UserControllerTest extends TestCase
 {
     protected $firestoreMock;
