@@ -33,79 +33,56 @@ class DiscountServiceTest extends TestCase
         $this->assertSame(0.0, DiscountService::applyValue(100, 'fixed', 500));
     }
 
-    public function test_applies_to_all(): void
-    {
-        $svc = $this->service();
-        $this->assertTrue($svc->appliesToProduct(['applies_to' => 'all'], ['id' => 'p1']));
-    }
-
-    public function test_applies_to_specific_product(): void
-    {
-        $svc = $this->service();
-        $disc = ['applies_to' => 'products', 'applicable_ids' => ['p1', 'p2']];
-
-        $this->assertTrue($svc->appliesToProduct($disc, ['id' => 'p1']));
-        $this->assertFalse($svc->appliesToProduct($disc, ['id' => 'p9']));
-    }
-
-    public function test_applies_to_category(): void
-    {
-        $svc = $this->service();
-        $disc = ['applies_to' => 'categories', 'applicable_ids' => ['cat1']];
-
-        $this->assertTrue($svc->appliesToProduct($disc, ['id' => 'p1', 'category_id' => 'cat1']));
-        $this->assertFalse($svc->appliesToProduct($disc, ['id' => 'p1', 'category_id' => 'cat9']));
-    }
-
-    public function test_best_for_product_picks_biggest_discount(): void
+    public function test_discount_for_product_returns_discount_when_product_has_discount_id(): void
     {
         $svc = $this->service([
-            ['id' => 'd1', 'code' => 'A', 'active' => true, 'applies_to' => 'all', 'discount_type' => 'percentage', 'value' => 10],
-            ['id' => 'd2', 'code' => 'B', 'active' => true, 'applies_to' => 'products', 'applicable_ids' => ['p1'], 'discount_type' => 'percentage', 'value' => 30],
+            ['id' => 'd1', 'code' => 'A', 'active' => true, 'discount_type' => 'percentage', 'value' => 10],
         ]);
 
-        $best = $svc->bestForProduct(['id' => 'p1', 'price' => 100]);
+        $discount = $svc->discountForProduct(['id' => 'p1', 'price' => 100, 'discount_id' => 'd1']);
 
-        $this->assertNotNull($best);
-        $this->assertSame('d2', $best['discount']['id']);
-        $this->assertSame(70.0, $best['final']);
-        $this->assertSame(30.0, $best['amount']);
+        $this->assertNotNull($discount);
+        $this->assertSame('d1', $discount['id']);
+        $this->assertSame('A', $discount['code']);
     }
 
-    public function test_best_for_product_ignores_expired(): void
+    public function test_discount_for_product_returns_null_when_no_discount_id(): void
     {
         $svc = $this->service([
-            ['id' => 'd1', 'code' => 'OLD', 'active' => true, 'applies_to' => 'all', 'discount_type' => 'percentage', 'value' => 50, 'valid_to' => '2000-01-01T00:00:00Z'],
+            ['id' => 'd1', 'code' => 'A', 'active' => true, 'discount_type' => 'percentage', 'value' => 10],
         ]);
 
-        $this->assertNull($svc->bestForProduct(['id' => 'p1', 'price' => 100]));
+        $discount = $svc->discountForProduct(['id' => 'p1', 'price' => 100]);
+
+        $this->assertNull($discount);
     }
 
-    public function test_best_for_product_ignores_inactive(): void
+    public function test_discount_for_product_ignores_inactive(): void
     {
         $svc = $this->service([
-            ['id' => 'd1', 'code' => 'OFF', 'active' => false, 'applies_to' => 'all', 'discount_type' => 'percentage', 'value' => 50],
+            ['id' => 'd1', 'code' => 'OFF', 'active' => false, 'discount_type' => 'percentage', 'value' => 50],
         ]);
 
-        $this->assertNull($svc->bestForProduct(['id' => 'p1', 'price' => 100]));
+        $this->assertNull($svc->discountForProduct(['id' => 'p1', 'price' => 100, 'discount_id' => 'd1']));
     }
 
-    public function test_best_for_product_ignores_used_up(): void
+    public function test_discount_for_product_ignores_used_up(): void
     {
         $svc = $this->service([
-            ['id' => 'd1', 'code' => 'MAX', 'active' => true, 'applies_to' => 'all', 'discount_type' => 'percentage', 'value' => 50, 'max_uses' => 5, 'used_count' => 5],
+            ['id' => 'd1', 'code' => 'MAX', 'active' => true, 'discount_type' => 'percentage', 'value' => 50, 'max_uses' => 5, 'used_count' => 5],
         ]);
 
-        $this->assertNull($svc->bestForProduct(['id' => 'p1', 'price' => 100]));
+        $this->assertNull($svc->discountForProduct(['id' => 'p1', 'price' => 100, 'discount_id' => 'd1']));
     }
 
     public function test_decorate_with_discount(): void
     {
         $svc = $this->service([
-            ['id' => 'd1', 'code' => 'VERANO', 'name' => 'Verano', 'active' => true, 'applies_to' => 'all', 'discount_type' => 'percentage', 'value' => 20],
+            ['id' => 'd1', 'code' => 'VERANO', 'name' => 'Verano', 'active' => true, 'discount_type' => 'percentage', 'value' => 20],
         ]);
 
-        $p = $svc->decorate(['id' => 'p1', 'price' => 100]);
+        // Product has discount_id pointing to d1
+        $p = $svc->decorate(['id' => 'p1', 'price' => 100, 'discount_id' => 'd1']);
 
         $this->assertTrue($p['has_discount']);
         $this->assertSame(80.0, $p['final_price']);

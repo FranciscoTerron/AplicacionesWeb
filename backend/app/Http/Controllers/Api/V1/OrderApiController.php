@@ -106,8 +106,8 @@ class OrderApiController extends Controller
             }
 
             $base = (float) ($product['price'] ?? 0);
-            $best = $this->discounts->bestForProduct($product);
-            $unit = $best['final'] ?? $base;
+            $best = $this->discounts->discountForProduct($product);
+            $unit = $best ? DiscountService::applyValue($base, (string) ($best['discount_type'] ?? 'percentage'), (float) ($best['value'] ?? 0)) : $base;
 
             $items[] = [
                 'product_id' => $item['product_id'],
@@ -117,10 +117,10 @@ class OrderApiController extends Controller
                 'price' => $unit,
                 'base_price' => round($base, 2),
                 'discount' => $best ? [
-                    'id' => $best['discount']['id'] ?? null,
-                    'code' => $best['discount']['code'] ?? null,
-                    'name' => $best['discount']['name'] ?? null,
-                    'amount' => $best['amount'],
+                    'id' => $best['id'] ?? null,
+                    'code' => $best['code'] ?? null,
+                    'name' => $best['name'] ?? null,
+                    'amount' => round($base - $unit, 2),
                 ] : null,
             ];
             $subtotal += $base * $quantity;

@@ -21,7 +21,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        $defaultFirestore = $this->createMock(FirestoreService::class);
+        $defaultFirestore = $this->createStub(FirestoreService::class);
         $defaultFirestore->method('listDocuments')->willReturn([
             'documents' => [],
             'hasMore' => false,

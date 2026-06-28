@@ -34,8 +34,6 @@ class DiscountsExport implements FromCollection, ShouldAutoSize, WithHeadings, W
                 $doc['discount_type'] ?? '',
                 $doc['value'] ?? '',
                 ($doc['active'] ?? true) ? 'Activo' : 'Inactivo',
-                $doc['valid_from'] ? Carbon::parse($doc['valid_from'])->format('d/m/Y H:i:s') : '',
-                $doc['valid_to'] ? Carbon::parse($doc['valid_to'])->format('d/m/Y H:i:s') : '',
                 $doc['created_at'] ? Carbon::parse($doc['created_at'])->format('d/m/Y H:i:s') : '',
                 $doc['updated_at'] ? Carbon::parse($doc['updated_at'])->format('d/m/Y H:i:s') : '',
             ];
@@ -44,12 +42,12 @@ class DiscountsExport implements FromCollection, ShouldAutoSize, WithHeadings, W
 
     public function headings(): array
     {
-        return ['ID', 'Nombre', 'Código', 'Tipo', 'Valor', 'Estado', 'Válido Desde', 'Válido Hasta', 'Creado', 'Actualizado'];
+        return ['ID', 'Nombre', 'Código', 'Tipo', 'Valor', 'Estado', 'Creado', 'Actualizado'];
     }
 
     public function styles(Worksheet $sheet)
     {
-        $sheet->getStyle('A1:J1')->applyFromArray([
+        $sheet->getStyle('A1:H1')->applyFromArray([
             'font' => ['bold' => true],
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,

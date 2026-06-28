@@ -16,7 +16,7 @@ class HealthCheckTest extends TestCase
     {
         parent::setUp();
 
-        $mock = $this->createMock(HealthCheckService::class);
+        $mock = $this->createStub(HealthCheckService::class);
         $mock->method('getStatus')->willReturn([
             'success' => true,
             'message' => 'API working',

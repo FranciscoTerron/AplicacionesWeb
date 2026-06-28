@@ -138,11 +138,10 @@ class CatalogApiTest extends TestCase
     public function test_products_expose_final_price_with_discount(): void
     {
         $this->firestore->seed('products', [
-            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'category_id' => 'c1'],
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'category_id' => 'c1', 'discount_id' => 'd1'],
         ]);
         $this->firestore->seed('discounts', [
-            ['id' => 'd1', 'code' => 'PROD20', 'name' => '20% off', 'active' => true,
-                'applies_to' => 'products', 'applicable_ids' => ['p1'], 'discount_type' => 'percentage', 'value' => 20],
+            ['id' => 'd1', 'code' => 'PROD20', 'name' => '20% off', 'active' => true, 'discount_type' => 'percentage', 'value' => 20],
         ]);
 
         $response = $this->getJson('/api/v1/catalog/products');

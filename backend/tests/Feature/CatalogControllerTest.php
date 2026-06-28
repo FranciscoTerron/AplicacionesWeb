@@ -12,7 +12,7 @@ class CatalogControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->firestoreMock = $this->createMock(FirestoreService::class);
+        $this->firestoreMock = $this->createStub(FirestoreService::class);
         $this->app->instance(FirestoreService::class, $this->firestoreMock);
     }
 

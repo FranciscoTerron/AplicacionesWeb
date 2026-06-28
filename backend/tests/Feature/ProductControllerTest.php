@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Services\CloudinaryService;
 use App\Services\FirestoreService;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Tests\TestCase;
 
+#[AllowMockObjectsWithoutExpectations]
 class ProductControllerTest extends TestCase
 {
     protected FirestoreService $firestoreMock;
@@ -43,19 +45,15 @@ class ProductControllerTest extends TestCase
                 'lastDocumentId' => null,
             ]);
 
+        // Mock listDocuments to return valid structure for categories, subcategories, and discounts
+        // The discounts array will be filtered to active=true in the controller
         $this->firestoreMock
             ->method('listDocuments')
-            ->willReturnMap([
-                ['categories', 100, null, 'name', [
-                    'documents' => [['id' => 'cat-1', 'name' => 'Limpieza', 'active' => true]],
-                ]],
-                ['subcategories', 100, null, 'name', [
-                    'documents' => [],
-                ]],
-                ['discounts', 200, null, 'name', [
-                    'documents' => [],
-                ]],
-            ]);
+            ->willReturnOnConsecutiveCalls(
+                ['documents' => [['id' => 'cat-1', 'name' => 'Limpieza', 'active' => true]]],
+                ['documents' => []],
+                ['documents' => []]
+            );
 
         $response = $this->get(route('admin.products.index'));
 
