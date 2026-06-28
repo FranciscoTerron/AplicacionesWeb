@@ -128,15 +128,13 @@ class CheckoutFlowApiTest extends TestCase
     {
         $headers = $this->actingAsApiUser(['id' => 'user-1']);
         $this->firestore->seed('products', [
-            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10],
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10, 'discount_id' => 'auto'],
         ]);
-        // Cupón 20% que NO aplica automático a p1 (scope ajeno), pero sí como
-        // cupón de carrito. Sin descuento automático, el cupón gana.
-        $this->firestore->seed('discounts', [[
-            'id' => 'd1', 'code' => 'VERANO20', 'active' => true,
-            'discount_type' => 'percentage', 'value' => 20,
-            'applies_to' => 'products', 'applicable_ids' => ['otro-producto'],
-        ]]);
+        // Cupón 20% que compite contra descuento automático 10%.
+        $this->firestore->seed('discounts', [
+            ['id' => 'auto', 'code' => 'AUTO10', 'active' => true, 'discount_type' => 'percentage', 'value' => 10],
+            ['id' => 'd1', 'code' => 'VERANO20', 'active' => true, 'discount_type' => 'percentage', 'value' => 20],
+        ]);
 
         $this->postJson('/api/v1/orders', [
             'items' => [['product_id' => 'p1', 'quantity' => 2]],
@@ -154,15 +152,12 @@ class CheckoutFlowApiTest extends TestCase
     {
         $headers = $this->actingAsApiUser(['id' => 'user-1']);
         $this->firestore->seed('products', [
-            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10],
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10, 'discount_id' => 'auto'],
         ]);
         $this->firestore->seed('discounts', [
-            // Descuento automático 50% (aplica a todo) -> gana sobre el cupón 10%.
-            ['id' => 'auto', 'code' => 'AUTO50', 'active' => true,
-                'discount_type' => 'percentage', 'value' => 50, 'applies_to' => 'all'],
-            ['id' => 'cup', 'code' => 'CHICO10', 'active' => true,
-                'discount_type' => 'percentage', 'value' => 10,
-                'applies_to' => 'products', 'applicable_ids' => ['otro']],
+            // Descuento automático 50% aplica al producto -> gana sobre el cupón 10%.
+            ['id' => 'auto', 'code' => 'AUTO50', 'active' => true, 'discount_type' => 'percentage', 'value' => 50],
+            ['id' => 'cup', 'code' => 'CHICO10', 'active' => true, 'discount_type' => 'percentage', 'value' => 10],
         ]);
 
         $this->postJson('/api/v1/orders', [

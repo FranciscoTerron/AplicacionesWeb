@@ -19,8 +19,6 @@
             {{ $discount['value'] ?? '-' }}
         @endif
     </td>
-    <td>{{ isset($discount['valid_from']) ? \Carbon\Carbon::parse($discount['valid_from'])->format('d/m/Y H:i') : '-' }}</td>
-    <td>{{ isset($discount['valid_to']) ? \Carbon\Carbon::parse($discount['valid_to'])->format('d/m/Y H:i') : '-' }}</td>
     <td>
         @if($isActive)
             <span class="badge bg-success">Activo</span>

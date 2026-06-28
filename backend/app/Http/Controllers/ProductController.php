@@ -190,6 +190,19 @@ class ProductController extends Controller
                 return $subcategory;
             });
 
+        // Fetch active discounts for product discount selector
+        $discountsResult = $this->firestore->listDocuments('discounts', 100);
+        $discounts = collect($discountsResult['documents'] ?? [])
+            ->filter(fn ($d) => $d['active'] ?? false)
+            ->map(function ($discount) {
+                if (! isset($discount['id']) && isset($discount['_document_path'])) {
+                    $parts = explode('/', $discount['_document_path']);
+                    $discount['id'] = end($parts);
+                }
+
+                return $discount;
+            });
+
         // Paginate filtered results
         $totalFiltered = $items->count();
         $totalPages = intval(ceil($totalFiltered / $perPage));
@@ -201,6 +214,7 @@ class ProductController extends Controller
             'products' => $pageItems,
             'categories' => $categories,
             'subcategories' => $subcategories,
+            'discounts' => $discounts,
             'search' => $search,
             'categoryFilter' => $categoryFilter,
             'subcategoryFilter' => $subcategoryFilter,

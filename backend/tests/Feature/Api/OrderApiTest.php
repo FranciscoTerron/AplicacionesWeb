@@ -264,10 +264,10 @@ class OrderApiTest extends TestCase
     {
         $headers = $this->actingAsApiUser(['id' => 'user-1']);
         $this->firestore->seed('products', [
-            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10],
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10, 'discount_id' => 'd1'],
         ]);
         $this->firestore->seed('discounts', [
-            ['id' => 'd1', 'code' => 'ALL10', 'active' => true, 'applies_to' => 'all',
+            ['id' => 'd1', 'code' => 'ALL10', 'active' => true,
                 'discount_type' => 'percentage', 'value' => 10],
         ]);
 

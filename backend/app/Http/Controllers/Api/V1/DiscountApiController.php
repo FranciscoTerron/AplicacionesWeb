@@ -7,7 +7,6 @@ use App\Http\Requests\Api\Discount\ValidateDiscountRequest;
 use App\Services\DiscountService;
 use App\Services\FirestoreService;
 use App\Support\ApiResponse;
-use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 
@@ -89,25 +88,6 @@ class DiscountApiController extends Controller
             ], 404);
         }
 
-        // Verificar fechas de validez
-        $now = Carbon::now();
-        $validFrom = isset($discount['valid_from']) ? Carbon::parse($discount['valid_from']) : null;
-        $validTo = isset($discount['valid_to']) ? Carbon::parse($discount['valid_to']) : null;
-
-        if ($validFrom && $now->lt($validFrom)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'El código de descuento aún no es válido.',
-            ], 404);
-        }
-
-        if ($validTo && $now->gt($validTo)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'El código de descuento ha expirado.',
-            ], 404);
-        }
-
         // Verificar límite de usos
         $maxUses = $discount['max_uses'] ?? null;
         $usedCount = $discount['used_count'] ?? 0;
@@ -117,37 +97,6 @@ class DiscountApiController extends Controller
                 'success' => false,
                 'message' => 'El código de descuento ha alcanzado su límite de usos.',
             ], 404);
-        }
-
-        // Verificar aplicabilidad (applies_to + applicable_ids)
-        $appliesTo = $discount['applies_to'] ?? 'all';
-        $applicableIds = $discount['applicable_ids'] ?? [];
-
-        if ($appliesTo !== 'all' && ! empty($applicableIds)) {
-            $targetId = $productId ?? $categoryId;
-
-            if ($targetId && ! in_array($targetId, $applicableIds)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El código de descuento no aplica a este producto/categoría.',
-                ], 404);
-            }
-
-            // Si se proporcionó product_id pero aplica a categoría, verificar coincidencia
-            if ($productId && $appliesTo === 'category') {
-                if (! $categoryId) {
-                    $product = $this->firestore->getDocument('products', $productId);
-                    if ($product && isset($product['category_id'])) {
-                        $categoryId = $product['category_id'];
-                    }
-                }
-                if ($categoryId && ! in_array($categoryId, $applicableIds)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'El código de descuento no aplica a este producto/categoría.',
-                    ], 404);
-                }
-            }
         }
 
         // Si hay producto, calcular precio final para que el front lo muestre.
@@ -162,8 +111,8 @@ class DiscountApiController extends Controller
                     (string) ($discount['discount_type'] ?? 'percentage'),
                     (float) ($discount['value'] ?? 0),
                 );
-                $auto = $this->discounts->bestForProduct($product);
-                $autoFinal = $auto['final'] ?? $base;
+                $auto = $this->discounts->discountForProduct($product);
+                $autoFinal = $auto ? DiscountService::applyValue($base, (string) ($auto['discount_type'] ?? 'percentage'), (float) ($auto['value'] ?? 0)) : $base;
                 $final = min($couponFinal, $autoFinal);
 
                 $pricing = [
@@ -185,7 +134,6 @@ class DiscountApiController extends Controller
             'description' => $discount['description'] ?? null,
             'discount_type' => $discount['discount_type'] ?? null,
             'value' => $discount['value'] ?? null,
-            'applies_to' => $appliesTo,
             'pricing' => $pricing,
         ];
 
