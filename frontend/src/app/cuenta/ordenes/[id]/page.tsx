@@ -117,9 +117,14 @@ function OrderDetail() {
         </div>
       )}
       {pago === "failure" && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-destructive">
-          <XCircle className="size-5" />
-          <span>El pago fue rechazado. Podés intentar nuevamente desde el carrito.</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-destructive">
+          <span className="flex items-center gap-2">
+            <XCircle className="size-5 shrink-0" />
+            El pago fue rechazado. Podés intentar nuevamente desde el carrito.
+          </span>
+          <Button asChild size="sm" variant="destructive">
+            <Link href="/carrito">Ir al carrito</Link>
+          </Button>
         </div>
       )}
 
