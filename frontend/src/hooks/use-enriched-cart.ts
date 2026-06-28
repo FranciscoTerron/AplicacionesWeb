@@ -49,9 +49,27 @@ export function useEnrichedCart(items: CartItem[]) {
   return { enriched, loading };
 }
 
-export function cartSubtotal(items: EnrichedCartItem[]): number {
+// Suma de precios base (sin descuentos por producto), tal como los carga el
+// catálogo: es el punto de partida antes de aplicar descuento automático o cupón.
+export function cartBaseSubtotal(items: EnrichedCartItem[]): number {
   return items.reduce((acc, it) => {
     const price = it.product ? Number(it.product.price) : 0;
     return acc + price * it.quantity;
   }, 0);
+}
+
+// Monto total que ahorra el carrito por los descuentos automáticos de cada
+// producto (Product.discount_id), antes de considerar un cupón.
+export function cartAutoDiscount(items: EnrichedCartItem[]): number {
+  return items.reduce((acc, it) => {
+    if (!it.product) return acc;
+    const base = Number(it.product.price);
+    const final = Number(it.product.final_price ?? base);
+    return acc + (base - final) * it.quantity;
+  }, 0);
+}
+
+// Subtotal ya con los descuentos automáticos por producto aplicados (sin cupón).
+export function cartSubtotal(items: EnrichedCartItem[]): number {
+  return cartBaseSubtotal(items) - cartAutoDiscount(items);
 }

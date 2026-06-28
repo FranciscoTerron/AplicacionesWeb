@@ -159,11 +159,48 @@ function OrderDetail() {
             <li key={`${it.product_id}-${i}`} className="flex justify-between gap-2">
               <span className="text-muted-foreground">
                 {it.quantity}× {it.name}
+                {it.discount && (
+                  <span className="ml-1.5 text-xs text-green-600">
+                    (-{formatPrice(it.discount.amount)} c/u)
+                  </span>
+                )}
               </span>
-              <span>{formatPrice(it.price * it.quantity)}</span>
+              <span className="flex items-center gap-1.5">
+                {it.discount && it.base_price !== undefined && (
+                  <span className="text-muted-foreground line-through">
+                    {formatPrice(it.base_price * it.quantity)}
+                  </span>
+                )}
+                {formatPrice(it.price * it.quantity)}
+              </span>
             </li>
           ))}
         </ul>
+
+        <Separator className="my-4" />
+
+        <div className="space-y-1 text-sm">
+          {order.subtotal !== undefined && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span>{formatPrice(order.subtotal)}</span>
+            </div>
+          )}
+          {order.coupon ? (
+            <div className="flex justify-between text-green-600">
+              <span>Cupón ({order.coupon.code})</span>
+              <span>-{formatPrice(order.coupon.amount)}</span>
+            </div>
+          ) : (
+            order.discount_total !== undefined &&
+            order.discount_total > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Descuento en productos</span>
+                <span>-{formatPrice(order.discount_total)}</span>
+              </div>
+            )
+          )}
+        </div>
 
         <Separator className="my-4" />
 

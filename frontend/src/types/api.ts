@@ -19,6 +19,16 @@ export interface ProductImage {
   public_id: string;
 }
 
+// Descuento automático aplicado a un producto (vía Product.discount_id).
+export interface ProductDiscount {
+  id: string | null;
+  code: string | null;
+  name: string | null;
+  discount_type: "percentage" | "fixed" | string;
+  value: number;
+  percent_off: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -34,6 +44,13 @@ export interface Product {
   main_image?: string | null;
   active: boolean;
   featured: boolean;
+  discount_id?: string | null;
+  // El backend decora todo producto de catálogo con el precio final ya
+  // calculado: has_discount/final_price/discount_amount/discount.
+  has_discount?: boolean;
+  final_price?: number | string;
+  discount_amount?: number | string;
+  discount?: ProductDiscount | null;
   dimensions?: Record<string, unknown> | null;
   created_at?: string;
   updated_at?: string;
@@ -85,14 +102,35 @@ export interface Discount {
   description: string | null;
   discount_type: "percentage" | "fixed" | string;
   value: number;
-  applies_to: "all" | "product" | "category" | string;
+  // Comparación cupón vs. descuento automático del producto, solo cuando
+  // /discounts/validate se llama con product_id.
+  pricing?: {
+    base: number;
+    coupon_final: number;
+    auto_final: number;
+    final: number;
+    amount: number;
+    applied: "coupon" | "auto";
+  } | null;
+}
+
+// Descuento automático ya aplicado a un ítem de orden (gana sobre el cupón
+// si baja más el precio; ver OrderApiController@store).
+export interface OrderItemDiscount {
+  id: string | null;
+  code: string | null;
+  name: string | null;
+  amount: number;
 }
 
 export interface OrderItem {
   product_id: string;
   name: string;
   quantity: number;
+  // Precio final por unidad, ya con el descuento (si aplica) aplicado.
   price: number;
+  base_price?: number;
+  discount?: OrderItemDiscount | null;
 }
 
 export type OrderStatus =
@@ -119,6 +157,10 @@ export interface Order {
   items: OrderItem[];
   shipping_address: string;
   payment_method: PaymentMethod | string;
+  // Suma de precios base (sin descuentos). total_amount es lo realmente cobrado.
+  subtotal?: number;
+  discount_total?: number;
+  coupon?: { code: string; name: string | null; amount: number } | null;
   total_amount: number;
   status: OrderStatus | string;
   payment_status: PaymentStatus | string;

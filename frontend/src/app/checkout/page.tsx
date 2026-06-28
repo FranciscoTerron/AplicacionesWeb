@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -17,10 +17,14 @@ import {
 } from "@/components/ui/select";
 import { RequireAuth } from "@/components/require-auth";
 import { useCart } from "@/context/cart-context";
-import { useEnrichedCart, cartSubtotal } from "@/hooks/use-enriched-cart";
-import { createOrder, payOrder } from "@/lib/endpoints";
+import {
+  useEnrichedCart,
+  cartBaseSubtotal,
+  cartAutoDiscount,
+} from "@/hooks/use-enriched-cart";
+import { createOrder, payOrder, validateDiscount } from "@/lib/endpoints";
 import { formatPrice } from "@/lib/utils";
-import type { PaymentMethod } from "@/types/api";
+import type { Discount, PaymentMethod } from "@/types/api";
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   mercado_pago: "Mercado Pago",
@@ -37,8 +41,32 @@ function CheckoutContent() {
   const [address, setAddress] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("transfer");
   const [submitting, setSubmitting] = useState(false);
+  const [discount, setDiscount] = useState<Discount | null>(null);
 
-  const subtotal = cartSubtotal(enriched);
+  // El cupón se aplicó en el carrito y queda guardado en localStorage; acá lo
+  // re-validamos solo para mostrar el mismo desglose en el resumen.
+  useEffect(() => {
+    const code = localStorage.getItem("discount_code");
+    if (!code) return;
+    validateDiscount(code)
+      .then(setDiscount)
+      .catch(() => {
+        setDiscount(null);
+        localStorage.removeItem("discount_code");
+      });
+  }, []);
+
+  // Misma regla que el backend: cupón y descuento automático por producto no
+  // se suman, gana el que más baja el total.
+  const baseSubtotal = cartBaseSubtotal(enriched);
+  const autoDiscount = cartAutoDiscount(enriched);
+  const couponAmount = discount
+    ? discount.discount_type === "percentage"
+      ? (baseSubtotal * discount.value) / 100
+      : Math.min(discount.value, baseSubtotal)
+    : 0;
+  const bestDiscount = Math.max(autoDiscount, couponAmount);
+  const total = baseSubtotal - bestDiscount;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -142,23 +170,42 @@ function CheckoutContent() {
       <div className="h-fit space-y-4 rounded-lg border bg-card p-4">
         <h2 className="font-semibold">Tu pedido</h2>
         <ul className="space-y-2 text-sm">
-          {enriched.map((it) => (
-            <li key={it.product_id} className="flex justify-between gap-2">
-              <span className="line-clamp-1 text-muted-foreground">
-                {it.quantity}× {it.product?.name ?? it.product_id}
-              </span>
-              <span>
-                {it.product
-                  ? formatPrice(Number(it.product.price) * it.quantity)
-                  : "—"}
-              </span>
-            </li>
-          ))}
+          {enriched.map((it) => {
+            const p = it.product;
+            const unitPrice = p ? Number(p.final_price ?? p.price) : 0;
+            return (
+              <li key={it.product_id} className="flex justify-between gap-2">
+                <span className="line-clamp-1 text-muted-foreground">
+                  {it.quantity}× {p?.name ?? it.product_id}
+                </span>
+                <span>{p ? formatPrice(unitPrice * it.quantity) : "—"}</span>
+              </li>
+            );
+          })}
         </ul>
+        <Separator />
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Subtotal</span>
+            <span>{formatPrice(baseSubtotal)}</span>
+          </div>
+          {autoDiscount > 0 && (
+            <div className="flex justify-between text-green-600">
+              <span>Descuento en productos</span>
+              <span>-{formatPrice(autoDiscount)}</span>
+            </div>
+          )}
+          {discount && (
+            <div className="flex justify-between text-green-600">
+              <span>Cupón ({discount.code})</span>
+              <span>-{formatPrice(couponAmount)}</span>
+            </div>
+          )}
+        </div>
         <Separator />
         <div className="flex justify-between text-base font-bold">
           <span>Total</span>
-          <span>{formatPrice(subtotal)}</span>
+          <span>{formatPrice(total)}</span>
         </div>
         <Button type="submit" className="w-full" size="lg" disabled={submitting}>
           {submitting && <Loader2 className="animate-spin" />}
