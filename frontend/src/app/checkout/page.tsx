@@ -74,6 +74,12 @@ function CheckoutContent() {
       toast.error("Tu carrito está vacío");
       return;
     }
+    // Mercado Pago se abre en una pestaña nueva. El window.open debe dispararse
+    // DENTRO del gesto del click (antes de cualquier await), o el navegador lo
+    // bloquea como popup. La pestaña arranca vacía y luego se le setea la URL.
+    const mpTab =
+      method === "mercado_pago" ? window.open("", "_blank") : null;
+
     setSubmitting(true);
     try {
       const couponCode = localStorage.getItem("discount_code") ?? undefined;
@@ -89,13 +95,20 @@ function CheckoutContent() {
       // Cupón consumido: no debe quedar pegado para la próxima compra.
       localStorage.removeItem("discount_code");
 
-      // Mercado Pago: crear preference y redirigir al checkout externo. NO se
-      // vacía el carrito todavía: el backend lo limpia recién cuando el webhook
-      // acredita el pago. Así, si el usuario vuelve atrás desde el checkout de
-      // MP sin pagar, el carrito sigue intacto.
+      // Mercado Pago: crear preference y abrir el checkout externo en la pestaña
+      // nueva. NO se vacía el carrito todavía: el backend lo limpia recién
+      // cuando el webhook acredita el pago. La pestaña actual va al detalle de
+      // la orden (pendiente), así no se pierde el contexto del sitio.
       if (method === "mercado_pago") {
         const { init_point } = await payOrder(order.id);
-        window.location.href = init_point;
+        if (mpTab) {
+          mpTab.location.href = init_point;
+        } else {
+          // Popup bloqueado: caemos a redirigir en la misma pestaña.
+          window.location.href = init_point;
+          return;
+        }
+        router.push(`/cuenta/ordenes/${order.id}`);
         return;
       }
 
@@ -105,6 +118,8 @@ function CheckoutContent() {
       toast.success("¡Orden creada!");
       router.push(`/cuenta/ordenes/${order.id}?creada=1`);
     } catch (err) {
+      // Si algo falló, cerramos la pestaña de MP que abrimos en el click.
+      mpTab?.close();
       toast.error(err instanceof Error ? err.message : "No se pudo crear la orden");
     } finally {
       setSubmitting(false);
