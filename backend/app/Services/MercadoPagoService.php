@@ -51,7 +51,10 @@ class MercadoPagoService
             'external_reference' => $orderId,
             'back_urls' => [
                 'success' => "{$frontendUrl}/cuenta/ordenes/{$orderId}?pago=success",
-                'failure' => "{$frontendUrl}/cuenta/ordenes/{$orderId}?pago=failure",
+                // "Volver a la tienda" / pago rechazado: al carrito, que conserva
+                // los productos (no se vacía hasta que el pago se acredita), así
+                // el usuario puede reintentar la compra directo.
+                'failure' => "{$frontendUrl}/carrito",
                 'pending' => "{$frontendUrl}/cuenta/ordenes/{$orderId}?pago=pending",
             ],
         ];
