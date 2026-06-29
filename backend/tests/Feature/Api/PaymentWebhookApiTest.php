@@ -64,20 +64,55 @@ class PaymentWebhookApiTest extends TestCase
         return $this->call('POST', '/api/v1/payments/webhook', [], [], [], $server, json_encode($body));
     }
 
-    public function test_rejects_request_without_signature(): void
+    public function test_without_signature_still_reconciles_via_api(): void
     {
+        // La firma es defensa en profundidad; la autenticidad real la da
+        // getPayment() (consulta a MP con nuestro token) + validación de monto.
+        // Sin firma, igual concilia si el pago verifica contra la API de MP.
+        Http::fake([
+            'api.mercadopago.com/*' => Http::response([
+                'status' => 'approved',
+                'external_reference' => 'order-ref-1',
+                'transaction_amount' => 550,
+            ], 200),
+        ]);
+        $this->firestore->seed('orders', [[
+            'id' => 'o1',
+            'external_reference' => 'order-ref-1',
+            'total_amount' => 550,
+            'payment_status' => 'pending',
+        ]]);
+
         $this->postWebhook(['type' => 'payment', 'data' => ['id' => 'pay-1']])
-            ->assertStatus(400)
-            ->assertJson(['success' => false, 'message' => 'Firma inválida']);
+            ->assertStatus(200)
+            ->assertJson(['success' => true]);
+
+        $this->assertSame('approved', $this->firestore->all('orders')[0]['payment_status']);
     }
 
-    public function test_rejects_tampered_signature(): void
+    public function test_tampered_signature_still_reconciles_via_api(): void
     {
+        Http::fake([
+            'api.mercadopago.com/*' => Http::response([
+                'status' => 'approved',
+                'external_reference' => 'order-ref-1',
+                'transaction_amount' => 550,
+            ], 200),
+        ]);
+        $this->firestore->seed('orders', [[
+            'id' => 'o1',
+            'external_reference' => 'order-ref-1',
+            'total_amount' => 550,
+            'payment_status' => 'pending',
+        ]]);
+
         $this->postWebhook(
             ['type' => 'payment', 'data' => ['id' => 'pay-1']],
             'ts='.self::TS.',v1=deadbeef'
-        )->assertStatus(400)
-            ->assertJson(['success' => false, 'message' => 'Firma inválida']);
+        )->assertStatus(200)
+            ->assertJson(['success' => true]);
+
+        $this->assertSame('approved', $this->firestore->all('orders')[0]['payment_status']);
     }
 
     public function test_rejects_unsupported_type(): void
