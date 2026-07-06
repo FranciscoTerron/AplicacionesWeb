@@ -3,18 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Banknote, Loader2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { RequireAuth } from "@/components/require-auth";
 import { useCart } from "@/context/cart-context";
 import {
@@ -23,15 +16,20 @@ import {
   cartAutoDiscount,
 } from "@/hooks/use-enriched-cart";
 import { createOrder, payOrder, validateDiscount } from "@/lib/endpoints";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import type { Discount, PaymentMethod } from "@/types/api";
 
-const PAYMENT_LABELS: Record<PaymentMethod, string> = {
-  mercado_pago: "Mercado Pago",
-  transfer: "Transferencia bancaria",
-  cash: "Efectivo / contra entrega",
-  card: "Tarjeta",
-};
+// Métodos ofrecidos al cliente: solo dos, como botones (no select). "transfer"
+// y "card" se dejaron fuera para no confundir; el tipo PaymentMethod los
+// mantiene para mostrar órdenes históricas que sí los usaron.
+const PAYMENT_OPTIONS: {
+  value: PaymentMethod;
+  label: string;
+  icon: typeof Wallet;
+}[] = [
+  { value: "mercado_pago", label: "Mercado Pago", icon: Wallet },
+  { value: "cash", label: "Efectivo", icon: Banknote },
+];
 
 function CheckoutContent() {
   const { items, clearLocal } = useCart();
@@ -39,7 +37,7 @@ function CheckoutContent() {
   const router = useRouter();
 
   const [address, setAddress] = useState("");
-  const [method, setMethod] = useState<PaymentMethod>("transfer");
+  const [method, setMethod] = useState<PaymentMethod>("mercado_pago");
   const [submitting, setSubmitting] = useState(false);
   const [discount, setDiscount] = useState<Discount | null>(null);
 
@@ -166,21 +164,29 @@ function CheckoutContent() {
 
         <div className="space-y-1.5">
           <Label>Método de pago</Label>
-          <Select
-            value={method}
-            onValueChange={(v) => setMethod(v as PaymentMethod)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.keys(PAYMENT_LABELS) as PaymentMethod[]).map((m) => (
-                <SelectItem key={m} value={m}>
-                  {PAYMENT_LABELS[m]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="grid grid-cols-2 gap-3">
+            {PAYMENT_OPTIONS.map((opt) => {
+              const active = method === opt.value;
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setMethod(opt.value)}
+                  aria-pressed={active}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-2 rounded-lg border p-4 text-sm font-medium transition-colors",
+                    active
+                      ? "border-primary bg-primary/5 ring-2 ring-primary"
+                      : "border-border hover:bg-accent",
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
