@@ -145,9 +145,7 @@ export type PaymentStatus =
   | "pending"
   | "approved"
   | "rejected"
-  | "refunded"
-  | "completed"
-  | "failed";
+  | "refunded";
 
 export type PaymentMethod = "cash" | "card" | "transfer" | "mercado_pago";
 

@@ -39,16 +39,16 @@ $products = $products ?? collect([]);
     'name' => 'status',
     'label' => 'Estado',
     'type' => 'select',
-    'options' => ['pending' => 'Pendiente', 'confirmed' => 'Confirmado', 'in_process' => 'En Proceso', 'completed' => 'Completado', 'cancelled' => 'Cancelado'],
+    'options' => \App\Support\OrderStatus::statuses(),
     'selected' => old('status', 'pending')
 ])
 
 @include('admin.components.form-field', [
-    'name' => 'paymentStatus',
+    'name' => 'payment_status',
     'label' => 'Estado de Pago',
     'type' => 'select',
-    'options' => ['pending' => 'Pendiente', 'paid' => 'Pagado', 'overdue' => 'Vencido'],
-    'selected' => old('paymentStatus', 'pending')
+    'options' => \App\Support\OrderStatus::paymentStatuses(),
+    'selected' => old('payment_status', 'pending')
 ])
 
 @include('admin.components.form-field', [

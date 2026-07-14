@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\FirestoreService;
+use App\Services\StockService;
 use App\Support\ApiResponse;
+use App\Support\OrderStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -12,7 +14,10 @@ use OpenApi\Attributes as OA;
 
 class PaymentWebhookController extends Controller
 {
-    public function __construct(private readonly FirestoreService $firestore) {}
+    public function __construct(
+        private readonly FirestoreService $firestore,
+        private readonly StockService $stock,
+    ) {}
 
     /**
      * POST /api/v1/payments/webhook
@@ -128,21 +133,13 @@ class PaymentWebhookController extends Controller
         // Pago aprobado sobre una orden recién creada => confirmarla, así el
         // comprobante no queda "Pendiente" con el pago ya acreditado. No se
         // pisan estados de fulfillment posteriores (shipped, delivered, etc.).
-        if ($paymentStatus === 'approved' && (string) ($order['status'] ?? 'pending') === 'pending') {
-            $update['status'] = 'confirmed';
+        if ($paymentStatus === OrderStatus::PAYMENT_APPROVED && OrderStatus::of($order) === OrderStatus::PENDING) {
+            $update['status'] = OrderStatus::CONFIRMED;
 
             // Descontar stock recién cuando el pago se acredita (no al crear la
             // orden), así no se resta por órdenes pendientes o abandonadas.
-            // Idempotente: la bandera evita doble descuento si MP reintenta.
-            if (! ($order['stock_decremented'] ?? false)) {
-                $oversold = $this->decrementStock($order['items'] ?? []);
-                $update['stock_decremented'] = true;
-                // Si al acreditarse el pago el stock ya no alcanzaba (otra compra
-                // se adelantó), se marca la orden para revisión manual del admin.
-                if ($oversold) {
-                    $update['oversold'] = true;
-                }
-            }
+            // Idempotente vía stock_decremented: MP puede reintentar el webhook.
+            $update = array_merge($update, $this->stock->decrementForOrder($order));
 
             // Vaciar el carrito recién acá (pago acreditado), no al crear la
             // orden: así volver atrás desde el checkout de MP sin pagar no deja
@@ -172,44 +169,6 @@ class PaymentWebhookController extends Controller
                 'updated_at' => now()->toISOString(),
             ]);
         }
-    }
-
-    /**
-     * Resta del stock de cada producto la cantidad comprada en la orden.
-     * El stock nunca baja de 0. Producto inexistente se ignora.
-     * Devuelve true si algún producto no tenía stock suficiente (oversell).
-     *
-     * @param  array<int, array<string, mixed>>  $items
-     */
-    protected function decrementStock(array $items): bool
-    {
-        $oversold = false;
-
-        foreach ($items as $item) {
-            $productId = (string) ($item['product_id'] ?? '');
-            $quantity = (int) ($item['quantity'] ?? 0);
-
-            if ($productId === '' || $quantity <= 0) {
-                continue;
-            }
-
-            $product = $this->firestore->getDocument('products', $productId);
-            if ($product === null) {
-                continue;
-            }
-
-            $current = (int) ($product['stock'] ?? 0);
-            if ($current < $quantity) {
-                $oversold = true;
-            }
-
-            $this->firestore->updateDocument('products', $productId, [
-                'stock' => max(0, $current - $quantity),
-                'updated_at' => now()->toISOString(),
-            ]);
-        }
-
-        return $oversold;
     }
 
     /**

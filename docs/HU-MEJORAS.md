@@ -98,10 +98,10 @@
 - La **cancelación** (`OrderApiController::cancel`, cron `expireOrders`, y el panel) no repone stock aunque `stock_decremented = true`; una orden MP pagada y luego cancelada deja el stock descontado y sin reembolso registrado.
 
 **Criterios de aceptación**
-- [ ] Definir en refinamiento el momento de descuento para efectivo (sugerido: al confirmar la orden desde el panel), reutilizando la misma lógica idempotente con `stock_decremented`.
-- [ ] Cancelar una orden con `stock_decremented = true` repone el stock (y limpia la bandera), desde la API, el panel y el cron.
-- [ ] Cancelar una orden con `payment_status = approved` exige una decisión explícita: bloquear la cancelación del lado del cliente o marcar la orden como "pendiente de reembolso" para revisión manual.
-- [ ] Tests: efectivo confirmada descuenta una sola vez; cancelación repone; doble webhook no descuenta dos veces (ya cubierto por la bandera, mantenerlo).
+- [x] **Decisión: al confirmar desde el panel.** El stock de órdenes no-MP se descuenta al pasar a `confirmed` (o cualquier estado aceptado posterior), con la lógica idempotente compartida en `App\Services\StockService` (`stock_decremented`). Para MP lo sigue haciendo el webhook.
+- [x] Cancelar una orden con `stock_decremented = true` repone el stock (y limpia la bandera), desde la API, el panel y el cron.
+- [x] **Decisión: cliente bloqueado, panel sí.** El cliente recibe 422 al cancelar una orden con pago aprobado; el admin puede cancelarla desde el panel y queda marcada `refund_pending = true` para gestión manual del reembolso.
+- [x] Tests: efectivo confirmada descuenta una sola vez (`StockFlowTest`); cancelación repone (panel, API y cron); doble webhook no descuenta dos veces (se mantiene verde).
 
 ---
 
@@ -120,10 +120,10 @@ Consecuencias concretas:
 - Si el admin pone `in_process`/`completed`, la tienda muestra el string crudo (no tiene label).
 
 **Criterios de aceptación**
-- [ ] Un único enum documentado de `status` (sugerido: `pending, confirmed, processing, shipped, delivered, cancelled`) y de `payment_status` (`pending, approved, rejected, refunded`), definido en un solo lugar del backend.
-- [ ] Panel, API, webhook y frontend usan ese enum; se define un mapeo/migración para los datos existentes con estados viejos.
-- [ ] La facturación del dashboard cuenta órdenes con `payment_status = approved` (y efectivo confirmado) y filtra por el mes corriente.
-- [ ] Los selects/filtros del panel (`_form_fields.blade.php`, filtros de índice) reflejan el nuevo vocabulario.
+- [x] Enum único en `App\Support\OrderStatus`: `status` = `pending, confirmed, processing, shipped, delivered, cancelled`; `payment_status` = `pending, approved, rejected, refunded`.
+- [x] Panel, API, webhook y frontend usan el enum. Los datos legacy (`in_process`, `completed`, `paid`, `overdue`, `paymentStatus` camelCase) se mapean al leer vía `OrderStatus::normalize()/normalizePayment()`; el panel dejó de escribir `paymentStatus` camelCase (ahora `payment_status`).
+- [x] La facturación del dashboard cuenta `payment_status = approved` + efectivo aceptado, del mes corriente (`DashboardControllerTest`).
+- [x] Selects/filtros del panel (`_form_fields.blade.php`, filtros del índice, modal JS) toman las opciones de `OrderStatus`.
 
 ---
 
