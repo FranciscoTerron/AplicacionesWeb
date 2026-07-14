@@ -11,6 +11,7 @@ export function ProductCard({ product }: { product: Product }) {
   const minStock = toNum(product.min_stock);
   const outOfStock = stock <= 0;
   const lowStock = !outOfStock && minStock > 0 && stock <= minStock;
+  const hasDiscount = product.has_discount && product.discount;
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-xl border bg-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
@@ -37,6 +38,11 @@ export function ProductCard({ product }: { product: Product }) {
               ★ Destacado
             </Badge>
           )}
+          {hasDiscount && (
+            <Badge className="bg-red-600 text-white shadow-sm">
+              -{product.discount?.percent_off}%
+            </Badge>
+          )}
         </div>
         {outOfStock && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
@@ -51,9 +57,20 @@ export function ProductCard({ product }: { product: Product }) {
             {product.name}
           </h3>
         </Link>
-        <p className="text-lg font-bold tracking-tight">
-          {formatPrice(product.price)}
-        </p>
+        {hasDiscount ? (
+          <div className="flex items-baseline gap-1.5">
+            <p className="text-lg font-bold tracking-tight text-red-600">
+              {formatPrice(product.final_price)}
+            </p>
+            <p className="text-sm text-muted-foreground line-through">
+              {formatPrice(product.price)}
+            </p>
+          </div>
+        ) : (
+          <p className="text-lg font-bold tracking-tight">
+            {formatPrice(product.price)}
+          </p>
+        )}
         {lowStock && (
           <p className="text-xs font-medium text-orange-600">
             ¡Quedan {stock}!

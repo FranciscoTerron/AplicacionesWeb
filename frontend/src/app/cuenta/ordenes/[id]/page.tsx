@@ -43,6 +43,26 @@ function OrderDetail() {
       .finally(() => setLoading(false));
   }, [params.id]);
 
+  // Al volver de Mercado Pago (?pago=success) el webhook concilia el pago de
+  // forma asíncrona. Si la orden sigue "pending", refrescamos solo cada 3s
+  // (hasta 5 veces) para mostrar "Pago aprobado" sin recargar a mano.
+  useEffect(() => {
+    if (pago !== "success" || !params.id) return;
+    if (order && order.payment_status !== "pending") return;
+    let tries = 0;
+    const iv = setInterval(async () => {
+      tries++;
+      try {
+        const fresh = await getOrder(params.id);
+        setOrder(fresh);
+        if (fresh.payment_status !== "pending" || tries >= 5) clearInterval(iv);
+      } catch {
+        clearInterval(iv);
+      }
+    }, 3000);
+    return () => clearInterval(iv);
+  }, [pago, params.id, order?.payment_status]);
+
   async function handleCancel() {
     if (!order) return;
     setCancelling(true);
@@ -97,9 +117,14 @@ function OrderDetail() {
         </div>
       )}
       {pago === "failure" && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-destructive">
-          <XCircle className="size-5" />
-          <span>El pago fue rechazado. Podés intentar nuevamente desde el carrito.</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-destructive">
+          <span className="flex items-center gap-2">
+            <XCircle className="size-5 shrink-0" />
+            El pago fue rechazado. Podés intentar nuevamente desde el carrito.
+          </span>
+          <Button asChild size="sm" variant="destructive">
+            <Link href="/carrito">Ir al carrito</Link>
+          </Button>
         </div>
       )}
 
@@ -139,11 +164,48 @@ function OrderDetail() {
             <li key={`${it.product_id}-${i}`} className="flex justify-between gap-2">
               <span className="text-muted-foreground">
                 {it.quantity}× {it.name}
+                {it.discount && (
+                  <span className="ml-1.5 text-xs text-green-600">
+                    (-{formatPrice(it.discount.amount)} c/u)
+                  </span>
+                )}
               </span>
-              <span>{formatPrice(it.price * it.quantity)}</span>
+              <span className="flex items-center gap-1.5">
+                {it.discount && it.base_price !== undefined && (
+                  <span className="text-muted-foreground line-through">
+                    {formatPrice(it.base_price * it.quantity)}
+                  </span>
+                )}
+                {formatPrice(it.price * it.quantity)}
+              </span>
             </li>
           ))}
         </ul>
+
+        <Separator className="my-4" />
+
+        <div className="space-y-1 text-sm">
+          {order.subtotal !== undefined && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span>{formatPrice(order.subtotal)}</span>
+            </div>
+          )}
+          {order.coupon ? (
+            <div className="flex justify-between text-green-600">
+              <span>Cupón ({order.coupon.code})</span>
+              <span>-{formatPrice(order.coupon.amount)}</span>
+            </div>
+          ) : (
+            order.discount_total !== undefined &&
+            order.discount_total > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Descuento en productos</span>
+                <span>-{formatPrice(order.discount_total)}</span>
+              </div>
+            )
+          )}
+        </div>
 
         <Separator className="my-4" />
 

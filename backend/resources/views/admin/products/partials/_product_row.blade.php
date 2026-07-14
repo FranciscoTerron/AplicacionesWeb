@@ -30,7 +30,25 @@
         </div>
     </td>
     <td>{{ $categoryName ?? 'N/A' }}</td>
-    <td>${{ number_format($product['price'] ?? 0, 2, ',', '.') }}</td>
+    <td>
+        @php
+            $hasDisc = ! empty($product['has_discount']);
+            $basePrice = $product['price'] ?? 0;
+            $finalPrice = $product['final_price'] ?? $basePrice;
+            $disc = $product['discount'] ?? null;
+        @endphp
+        @if($hasDisc)
+            <span class="text-muted text-decoration-line-through small">${{ number_format($basePrice, 2, ',', '.') }}</span>
+            <br>
+            <strong class="text-success">${{ number_format($finalPrice, 2, ',', '.') }}</strong>
+            <span class="badge bg-success ms-1"
+                  title="{{ $disc['name'] ?? 'Descuento' }}{{ ! empty($disc['code']) ? ' ('.$disc['code'].')' : '' }}">
+                -{{ $disc['percent_off'] ?? 0 }}%
+            </span>
+        @else
+            ${{ number_format($basePrice, 2, ',', '.') }}
+        @endif
+    </td>
     <td>{{ $product['stock'] ?? 0 }}</td>
     <td>
         @if($isActive)

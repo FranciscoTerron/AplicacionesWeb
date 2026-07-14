@@ -14,7 +14,7 @@ class ExportControllerTest extends TestCase
     {
         parent::setUp();
         $this->withoutMiddleware();
-        $this->firestoreMock = $this->createMock(FirestoreService::class);
+        $this->firestoreMock = $this->createStub(FirestoreService::class);
         $this->app->instance(FirestoreService::class, $this->firestoreMock);
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Order\StoreOrderRequest;
+use App\Services\DiscountService;
 use App\Services\FirestoreService;
 use App\Services\MercadoPagoService;
 use App\Support\ApiResponse;
@@ -17,6 +18,7 @@ class OrderApiController extends Controller
     public function __construct(
         private readonly FirestoreService $firestore,
         private readonly MercadoPagoService $mercadoPago,
+        private readonly DiscountService $discounts,
     ) {}
 
     /**
@@ -79,8 +81,10 @@ class OrderApiController extends Controller
         $validated = $request->validated();
 
         // Resolver precios server-side: el cliente NO define el precio.
+        // El descuento automático del producto se aplica acá, no del lado del cliente.
         $items = [];
-        $totalAmount = 0;
+        $subtotal = 0;     // suma de precios base (sin descuento)
+        $totalAmount = 0;  // suma de precios finales (con descuento)
         foreach ($validated['items'] as $item) {
             $product = $this->firestore->getDocument('products', $item['product_id']);
 
@@ -101,14 +105,55 @@ class OrderApiController extends Controller
                 );
             }
 
-            $price = (float) ($product['price'] ?? 0);
+            $base = (float) ($product['price'] ?? 0);
+            $best = $this->discounts->discountForProduct($product);
+            $unit = $best ? DiscountService::applyValue($base, (string) ($best['discount_type'] ?? 'percentage'), (float) ($best['value'] ?? 0)) : $base;
+
             $items[] = [
                 'product_id' => $item['product_id'],
                 'name' => $product['name'] ?? null,
                 'quantity' => $quantity,
-                'price' => $price,
+                // 'price' = precio cobrado por unidad (ya con descuento aplicado).
+                'price' => $unit,
+                'base_price' => round($base, 2),
+                'discount' => $best ? [
+                    'id' => $best['id'] ?? null,
+                    'code' => $best['code'] ?? null,
+                    'name' => $best['name'] ?? null,
+                    'amount' => round($base - $unit, 2),
+                ] : null,
             ];
-            $totalAmount += $price * $quantity;
+            $subtotal += $base * $quantity;
+            $totalAmount += $unit * $quantity;
+        }
+
+        // Cupón por código (opcional). Regla de negocio: NO se suma a los
+        // descuentos automáticos por producto — gana el que más baja el total.
+        $coupon = null;
+        $autoDiscount = round($subtotal - $totalAmount, 2);
+        $code = trim((string) ($validated['discount_code'] ?? ''));
+        if ($code !== '') {
+            $found = $this->discounts->couponByCode($code);
+            if ($found !== null) {
+                $couponAmount = $this->discounts->couponAmountForSubtotal($found, $subtotal);
+
+                if ($couponAmount > $autoDiscount) {
+                    // El cupón reemplaza a los descuentos automáticos: los ítems
+                    // vuelven a precio base y el descuento queda a nivel orden.
+                    $totalAmount = round($subtotal - $couponAmount, 2);
+                    foreach ($items as &$it) {
+                        $it['price'] = $it['base_price'];
+                        $it['discount'] = null;
+                    }
+                    unset($it);
+
+                    $coupon = [
+                        'code' => $found['code'] ?? $code,
+                        'name' => $found['name'] ?? null,
+                        'amount' => $couponAmount,
+                    ];
+                }
+            }
         }
 
         $orderData = [
@@ -120,7 +165,10 @@ class OrderApiController extends Controller
             'items' => $items,
             'shipping_address' => $validated['shipping_address'],
             'payment_method' => $validated['payment_method'],
-            'total_amount' => $totalAmount,
+            'subtotal' => round($subtotal, 2),
+            'discount_total' => round($subtotal - $totalAmount, 2),
+            'coupon' => $coupon,
+            'total_amount' => round($totalAmount, 2),
             'status' => 'pending',
             'payment_status' => 'pending',
             'created_at' => now()->toISOString(),
@@ -129,11 +177,35 @@ class OrderApiController extends Controller
 
         $order = $this->firestore->createDocument('orders', $orderData);
 
+        // Vaciar el carrito SOLO para métodos sin redirect externo
+        // (transferencia/efectivo/tarjeta): ahí la orden queda en firme al
+        // crearse. Para Mercado Pago NO se vacía acá: el carrito se limpia
+        // recién cuando el webhook acredita el pago, así si el usuario vuelve
+        // atrás desde el checkout externo sin pagar no pierde el carrito.
+        if (($validated['payment_method'] ?? '') !== 'mercado_pago') {
+            $this->clearCartForUser((string) $user->id);
+        }
+
         return ApiResponse::success(
             data: $order,
             message: 'Orden creada exitosamente',
             status: 201
         );
+    }
+
+    /**
+     * Vacía el carrito del usuario en el backend (fuente de verdad).
+     * No falla si el usuario no tiene carrito.
+     */
+    private function clearCartForUser(string $userId): void
+    {
+        $carts = $this->firestore->query('carts', ['user_id' => $userId], 1);
+        if ($carts !== []) {
+            $this->firestore->updateDocument('carts', (string) $carts[0]['id'], [
+                'items' => [],
+                'updated_at' => now()->toISOString(),
+            ]);
+        }
     }
 
     /**

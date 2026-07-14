@@ -124,6 +124,118 @@ class CheckoutFlowApiTest extends TestCase
         $this->assertSame('confirmed', $paid['status']);
     }
 
+    public function test_coupon_applies_when_better_than_auto_discount(): void
+    {
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('products', [
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10, 'discount_id' => 'auto'],
+        ]);
+        // Cupón 20% que compite contra descuento automático 10%.
+        $this->firestore->seed('discounts', [
+            ['id' => 'auto', 'code' => 'AUTO10', 'active' => true, 'discount_type' => 'percentage', 'value' => 10],
+            ['id' => 'd1', 'code' => 'VERANO20', 'active' => true, 'discount_type' => 'percentage', 'value' => 20],
+        ]);
+
+        $this->postJson('/api/v1/orders', [
+            'items' => [['product_id' => 'p1', 'quantity' => 2]],
+            'shipping_address' => 'x',
+            'payment_method' => 'cash',
+            'discount_code' => 'VERANO20',
+        ], $headers)->assertStatus(201)->assertJson(['data' => [
+            'subtotal' => 200,
+            'total_amount' => 160,
+            'coupon' => ['code' => 'VERANO20', 'amount' => 40],
+        ]]);
+    }
+
+    public function test_coupon_ignored_when_auto_discount_is_better(): void
+    {
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('products', [
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10, 'discount_id' => 'auto'],
+        ]);
+        $this->firestore->seed('discounts', [
+            // Descuento automático 50% aplica al producto -> gana sobre el cupón 10%.
+            ['id' => 'auto', 'code' => 'AUTO50', 'active' => true, 'discount_type' => 'percentage', 'value' => 50],
+            ['id' => 'cup', 'code' => 'CHICO10', 'active' => true, 'discount_type' => 'percentage', 'value' => 10],
+        ]);
+
+        $this->postJson('/api/v1/orders', [
+            'items' => [['product_id' => 'p1', 'quantity' => 2]],
+            'shipping_address' => 'x',
+            'payment_method' => 'cash',
+            'discount_code' => 'CHICO10',
+        ], $headers)->assertStatus(201)->assertJson(['data' => [
+            'subtotal' => 200,
+            'total_amount' => 100, // 50% automático, el cupón 10% se descarta
+            'coupon' => null,
+        ]]);
+    }
+
+    public function test_creating_non_mp_order_empties_the_user_cart(): void
+    {
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('products', [
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10],
+        ]);
+        $this->firestore->seed('carts', [[
+            'id' => 'cart-1',
+            'user_id' => 'user-1',
+            'items' => [['product_id' => 'p1', 'quantity' => 2]],
+        ]]);
+
+        // Métodos sin redirect externo (efectivo/transferencia/tarjeta): la
+        // orden queda en firme al crearse, así que el carrito se vacía ya.
+        $this->postJson('/api/v1/orders', [
+            'items' => [['product_id' => 'p1', 'quantity' => 2]],
+            'shipping_address' => 'x',
+            'payment_method' => 'cash',
+        ], $headers)->assertStatus(201);
+
+        $this->assertSame([], $this->firestore->getDocument('carts', 'cart-1')['items']);
+    }
+
+    public function test_creating_mp_order_keeps_cart_until_payment_is_approved(): void
+    {
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('products', [
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10],
+        ]);
+        $this->firestore->seed('carts', [[
+            'id' => 'cart-1',
+            'user_id' => 'user-1',
+            'items' => [['product_id' => 'p1', 'quantity' => 2]],
+        ]]);
+
+        // Mercado Pago: crear la orden NO vacía el carrito. Si el usuario vuelve
+        // atrás desde el checkout externo sin pagar, el carrito sigue intacto.
+        $orderId = (string) $this->postJson('/api/v1/orders', [
+            'items' => [['product_id' => 'p1', 'quantity' => 2]],
+            'shipping_address' => 'x',
+            'payment_method' => 'mercado_pago',
+        ], $headers)->json('data.id');
+
+        $this->assertSame(
+            [['product_id' => 'p1', 'quantity' => 2]],
+            $this->firestore->getDocument('carts', 'cart-1')['items']
+        );
+
+        // Recién cuando el webhook acredita el pago, el carrito se vacía.
+        $this->firestore->updateDocument('orders', $orderId, ['external_reference' => $orderId]);
+        Http::fake([
+            'api.mercadopago.com/v1/payments/*' => Http::response([
+                'status' => 'approved',
+                'external_reference' => $orderId,
+                'transaction_amount' => 200,
+            ]),
+        ]);
+
+        $this->postWebhook(['type' => 'payment', 'data' => ['id' => self::PAYMENT_ID]])
+            ->assertStatus(200);
+
+        $this->assertSame([], $this->firestore->getDocument('carts', 'cart-1')['items']);
+    }
+
     public function test_webhook_with_wrong_amount_keeps_order_unpaid(): void
     {
         $headers = $this->actingAsApiUser(['id' => 'user-1']);
@@ -154,6 +266,40 @@ class CheckoutFlowApiTest extends TestCase
             ->assertStatus(400);
 
         $this->assertSame('pending', $this->firestore->getDocument('orders', $orderId)['payment_status']);
+    }
+
+    public function test_approved_payment_decrements_stock_once(): void
+    {
+        $this->firestore->seed('products', [
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10],
+        ]);
+        $this->firestore->seed('orders', [[
+            'id' => 'o-stock',
+            'external_reference' => 'ref-stock',
+            'total_amount' => 300,
+            'status' => 'pending',
+            'payment_status' => 'pending',
+            'items' => [['product_id' => 'p1', 'quantity' => 3]],
+        ]]);
+
+        Http::fake([
+            'api.mercadopago.com/v1/payments/*' => Http::response([
+                'status' => 'approved',
+                'external_reference' => 'ref-stock',
+                'transaction_amount' => 300,
+            ]),
+        ]);
+
+        // Primer webhook: 10 - 3 = 7
+        $this->postWebhook(['type' => 'payment', 'data' => ['id' => self::PAYMENT_ID]])
+            ->assertStatus(200);
+        $this->assertSame(7, $this->firestore->getDocument('products', 'p1')['stock']);
+        $this->assertTrue($this->firestore->getDocument('orders', 'o-stock')['stock_decremented']);
+
+        // Reintento de MP: NO debe volver a descontar (sigue en 7).
+        $this->postWebhook(['type' => 'payment', 'data' => ['id' => self::PAYMENT_ID]])
+            ->assertStatus(200);
+        $this->assertSame(7, $this->firestore->getDocument('products', 'p1')['stock']);
     }
 
     public function test_webhook_approval_does_not_override_fulfillment_status(): void

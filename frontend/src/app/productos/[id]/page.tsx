@@ -65,6 +65,7 @@ export default async function ProductDetailPage({
   const minStock = toNum(product.min_stock);
   const outOfStock = stock <= 0;
   const lowStock = !outOfStock && minStock > 0 && stock <= minStock;
+  const hasDiscount = product.has_discount && product.discount;
   const gallery: ProductImage[] =
     product.images?.length > 0
       ? product.images
@@ -102,6 +103,11 @@ export default async function ProductDetailPage({
                   ★ Destacado
                 </Badge>
               )}
+              {hasDiscount && (
+                <Badge className="bg-red-600 text-white">
+                  -{product.discount?.percent_off}% OFF
+                </Badge>
+              )}
               <span className="text-xs text-muted-foreground">
                 SKU: {product.sku}
               </span>
@@ -112,9 +118,25 @@ export default async function ProductDetailPage({
           </div>
 
           <div className="rounded-2xl border bg-card p-5">
-            <p className="text-4xl font-extrabold tracking-tight">
-              {formatPrice(product.price)}
-            </p>
+            {hasDiscount ? (
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <p className="text-4xl font-extrabold tracking-tight text-red-600">
+                    {formatPrice(product.final_price)}
+                  </p>
+                  <p className="text-lg text-muted-foreground line-through">
+                    {formatPrice(product.price)}
+                  </p>
+                </div>
+                <p className="text-sm font-medium text-green-600">
+                  Ahorrás {formatPrice(product.discount_amount)}
+                </p>
+              </div>
+            ) : (
+              <p className="text-4xl font-extrabold tracking-tight">
+                {formatPrice(product.price)}
+              </p>
+            )}
 
             <div className="mt-2">
               {outOfStock ? (

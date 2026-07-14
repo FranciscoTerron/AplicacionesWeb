@@ -20,6 +20,7 @@ interface CartContextValue {
   update: (productId: string, quantity: number) => Promise<void>;
   remove: (productId: string) => Promise<void>;
   clear: () => Promise<void>;
+  clearLocal: () => void;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -69,11 +70,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setItems(cart.items ?? []);
   }, []);
 
+  // Vacía solo el estado local. Se usa tras crear la orden: el backend ya
+  // limpió el carrito server-side, así que acá solo sincronizamos la UI/badge.
+  const clearLocal = useCallback(() => setItems([]), []);
+
   const count = items.reduce((acc, it) => acc + (it.quantity ?? 0), 0);
 
   return (
     <CartContext.Provider
-      value={{ items, count, loading, refresh, add, update, remove, clear }}
+      value={{ items, count, loading, refresh, add, update, remove, clear, clearLocal }}
     >
       {children}
     </CartContext.Provider>

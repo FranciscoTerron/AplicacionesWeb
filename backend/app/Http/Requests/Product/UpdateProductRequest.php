@@ -14,7 +14,7 @@ class UpdateProductRequest extends FormRequest
 
     public function rules(): array
     {
-        $productId = $this->route('product'); // ID del producto en actualización
+        $productId = $this->route('product');
 
         return [
             'name' => 'required|string|max:255',
@@ -28,7 +28,6 @@ class UpdateProductRequest extends FormRequest
                 function ($attribute, $value, $fail) use ($productId) {
                     $fs = app(FirestoreService::class);
                     $existing = $fs->query('products', ['sku' => strtolower($value)], 1);
-                    // Si existe otro con mismo SKU y no es este producto → error
                     if (count($existing) > 0 && ($existing[0]['id'] ?? '') !== $productId) {
                         $fail('Ya existe un producto con ese SKU.');
                     }
@@ -49,6 +48,7 @@ class UpdateProductRequest extends FormRequest
             'images.*.public_id' => 'required|string',
             'active' => 'boolean',
             'featured' => 'boolean',
+            'discount_id' => 'nullable|string',
             'dimensions' => 'nullable|array',
             'dimensions.weight_kg' => 'nullable|numeric|min:0',
             'dimensions.length_cm' => 'nullable|numeric|min:0',
@@ -79,9 +79,6 @@ class UpdateProductRequest extends FormRequest
         ];
     }
 
-    /**
-     * Validación de existencia de category_id (activa) y subcategory_id.
-     */
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
@@ -100,6 +97,16 @@ class UpdateProductRequest extends FormRequest
                     $validator->errors()->add('subcategory_id', 'La subcategoría seleccionada no existe.');
                 } elseif ($categoryId && ($subcategory['category_id'] ?? null) !== $categoryId) {
                     $validator->errors()->add('subcategory_id', 'La subcategoría no pertenece a la categoría seleccionada.');
+                }
+            }
+
+            $discountId = $this->input('discount_id');
+            if ($discountId) {
+                $discount = app(FirestoreService::class)->getDocument('discounts', $discountId);
+                if (! $discount) {
+                    $validator->errors()->add('discount_id', 'El descuento seleccionado no existe.');
+                } elseif (! ($discount['active'] ?? false)) {
+                    $validator->errors()->add('discount_id', 'El descuento seleccionado está inactivo.');
                 }
             }
         });

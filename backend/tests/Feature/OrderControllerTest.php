@@ -6,8 +6,10 @@ use App\Http\Requests\Order\StoreOrderRequest;
 use App\Models\User;
 use App\Services\FirestoreService;
 use Illuminate\Support\Facades\Validator;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use Tests\TestCase;
 
+#[AllowMockObjectsWithoutExpectations]
 class OrderControllerTest extends TestCase
 {
     protected FirestoreService $firestoreMock;

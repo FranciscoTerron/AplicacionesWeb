@@ -148,6 +148,16 @@
         return options;
     }
 
+    function generateDiscountOptions(selectedId = null) {
+        let options = '<option value="">Sin descuento</option>';
+        @if($discounts && $discounts->count() > 0)
+            @foreach($discounts as $discount)
+                options += `<option value="{{ $discount['id'] }}" ${selectedId === '{{ $discount['id'] }}' ? 'selected' : ''}>{{ addslashes($discount['code']) }} - {{ addslashes($discount['name']) }}</option>`;
+            @endforeach
+        @endif
+        return options;
+    }
+
     function openModal(action, product, triggerButton) {
         if (!modal) {
             modalElement = document.getElementById('productModal');
@@ -264,6 +274,14 @@
                     </select>
                     <div class="form-text" id="activeHelp">Productos inactivos no aparecen en el catálogo.</div>
                 </div>
+                <div class="mb-3">
+                    <label for="discountSelect" class="form-label">Descuento (opcional)</label>
+                    <select name="discount_id" class="form-select" id="discountSelect"
+                            aria-describedby="discountHelp">
+                        ${generateDiscountOptions()}
+                    </select>
+                    <div class="form-text" id="discountHelp">Selecciona un descuento activo para aplicar a este producto.</div>
+                </div>
                 ${window.renderCloudinaryGalleryInput('images', 'products', [], 'Imágenes (la primera será la principal)', '_new')}
             `;
             footerEl.innerHTML = `
@@ -349,6 +367,14 @@
                         <option value="0" ${!product.active ? 'selected' : ''}>Inactivo</option>
                     </select>
                     <div class="form-text" id="activeHelpEdit">Productos inactivos no aparecen en el catálogo.</div>
+                </div>
+                <div class="mb-3">
+                    <label for="discountSelectEdit" class="form-label">Descuento (opcional)</label>
+                    <select name="discount_id" class="form-select" id="discountSelectEdit"
+                            aria-describedby="discountHelpEdit">
+                        ${generateDiscountOptions(product.discount_id)}
+                    </select>
+                    <div class="form-text" id="discountHelpEdit">Selecciona un descuento activo para aplicar a este producto.</div>
                 </div>
                 ${window.renderCloudinaryGalleryInput('images', 'products', product.images || [], 'Imágenes (la primera será la principal)', '_edit')}
                 <input type="hidden" name="_method" value="PUT">

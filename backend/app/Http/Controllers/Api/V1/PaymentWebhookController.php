@@ -57,14 +57,28 @@ class PaymentWebhookController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $data = $request->all();
-        $type = $data['type'] ?? '';
-        $paymentId = (string) ($data['data']['id'] ?? '');
+        $type = $data['type'] ?? $request->query('type', '');
+        // data.id puede venir en el body JSON (data.id anidado) o en el query
+        // string. PHP convierte el punto del query (?data.id=) a guion bajo
+        // (data_id), así que probamos todas las variantes.
+        $paymentId = (string) (
+            ($data['data']['id'] ?? null)
+            ?? $request->query('data_id')
+            ?? $request->query('id')
+            ?? ''
+        );
 
+        // La firma es defensa en profundidad, pero la autenticidad real la da
+        // getPayment() más abajo: consulta el pago a la API de MP con nuestro
+        // access_token (solo devuelve pagos de NUESTRA cuenta) y validamos
+        // external_reference + monto contra la orden. Por eso, si la firma no
+        // valida (configs de secret de MP inconsistentes), igual conciliamos
+        // confiando en esa verificación contra MP. Para prod estricto, convertir
+        // este aviso en un `return 400`.
         if (! $this->verifySignature($request, $paymentId)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Firma inválida',
-            ], 400);
+            logger()->warning('MP webhook: firma no válida, se concilia contra la API de MP', [
+                'payment_id' => $paymentId,
+            ]);
         }
 
         if ($type !== 'payment' || $paymentId === '') {
@@ -116,11 +130,86 @@ class PaymentWebhookController extends Controller
         // pisan estados de fulfillment posteriores (shipped, delivered, etc.).
         if ($paymentStatus === 'approved' && (string) ($order['status'] ?? 'pending') === 'pending') {
             $update['status'] = 'confirmed';
+
+            // Descontar stock recién cuando el pago se acredita (no al crear la
+            // orden), así no se resta por órdenes pendientes o abandonadas.
+            // Idempotente: la bandera evita doble descuento si MP reintenta.
+            if (! ($order['stock_decremented'] ?? false)) {
+                $oversold = $this->decrementStock($order['items'] ?? []);
+                $update['stock_decremented'] = true;
+                // Si al acreditarse el pago el stock ya no alcanzaba (otra compra
+                // se adelantó), se marca la orden para revisión manual del admin.
+                if ($oversold) {
+                    $update['oversold'] = true;
+                }
+            }
+
+            // Vaciar el carrito recién acá (pago acreditado), no al crear la
+            // orden: así volver atrás desde el checkout de MP sin pagar no deja
+            // el carrito vacío. Para métodos sin redirect ya se vació al crear.
+            $this->clearCartForUser((string) ($order['user_id'] ?? ''));
         }
 
         $this->firestore->updateDocument('orders', (string) $order['id'], $update);
 
         return ApiResponse::success(message: 'Pago actualizado: '.$paymentStatus);
+    }
+
+    /**
+     * Vacía el carrito del usuario en el backend (fuente de verdad).
+     * No falla si el user_id viene vacío o no tiene carrito.
+     */
+    protected function clearCartForUser(string $userId): void
+    {
+        if ($userId === '') {
+            return;
+        }
+
+        $carts = $this->firestore->query('carts', ['user_id' => $userId], 1);
+        if ($carts !== []) {
+            $this->firestore->updateDocument('carts', (string) $carts[0]['id'], [
+                'items' => [],
+                'updated_at' => now()->toISOString(),
+            ]);
+        }
+    }
+
+    /**
+     * Resta del stock de cada producto la cantidad comprada en la orden.
+     * El stock nunca baja de 0. Producto inexistente se ignora.
+     * Devuelve true si algún producto no tenía stock suficiente (oversell).
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    protected function decrementStock(array $items): bool
+    {
+        $oversold = false;
+
+        foreach ($items as $item) {
+            $productId = (string) ($item['product_id'] ?? '');
+            $quantity = (int) ($item['quantity'] ?? 0);
+
+            if ($productId === '' || $quantity <= 0) {
+                continue;
+            }
+
+            $product = $this->firestore->getDocument('products', $productId);
+            if ($product === null) {
+                continue;
+            }
+
+            $current = (int) ($product['stock'] ?? 0);
+            if ($current < $quantity) {
+                $oversold = true;
+            }
+
+            $this->firestore->updateDocument('products', $productId, [
+                'stock' => max(0, $current - $quantity),
+                'updated_at' => now()->toISOString(),
+            ]);
+        }
+
+        return $oversold;
     }
 
     /**

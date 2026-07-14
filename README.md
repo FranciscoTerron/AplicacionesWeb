@@ -146,6 +146,25 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 
 ---
 
+### Quinta Entrega (PR) — 27 de Junio 2026
+**Módulo**: Frontend cliente (Next.js) + Pagos Mercado Pago end-to-end
+
+| Item | Estado | Observaciones |
+|------|--------|---------------|
+| Frontend cliente Next.js | ✅ | Catálogo, detalle, carrito, checkout, cuenta/órdenes |
+| Pago con Mercado Pago (Checkout Pro) | ✅ | Preference + redirect + back_urls |
+| Webhook concilia pago automático | ✅ | Verificación HMAC, en prod |
+| Orden pasa a `confirmed` al aprobar | ✅ | Sin pisar estados de envío |
+| Descuento de stock al aprobar pago | ✅ | Idempotente, nunca baja de 0 |
+| Cupón por código aplicado a la orden | ✅ | Regla no-stack (gana el mayor) |
+| Carrito se vacía al crear la orden | ✅ | Server-side, atómico |
+| Comprobante auto-refresca tras pagar | ✅ | Polling hasta que el webhook confirma |
+| Cron de órdenes vencidas | ✅ | Cancela pending sin pagar > 48h |
+
+**Conclusión**: El flujo de compra quedó cerrado de punta a punta, con pagos reales de prueba aprobándose y conciliándose solos vía webhook.
+
+---
+
 ## Cronograma de Entregas (PRs Obligatorios)
 
 | Fecha Límite | Hito | Estado |
@@ -187,6 +206,29 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 - Middleware `ForceJsonResponse` + `AcceptJsonHeader` para asegurar respuestas JSON
 - Resource classes (`ApiResponseResource`) para shape consistente
 
+### Flujo de compra (frontend cliente)
+- **Catálogo** con filtros, orden y búsqueda; **stock visible** en card y detalle (lo trae del backend; "Sin stock" / "Últimas N unidades")
+- **Carrito** con cantidades y validación de cupón
+- **Checkout**: dirección + método de pago. Al crear la orden el **backend vacía el carrito** server-side (atómico, sin depender del cliente)
+- **Comprobante** (`/cuenta/ordenes/{id}`): tras volver de Mercado Pago **auto-refresca** cada 3s hasta que el webhook confirma el pago (no hace falta recargar a mano)
+
+### Pagos (Mercado Pago — Checkout Pro)
+- `POST /orders/{id}/pay` crea una **preference** y devuelve el `init_point`; el front redirige al checkout de MP
+- `back_urls` (success / failure / pending) construidas con `FRONTEND_URL`; `notification_url` con `APP_URL` (solo si es HTTPS)
+- **Webhook** `POST /payments/webhook`: verifica la **firma HMAC** (`x-signature`) con `MERCADOPAGO_WEBHOOK_SECRET`, consulta el pago real en la API de MP (fuente de verdad del monto y `external_reference`) y **concilia la orden**
+- Al aprobarse: orden `pending → confirmed` (no pisa `shipped`/`delivered`) y se **descuenta el stock** (idempotente vía bandera `stock_decremented`; si no alcanzaba, marca `oversold` para revisión)
+- **Modo test**: credenciales de prueba + cuentas/tarjetas de prueba (el titular de la tarjeta define el resultado: `APRO`, `FUND`, `OTHE`, etc.)
+
+### Descuentos y cupones
+- **Descuentos automáticos** por producto/categoría: `DiscountService::bestForProduct` elige el que más baja el precio
+- **Cupón por código**: el cliente lo valida en el carrito; viaja al checkout y se aplica server-side al crear la orden
+- **Regla no-stack**: el cupón y el descuento automático **no se suman** — gana el que deja el total más bajo
+- Un descuento vale solo si está **activo, vigente y con usos disponibles** (`isUsable`)
+
+### Tareas programadas (Vercel Cron)
+- `GET /cron/expire-orders` (diario, 04:00 UTC): **cancela** las órdenes que quedaron `pending` y sin pagar más de **48h** (no las borra: `status = cancelled`, `cancel_reason = expired_unpaid`)
+- Protegido por `Authorization: Bearer CRON_SECRET`; sin el secreto el endpoint queda deshabilitado
+
 ### Storage de imágenes
 - **Cloudinary** como CDN + storage (free tier 25GB)
 - Upload directo browser → Cloudinary con Upload Widget (sin pasar por Laravel, evita límite 4.5MB de Vercel)
@@ -194,9 +236,33 @@ El desarrollo contemplará buenas prácticas en términos de seguridad, validaci
 - Transformaciones on-the-fly por URL (thumbs de 40px en listados, 220px en formularios)
 
 ### Calidad
-- **Tests**: 112 tests, Feature tests por cada controller con mocks de FirestoreService y CloudinaryService
+- **Tests**: 225 tests, Feature tests por cada controller con mocks de FirestoreService y CloudinaryService (incluye flujo integral de compra/pago MP, cupones y cron)
 - **PHPStan nivel 5**: verde
 - **Laravel Pint**: formato consistente
+
+---
+
+## Setup Mercado Pago + Cron (variables de entorno)
+
+El flujo de pago y las tareas programadas se configuran con estas env vars en el proyecto de Vercel del **backend** (`ma-piscinas`):
+
+| Variable | Para qué | Notas |
+|----------|----------|-------|
+| `MERCADOPAGO_ACCESS_TOKEN` | Crear preferences y consultar pagos | Token de **prueba** o de **producción** según el entorno |
+| `MERCADOPAGO_WEBHOOK_SECRET` | Verificar la firma del webhook | Debe ser **igual** a la "Clave secreta" del panel MP → Webhooks |
+| `APP_URL` | Arma el `notification_url` del webhook | Debe ser **HTTPS** o el webhook no se registra |
+| `FRONTEND_URL` | Arma los `back_urls` del checkout | URL pública del frontend cliente |
+| `CRON_SECRET` | Autoriza los endpoints de cron | Vercel lo manda como `Bearer`; sin él el cron queda deshabilitado |
+
+> El webhook (`/api/v1/payments/webhook`) y el cron (`/api/v1/cron/expire-orders`) están registrados en `backend/vercel.json` (el cron corre diario, 04:00 UTC).
+
+### Probar pagos en modo test
+1. Panel MP → **Cuentas de prueba**: crear un comprador y un vendedor de prueba.
+2. Setear el `MERCADOPAGO_ACCESS_TOKEN` del **vendedor de prueba**.
+3. Loguearse en `mercadopago.com.ar` como el **comprador de prueba** (no la cuenta real).
+4. Comprar en la tienda y pagar con tarjeta de prueba; el **titular** define el resultado: `APRO` (aprobado), `FUND` (sin fondos), `OTHE` (rechazado), etc.
+
+> ⚠️ Tarjeta de prueba **solo** funciona con credenciales de prueba. Con credenciales de producción se necesitan tarjeta y cuenta reales.
 
 ---
 

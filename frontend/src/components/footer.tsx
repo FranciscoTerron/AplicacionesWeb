@@ -14,7 +14,7 @@ const TRUST = [
   { icon: Truck, title: "Envíos a todo el país", desc: "Despacho en 24/48 hs" },
   { icon: ShieldCheck, title: "Compra protegida", desc: "Pago 100% seguro" },
   { icon: Headset, title: "Soporte real", desc: "Te asesoramos siempre" },
-  { icon: CreditCard, title: "Múltiples pagos", desc: "Tarjeta, transfer y más" },
+  { icon: CreditCard, title: "Múltiples pagos", desc: "Mercado Pago, tarjeta y más" },
 ];
 
 export function Footer() {
