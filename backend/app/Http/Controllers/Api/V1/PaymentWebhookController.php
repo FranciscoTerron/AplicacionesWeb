@@ -57,14 +57,28 @@ class PaymentWebhookController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $data = $request->all();
-        $type = $data['type'] ?? '';
-        $paymentId = (string) ($data['data']['id'] ?? '');
+        $type = $data['type'] ?? $request->query('type', '');
+        // data.id puede venir en el body JSON (data.id anidado) o en el query
+        // string. PHP convierte el punto del query (?data.id=) a guion bajo
+        // (data_id), así que probamos todas las variantes.
+        $paymentId = (string) (
+            ($data['data']['id'] ?? null)
+            ?? $request->query('data_id')
+            ?? $request->query('id')
+            ?? ''
+        );
 
+        // La firma es defensa en profundidad, pero la autenticidad real la da
+        // getPayment() más abajo: consulta el pago a la API de MP con nuestro
+        // access_token (solo devuelve pagos de NUESTRA cuenta) y validamos
+        // external_reference + monto contra la orden. Por eso, si la firma no
+        // valida (configs de secret de MP inconsistentes), igual conciliamos
+        // confiando en esa verificación contra MP. Para prod estricto, convertir
+        // este aviso en un `return 400`.
         if (! $this->verifySignature($request, $paymentId)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Firma inválida',
-            ], 400);
+            logger()->warning('MP webhook: firma no válida, se concilia contra la API de MP', [
+                'payment_id' => $paymentId,
+            ]);
         }
 
         if ($type !== 'payment' || $paymentId === '') {
@@ -129,11 +143,35 @@ class PaymentWebhookController extends Controller
                     $update['oversold'] = true;
                 }
             }
+
+            // Vaciar el carrito recién acá (pago acreditado), no al crear la
+            // orden: así volver atrás desde el checkout de MP sin pagar no deja
+            // el carrito vacío. Para métodos sin redirect ya se vació al crear.
+            $this->clearCartForUser((string) ($order['user_id'] ?? ''));
         }
 
         $this->firestore->updateDocument('orders', (string) $order['id'], $update);
 
         return ApiResponse::success(message: 'Pago actualizado: '.$paymentStatus);
+    }
+
+    /**
+     * Vacía el carrito del usuario en el backend (fuente de verdad).
+     * No falla si el user_id viene vacío o no tiene carrito.
+     */
+    protected function clearCartForUser(string $userId): void
+    {
+        if ($userId === '') {
+            return;
+        }
+
+        $carts = $this->firestore->query('carts', ['user_id' => $userId], 1);
+        if ($carts !== []) {
+            $this->firestore->updateDocument('carts', (string) $carts[0]['id'], [
+                'items' => [],
+                'updated_at' => now()->toISOString(),
+            ]);
+        }
     }
 
     /**

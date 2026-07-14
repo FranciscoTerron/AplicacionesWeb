@@ -1,33 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Banknote, Loader2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { RequireAuth } from "@/components/require-auth";
 import { useCart } from "@/context/cart-context";
-import { useEnrichedCart, cartSubtotal } from "@/hooks/use-enriched-cart";
-import { createOrder, payOrder } from "@/lib/endpoints";
-import { formatPrice } from "@/lib/utils";
-import type { PaymentMethod } from "@/types/api";
+import {
+  useEnrichedCart,
+  cartBaseSubtotal,
+  cartAutoDiscount,
+} from "@/hooks/use-enriched-cart";
+import { createOrder, payOrder, validateDiscount } from "@/lib/endpoints";
+import { cn, formatPrice } from "@/lib/utils";
+import type { Discount, PaymentMethod } from "@/types/api";
 
-const PAYMENT_LABELS: Record<PaymentMethod, string> = {
-  mercado_pago: "Mercado Pago",
-  transfer: "Transferencia bancaria",
-  cash: "Efectivo / contra entrega",
-  card: "Tarjeta",
-};
+// Métodos ofrecidos al cliente: solo dos, como botones (no select). "transfer"
+// y "card" se dejaron fuera para no confundir; el tipo PaymentMethod los
+// mantiene para mostrar órdenes históricas que sí los usaron.
+const PAYMENT_OPTIONS: {
+  value: PaymentMethod;
+  label: string;
+  icon: typeof Wallet;
+}[] = [
+  { value: "mercado_pago", label: "Mercado Pago", icon: Wallet },
+  { value: "cash", label: "Efectivo", icon: Banknote },
+];
 
 function CheckoutContent() {
   const { items, clearLocal } = useCart();
@@ -35,10 +37,34 @@ function CheckoutContent() {
   const router = useRouter();
 
   const [address, setAddress] = useState("");
-  const [method, setMethod] = useState<PaymentMethod>("transfer");
+  const [method, setMethod] = useState<PaymentMethod>("mercado_pago");
   const [submitting, setSubmitting] = useState(false);
+  const [discount, setDiscount] = useState<Discount | null>(null);
 
-  const subtotal = cartSubtotal(enriched);
+  // El cupón se aplicó en el carrito y queda guardado en localStorage; acá lo
+  // re-validamos solo para mostrar el mismo desglose en el resumen.
+  useEffect(() => {
+    const code = localStorage.getItem("discount_code");
+    if (!code) return;
+    validateDiscount(code)
+      .then(setDiscount)
+      .catch(() => {
+        setDiscount(null);
+        localStorage.removeItem("discount_code");
+      });
+  }, []);
+
+  // Misma regla que el backend: cupón y descuento automático por producto no
+  // se suman, gana el que más baja el total.
+  const baseSubtotal = cartBaseSubtotal(enriched);
+  const autoDiscount = cartAutoDiscount(enriched);
+  const couponAmount = discount
+    ? discount.discount_type === "percentage"
+      ? (baseSubtotal * discount.value) / 100
+      : Math.min(discount.value, baseSubtotal)
+    : 0;
+  const bestDiscount = Math.max(autoDiscount, couponAmount);
+  const total = baseSubtotal - bestDiscount;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,6 +72,12 @@ function CheckoutContent() {
       toast.error("Tu carrito está vacío");
       return;
     }
+    // Mercado Pago se abre en una pestaña nueva. El window.open debe dispararse
+    // DENTRO del gesto del click (antes de cualquier await), o el navegador lo
+    // bloquea como popup. La pestaña arranca vacía y luego se le setea la URL.
+    const mpTab =
+      method === "mercado_pago" ? window.open("", "_blank") : null;
+
     setSubmitting(true);
     try {
       const couponCode = localStorage.getItem("discount_code") ?? undefined;
@@ -60,20 +92,32 @@ function CheckoutContent() {
       });
       // Cupón consumido: no debe quedar pegado para la próxima compra.
       localStorage.removeItem("discount_code");
-      // El backend vacía el carrito al crear la orden (server-side, atómico).
-      // Acá solo sincronizamos la UI/badge al instante.
-      clearLocal();
 
-      // Mercado Pago: crear preference y redirigir al checkout externo.
+      // Mercado Pago: crear preference y abrir el checkout externo en la pestaña
+      // nueva. NO se vacía el carrito todavía: el backend lo limpia recién
+      // cuando el webhook acredita el pago. La pestaña actual va al detalle de
+      // la orden (pendiente), así no se pierde el contexto del sitio.
       if (method === "mercado_pago") {
         const { init_point } = await payOrder(order.id);
-        window.location.href = init_point;
+        if (mpTab) {
+          mpTab.location.href = init_point;
+        } else {
+          // Popup bloqueado: caemos a redirigir en la misma pestaña.
+          window.location.href = init_point;
+          return;
+        }
+        router.push(`/cuenta/ordenes/${order.id}`);
         return;
       }
 
+      // Métodos sin redirect: el backend ya vació el carrito al crear la orden.
+      // Acá solo sincronizamos la UI/badge al instante.
+      clearLocal();
       toast.success("¡Orden creada!");
       router.push(`/cuenta/ordenes/${order.id}?creada=1`);
     } catch (err) {
+      // Si algo falló, cerramos la pestaña de MP que abrimos en el click.
+      mpTab?.close();
       toast.error(err instanceof Error ? err.message : "No se pudo crear la orden");
     } finally {
       setSubmitting(false);
@@ -120,21 +164,29 @@ function CheckoutContent() {
 
         <div className="space-y-1.5">
           <Label>Método de pago</Label>
-          <Select
-            value={method}
-            onValueChange={(v) => setMethod(v as PaymentMethod)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(Object.keys(PAYMENT_LABELS) as PaymentMethod[]).map((m) => (
-                <SelectItem key={m} value={m}>
-                  {PAYMENT_LABELS[m]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="grid grid-cols-2 gap-3">
+            {PAYMENT_OPTIONS.map((opt) => {
+              const active = method === opt.value;
+              const Icon = opt.icon;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setMethod(opt.value)}
+                  aria-pressed={active}
+                  className={cn(
+                    "flex flex-col items-center justify-center gap-2 rounded-lg border p-4 text-sm font-medium transition-colors",
+                    active
+                      ? "border-primary bg-primary/5 ring-2 ring-primary"
+                      : "border-border hover:bg-accent",
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -142,23 +194,42 @@ function CheckoutContent() {
       <div className="h-fit space-y-4 rounded-lg border bg-card p-4">
         <h2 className="font-semibold">Tu pedido</h2>
         <ul className="space-y-2 text-sm">
-          {enriched.map((it) => (
-            <li key={it.product_id} className="flex justify-between gap-2">
-              <span className="line-clamp-1 text-muted-foreground">
-                {it.quantity}× {it.product?.name ?? it.product_id}
-              </span>
-              <span>
-                {it.product
-                  ? formatPrice(Number(it.product.price) * it.quantity)
-                  : "—"}
-              </span>
-            </li>
-          ))}
+          {enriched.map((it) => {
+            const p = it.product;
+            const unitPrice = p ? Number(p.final_price ?? p.price) : 0;
+            return (
+              <li key={it.product_id} className="flex justify-between gap-2">
+                <span className="line-clamp-1 text-muted-foreground">
+                  {it.quantity}× {p?.name ?? it.product_id}
+                </span>
+                <span>{p ? formatPrice(unitPrice * it.quantity) : "—"}</span>
+              </li>
+            );
+          })}
         </ul>
+        <Separator />
+        <div className="space-y-1 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Subtotal</span>
+            <span>{formatPrice(baseSubtotal)}</span>
+          </div>
+          {autoDiscount > 0 && (
+            <div className="flex justify-between text-green-600">
+              <span>Descuento en productos</span>
+              <span>-{formatPrice(autoDiscount)}</span>
+            </div>
+          )}
+          {discount && (
+            <div className="flex justify-between text-green-600">
+              <span>Cupón ({discount.code})</span>
+              <span>-{formatPrice(couponAmount)}</span>
+            </div>
+          )}
+        </div>
         <Separator />
         <div className="flex justify-between text-base font-bold">
           <span>Total</span>
-          <span>{formatPrice(subtotal)}</span>
+          <span>{formatPrice(total)}</span>
         </div>
         <Button type="submit" className="w-full" size="lg" disabled={submitting}>
           {submitting && <Loader2 className="animate-spin" />}

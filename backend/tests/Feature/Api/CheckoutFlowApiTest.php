@@ -172,7 +172,7 @@ class CheckoutFlowApiTest extends TestCase
         ]]);
     }
 
-    public function test_creating_order_empties_the_user_cart(): void
+    public function test_creating_non_mp_order_empties_the_user_cart(): void
     {
         $headers = $this->actingAsApiUser(['id' => 'user-1']);
         $this->firestore->seed('products', [
@@ -184,13 +184,55 @@ class CheckoutFlowApiTest extends TestCase
             'items' => [['product_id' => 'p1', 'quantity' => 2]],
         ]]);
 
+        // Métodos sin redirect externo (efectivo/transferencia/tarjeta): la
+        // orden queda en firme al crearse, así que el carrito se vacía ya.
         $this->postJson('/api/v1/orders', [
             'items' => [['product_id' => 'p1', 'quantity' => 2]],
             'shipping_address' => 'x',
-            'payment_method' => 'mercado_pago',
+            'payment_method' => 'cash',
         ], $headers)->assertStatus(201);
 
-        // El carrito del usuario queda vacío tras crear la orden.
+        $this->assertSame([], $this->firestore->getDocument('carts', 'cart-1')['items']);
+    }
+
+    public function test_creating_mp_order_keeps_cart_until_payment_is_approved(): void
+    {
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('products', [
+            ['id' => 'p1', 'name' => 'Cloro', 'price' => 100, 'active' => true, 'stock' => 10],
+        ]);
+        $this->firestore->seed('carts', [[
+            'id' => 'cart-1',
+            'user_id' => 'user-1',
+            'items' => [['product_id' => 'p1', 'quantity' => 2]],
+        ]]);
+
+        // Mercado Pago: crear la orden NO vacía el carrito. Si el usuario vuelve
+        // atrás desde el checkout externo sin pagar, el carrito sigue intacto.
+        $orderId = (string) $this->postJson('/api/v1/orders', [
+            'items' => [['product_id' => 'p1', 'quantity' => 2]],
+            'shipping_address' => 'x',
+            'payment_method' => 'mercado_pago',
+        ], $headers)->json('data.id');
+
+        $this->assertSame(
+            [['product_id' => 'p1', 'quantity' => 2]],
+            $this->firestore->getDocument('carts', 'cart-1')['items']
+        );
+
+        // Recién cuando el webhook acredita el pago, el carrito se vacía.
+        $this->firestore->updateDocument('orders', $orderId, ['external_reference' => $orderId]);
+        Http::fake([
+            'api.mercadopago.com/v1/payments/*' => Http::response([
+                'status' => 'approved',
+                'external_reference' => $orderId,
+                'transaction_amount' => 200,
+            ]),
+        ]);
+
+        $this->postWebhook(['type' => 'payment', 'data' => ['id' => self::PAYMENT_ID]])
+            ->assertStatus(200);
+
         $this->assertSame([], $this->firestore->getDocument('carts', 'cart-1')['items']);
     }
 

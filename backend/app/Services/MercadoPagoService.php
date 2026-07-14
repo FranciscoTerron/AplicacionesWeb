@@ -33,7 +33,6 @@ class MercadoPagoService
 
         $orderId = (string) ($order['id'] ?? '');
         $frontendUrl = rtrim((string) config('services.mercadopago.frontend_url'), '/');
-        $appUrl = rtrim((string) config('app.url'), '/');
 
         // Items desde los precios server-side de la orden (no del cliente).
         // El total debe coincidir EXACTO con total_amount o el webhook lo rechaza.
@@ -52,19 +51,26 @@ class MercadoPagoService
             'external_reference' => $orderId,
             'back_urls' => [
                 'success' => "{$frontendUrl}/cuenta/ordenes/{$orderId}?pago=success",
-                'failure' => "{$frontendUrl}/cuenta/ordenes/{$orderId}?pago=failure",
+                // "Volver a la tienda" / pago rechazado: al carrito, que conserva
+                // los productos (no se vacía hasta que el pago se acredita), así
+                // el usuario puede reintentar la compra directo.
+                'failure' => "{$frontendUrl}/carrito",
                 'pending' => "{$frontendUrl}/cuenta/ordenes/{$orderId}?pago=pending",
             ],
         ];
 
-        // auto_return y notification_url solo con HTTPS: Mercado Pago rechaza
-        // URLs localhost/http en esos campos (rompería la creación en local).
+        // auto_return solo con HTTPS: Mercado Pago rechaza URLs localhost/http.
         if (str_starts_with($frontendUrl, 'https://')) {
             $payload['auto_return'] = 'approved';
         }
-        if (str_starts_with($appUrl, 'https://')) {
-            $payload['notification_url'] = "{$appUrl}/api/v1/payments/webhook";
-        }
+
+        // NO seteamos notification_url en la preference a propósito: cuando se
+        // define, MP firma la notificación con el secret de la integración API
+        // (distinto del que se ve/configura en el panel "Webhooks"), y la firma
+        // no valida. Sin notification_url, MP usa el webhook configurado en el
+        // panel (cuya URL ya apunta al backend) y firma con ESE secret, que es
+        // el que tenemos en MERCADOPAGO_WEBHOOK_SECRET. El webhook se administra
+        // desde el panel de MP (su URL ya apunta al backend).
 
         $response = Http::withToken($accessToken)->post(self::PREFERENCES_URL, $payload);
 

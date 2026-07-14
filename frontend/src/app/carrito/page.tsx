@@ -10,7 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { RequireAuth } from "@/components/require-auth";
 import { useCart } from "@/context/cart-context";
-import { useEnrichedCart, cartSubtotal } from "@/hooks/use-enriched-cart";
+import {
+  useEnrichedCart,
+  cartBaseSubtotal,
+  cartAutoDiscount,
+} from "@/hooks/use-enriched-cart";
 import { validateDiscount } from "@/lib/endpoints";
 import { formatPrice } from "@/lib/utils";
 import type { Discount } from "@/types/api";
@@ -22,13 +26,18 @@ function CartContent() {
   const [discount, setDiscount] = useState<Discount | null>(null);
   const [applying, setApplying] = useState(false);
 
-  const subtotal = cartSubtotal(enriched);
-  const discountAmount = discount
+  // El subtotal es siempre sobre precio base: el cupón y el descuento
+  // automático de cada producto NO se suman, gana el que más baja el total
+  // (misma regla que aplica el backend al crear la orden).
+  const baseSubtotal = cartBaseSubtotal(enriched);
+  const autoDiscount = cartAutoDiscount(enriched);
+  const couponAmount = discount
     ? discount.discount_type === "percentage"
-      ? (subtotal * discount.value) / 100
-      : Math.min(discount.value, subtotal)
+      ? (baseSubtotal * discount.value) / 100
+      : Math.min(discount.value, baseSubtotal)
     : 0;
-  const total = subtotal - discountAmount;
+  const bestDiscount = Math.max(autoDiscount, couponAmount);
+  const total = baseSubtotal - bestDiscount;
 
   async function applyDiscount() {
     if (!code.trim()) return;
@@ -74,6 +83,8 @@ function CartContent() {
         {enriched.map((it) => {
           const p = it.product;
           const img = p?.images?.[0]?.url;
+          const itemHasDiscount = p?.has_discount && p.discount;
+          const unitPrice = p ? Number(p.final_price ?? p.price) : 0;
           return (
             <div
               key={it.product_id}
@@ -97,9 +108,20 @@ function CartContent() {
                 >
                   {p?.name ?? "Producto no disponible"}
                 </Link>
-                <p className="text-sm text-muted-foreground">
-                  {p ? formatPrice(p.price) : "—"}
-                </p>
+                {itemHasDiscount ? (
+                  <p className="flex items-center gap-1.5 text-sm">
+                    <span className="font-medium text-red-600">
+                      {formatPrice(p.final_price)}
+                    </span>
+                    <span className="text-muted-foreground line-through">
+                      {formatPrice(p.price)}
+                    </span>
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {p ? formatPrice(p.price) : "—"}
+                  </p>
+                )}
                 <div className="mt-auto flex items-center gap-2">
                   <div className="flex items-center rounded-md border">
                     <button
@@ -130,7 +152,7 @@ function CartContent() {
                 </div>
               </div>
               <div className="text-right font-semibold">
-                {p ? formatPrice(Number(p.price) * it.quantity) : "—"}
+                {p ? formatPrice(unitPrice * it.quantity) : "—"}
               </div>
             </div>
           );
@@ -161,12 +183,18 @@ function CartContent() {
         <div className="space-y-1 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Subtotal</span>
-            <span>{formatPrice(subtotal)}</span>
+            <span>{formatPrice(baseSubtotal)}</span>
           </div>
+          {autoDiscount > 0 && (
+            <div className="flex justify-between text-green-600">
+              <span>Descuento en productos</span>
+              <span>-{formatPrice(autoDiscount)}</span>
+            </div>
+          )}
           {discount && (
             <div className="flex justify-between text-green-600">
-              <span>Descuento ({discount.code})</span>
-              <span>-{formatPrice(discountAmount)}</span>
+              <span>Cupón ({discount.code})</span>
+              <span>-{formatPrice(couponAmount)}</span>
             </div>
           )}
           <div className="flex justify-between pt-2 text-base font-bold">
@@ -174,6 +202,12 @@ function CartContent() {
             <span>{formatPrice(total)}</span>
           </div>
         </div>
+        {discount && autoDiscount > couponAmount && (
+          <p className="text-xs text-amber-600">
+            Tus productos ya tienen un descuento mayor al del cupón; el cupón
+            no se aplicará.
+          </p>
+        )}
 
         <Button asChild className="w-full" size="lg">
           <Link href="/checkout">Finalizar compra</Link>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\Catalog\SearchRequest;
+use App\Services\DiscountService;
 use App\Services\FirestoreService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -11,7 +12,10 @@ use OpenApi\Attributes as OA;
 
 class SearchController extends Controller
 {
-    public function __construct(private readonly FirestoreService $firestore) {}
+    public function __construct(
+        private readonly FirestoreService $firestore,
+        private readonly DiscountService $discounts,
+    ) {}
 
     /**
      * POST /api/v1/catalog/search
@@ -109,6 +113,8 @@ class SearchController extends Controller
             $products = $products->sortBy($sortBy, SORT_REGULAR, $sortOrder === 'desc')
                 ->values();
         }
+
+        $products = $this->discounts->decorateMany($products);
 
         return ApiResponse::success(
             data: $products->all(),
