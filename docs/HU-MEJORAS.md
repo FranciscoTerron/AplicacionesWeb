@@ -49,9 +49,9 @@
 - Los CRUD (categorías, productos, etc.) se salvan porque sus policies exigen `admin|editor`, pero la protección queda librada a que cada controller llame a `authorize`.
 
 **Criterios de aceptación**
-- [ ] Existe un middleware de rol (ej. `role:admin,editor`) aplicado a TODO el grupo `/admin`; un `cliente` autenticado recibe 403 en cualquier ruta del panel, incluidos dashboard, settings y exportaciones CSV.
-- [ ] Las rutas que hoy usan `admin` (solo admin) mantienen su restricción más estricta.
-- [ ] Test de feature que verifica que un usuario `cliente` recibe 403 en `/admin`, `/admin/settings` y `/admin/export/orders`.
+- [x] Existe un middleware de rol (ej. `role:admin,editor`) aplicado a TODO el grupo `/admin`; un `cliente` autenticado recibe 403 en cualquier ruta del panel, incluidos dashboard, settings y exportaciones CSV.
+- [x] Las rutas que hoy usan `admin` (solo admin) mantienen su restricción más estricta.
+- [x] Test de feature que verifica que un usuario `cliente` recibe 403 en `/admin`, `/admin/settings` y `/admin/export/orders`.
 
 ---
 
@@ -65,9 +65,9 @@
 - Los clientes del e-commerce viven en la colección `clients`, pero el alta por Google los mete en `users`: quedan mezclados usuarios internos con desconocidos.
 
 **Criterios de aceptación**
-- [ ] Primer login con Google de un email desconocido NO crea documentos en `users`. Opciones (decidir en refinamiento): (a) rechazar el acceso salvo que el email ya exista en `users`, o (b) crear el usuario en `clients` y redirigirlo a la tienda sin sesión de panel.
-- [ ] La promoción a `admin` vía `services.google.admin_emails` sigue funcionando.
-- [ ] Si `allowed_domains` está vacío en producción, se loguea un warning al iniciar (o se exige configuración explícita).
+- [x] Primer login con Google de un email desconocido NO crea documentos en `users`. **Decisión: opción (a)** — se rechaza el acceso salvo que el email ya exista en `users` (o esté en `admin_emails`).
+- [x] La promoción a `admin` vía `services.google.admin_emails` sigue funcionando.
+- [x] Si `allowed_domains` está vacío en producción, se loguea un warning (en cada callback de Google).
 - [ ] Nota de coordinación: esta HU define el backend del login con Google **de la tienda** (HU-F01): hace falta un endpoint que complete el flujo OAuth y devuelva un token de API (`api_tokens`) como el de `/auth/login`, en lugar de una sesión web.
 
 ---
@@ -249,8 +249,8 @@ Consecuencias concretas:
 - `router.push(params.get("redirect") || "/")` sin validar: `/login?redirect=https://evil.com` navega fuera del sitio después de un login exitoso.
 
 **Criterios de aceptación**
-- [ ] Solo se acepta un `redirect` que sea path interno (empieza con `/` y no con `//`); cualquier otro valor cae a `/`.
-- [ ] Aplicado también en cualquier otro consumidor del param (revisar `registro`).
+- [x] Solo se acepta un `redirect` que sea path interno (empieza con `/` y no con `//`); cualquier otro valor cae a `/`.
+- [x] Aplicado también en cualquier otro consumidor del param (verificado: `registro` no usa el param; `login/page.tsx` era el único consumidor).
 
 ---
 

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\Api\AuthenticateApiToken;
+use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\ShareSettingsMiddleware;
 use App\Providers\AppServiceProvider;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -50,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Add custom middleware aliases
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'role' => RoleMiddleware::class,
             'auth.api' => AuthenticateApiToken::class,
         ]);
     })
