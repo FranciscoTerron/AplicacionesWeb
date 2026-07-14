@@ -353,10 +353,10 @@ Consecuencias concretas:
 - `frontend/src/app/layout.tsx` solo define `title` y `description` en `metadata`; el HTML servido no linkea ningún `manifest.webmanifest`, por lo que Chrome nunca ofrece el prompt de instalación.
 
 **Criterios de aceptación**
-- [ ] Existe `frontend/src/app/manifest.ts` (convención de App Router; Next genera y linkea `/manifest.webmanifest` automáticamente, sin plugins).
-- [ ] El manifest define como mínimo: `name` ("MA Piscinas"), `short_name`, `description`, `start_url: "/"`, `display: "standalone"`, `background_color`, `theme_color` (coherente con la paleta de la tienda) y el array `icons` con los assets de HU-F10.
-- [ ] `GET /manifest.webmanifest` responde 200 en producción y el `<link rel="manifest">` aparece en el HTML.
-- [ ] Verificación: en Chrome DevTools → Application → Manifest no se muestran errores ni warnings de instalabilidad, y en un Android real aparece la opción "Instalar app" / "Agregar a pantalla de inicio".
+- [x] Existe `frontend/src/app/manifest.ts` (convención de App Router; Next genera y linkea `/manifest.webmanifest` automáticamente, sin plugins).
+- [x] El manifest define: `name` ("MA Piscinas"), `short_name`, `description`, `start_url: "/"`, `display: "standalone"`, `background_color: #ffffff`, `theme_color: #0284c7` (el `--primary` de la tienda) y el array `icons` con los assets de HU-F10.
+- [x] `GET /manifest.webmanifest` responde 200 y el `<link rel="manifest">` aparece en el HTML (verificado con `next build` + `next start` local).
+- [ ] Verificación pendiente post-deploy: DevTools → Application → Manifest sin warnings, y prompt de instalación en un Android real.
 
 ---
 
@@ -369,10 +369,10 @@ Consecuencias concretas:
 - Sin íconos de 192×192 y 512×512 el manifest de HU-F09 no pasa los criterios de instalabilidad de Chrome, aunque exista.
 
 **Criterios de aceptación**
-- [ ] A partir del logo de MA Piscinas se generan PNGs de **192×192** y **512×512** (propósito `any`) y una variante **maskable** de 512×512 con margen de seguridad (~10% de padding), ubicados en `frontend/public/icons/`.
-- [ ] Se genera un **apple-touch-icon** de 180×180 (fondo sólido, sin transparencia) para HU-F11.
-- [ ] Los íconos quedan declarados en el array `icons` del manifest con sus `sizes`, `type` y `purpose` correctos.
-- [ ] Verificación: el ícono se ve correcto (no recortado ni pixelado) al instalar en un Android real y en el preview "maskable" de DevTools → Application → Manifest.
+- [x] PNGs de **192×192** y **512×512** (`any`) y **maskable** 512×512 con margen de seguridad en `frontend/public/icons/`. Nota: no había logo fuente en el repo (la marca es el ícono Waves de lucide + texto), así que se generaron desde esa identidad: gradiente azul de la paleta, "MA" y ondas. Si aparece un logo oficial, regenerar.
+- [x] **apple-touch-icon** de 180×180 con fondo sólido, sin transparencia.
+- [x] Íconos declarados en el manifest con `sizes`, `type` y `purpose` correctos.
+- [ ] Verificación pendiente post-deploy: instalación en Android real y preview "maskable" de DevTools.
 
 ---
 
@@ -386,9 +386,9 @@ Consecuencias concretas:
 - Sin el ícono de Apple, iOS usa un screenshot de la página como ícono, con resultado poco profesional.
 
 **Criterios de aceptación**
-- [ ] `frontend/src/app/layout.tsx` exporta `viewport` con `themeColor` acorde a la paleta de la tienda.
-- [ ] El `metadata` del layout incluye `appleWebApp` (capable, `title: "MA Piscinas"`, `statusBarStyle`) y referencia el `apple-touch-icon` de 180×180 (vía `icons.apple` o colocándolo como `frontend/src/app/apple-icon.png`, que App Router sirve automático).
-- [ ] Verificación en iPhone real o simulador: "Agregar a pantalla de inicio" muestra el logo correcto y, al abrirse, la app corre en modo standalone (sin la barra de Safari).
+- [x] `layout.tsx` exporta `viewport` con `themeColor: #0284c7`.
+- [x] `metadata.appleWebApp` (capable, `title: "MA Piscinas"`, `statusBarStyle`) + `icons.apple` con el apple-touch-icon. Verificado en el HTML servido: `apple-mobile-web-app-title`, `apple-mobile-web-app-status-bar-style`, `mobile-web-app-capable` y el link del ícono.
+- [ ] Verificación pendiente: iPhone real o simulador ("Agregar a pantalla de inicio" + modo standalone).
 
 ---
 
@@ -401,11 +401,11 @@ Consecuencias concretas:
 - Chrome moderno ya no exige SW para permitir la instalación, pero sin él la "app" instalada es solo un acceso directo: sin cache, sin offline, y evaluando el requisito "instalable" como PWA queda incompleto.
 
 **Criterios de aceptación**
-- [ ] Decidir en refinamiento el enfoque: (a) **Serwist** (sucesor mantenido de `next-pwa`, precache automático de assets) o (b) **`public/sw.js` manual mínimo** (sin dependencias: cachea el shell y una página `/offline`). Para el alcance de la materia, (b) es suficiente.
-- [ ] El SW se registra solo en producción (no interferir con HMR en `next dev`).
-- [ ] Existe una página/ruta `offline` con estilo de la tienda, y el SW la sirve como fallback de navegación cuando no hay red.
-- [ ] Los assets estáticos (íconos, fuentes, CSS/JS del shell) se sirven desde cache cuando no hay conexión. Las llamadas a la API **no** se cachean (los datos de stock, precios y órdenes deben ser siempre frescos — coordinar con HU-F03/HU-F04, que asumen requests reales al backend).
-- [ ] Verificación: con la app instalada y el modo avión activado, abrirla muestra la página offline; en DevTools → Application → Service Workers el SW figura activo; Lighthouse (categoría PWA) pasa la auditoría de instalabilidad.
+- [x] **Decisión: opción (b)** — `public/sw.js` manual mínimo, sin dependencias.
+- [x] El SW se registra solo en producción (`ServiceWorkerRegister` en el layout chequea `NODE_ENV`).
+- [x] Página `/offline` con estilo de la tienda; el SW la precachea y la sirve como fallback de navegación sin red.
+- [x] Assets estáticos (`/_next/static/`, `/icons/`, css/js/fuentes/imágenes) cache-first; las llamadas a la API **no** se cachean (GET de otro origen y `/api/` quedan excluidos explícitamente).
+- [ ] Verificación pendiente post-deploy: modo avión muestra `/offline`, SW activo en DevTools, Lighthouse pasa instalabilidad.
 
 ---
 
