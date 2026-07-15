@@ -10,8 +10,8 @@
 |---|---|---|
 | Déficits técnicos resueltos (flujo de compra, CRUD, stock, responsive) | 🟡 Parcial | B04 ✅ B05 ✅ · pendientes: B06, F05, F06, F07, F08 |
 | PWA instalable | ✅ | F09–F12 (falta verificación iOS de F11) |
-| PWA: **notificaciones push** de productos/promos | ❌ | **HU-B13 + HU-F13** (nuevas) |
-| PWA: **catálogo visible offline** (cacheado) | ❌ | **HU-F14** (nueva — el SW actual solo muestra "Sin conexión") |
+| PWA: **notificaciones push** de productos/promos | 🟡 Implementado | HU-B13 ✅ + HU-F13 ✅ (falta verificar en Android real) |
+| PWA: **catálogo visible offline** (cacheado) | 🟡 Implementado | HU-F14 ✅ (falta verificar en Android real) |
 | **Lighthouse Accesibilidad = 100** | ❌ | **HU-F15** (nueva) |
 | API protegida para que **solo la app React** pueda usarla | 🟡 Parcial | **HU-B14** (nueva) + B03, B09 |
 | **Auditoría IA** con el prompt obligatorio de la cátedra | ❌ | **HT-01** (nueva) |
@@ -253,11 +253,11 @@ Consecuencias concretas:
 - Contraparte frontend: HU-F13 (suscripción del navegador + handler `push` en el SW).
 
 **Criterios de aceptación**
-- [ ] Par de claves VAPID en config (`services.webpush.public_key/private_key`, generadas una vez y en `.env`); la pública se expone al frontend.
-- [ ] `POST /api/v1/push/subscribe` guarda la suscripción (endpoint, keys `p256dh`/`auth`) en Firestore (colección `push_subscriptions`); idempotente por endpoint. `DELETE` (o `POST /push/unsubscribe`) la elimina. Decidir en refinamiento si requiere `auth.api` o acepta anónimos (para push de promos alcanza con anónimos).
-- [ ] Envío con una librería web-push para PHP (ej. `minishlink/web-push`); las suscripciones que devuelven 404/410 se eliminan.
-- [ ] Disparador desde el panel: al crear un producto (o mediante un botón/form "Enviar notificación" en el panel — decidir en refinamiento) se envía un push con título, texto y URL de destino.
-- [ ] Test de feature del subscribe/unsubscribe; el envío puede probarse con un fake del sender.
+- [x] Par de claves VAPID en config (`services.webpush`, env `VAPID_PUBLIC_KEY/PRIVATE_KEY/SUBJECT`); la pública se expone vía `GET /api/v1/push/public-key` (el frontend no necesita env var propia). **Pendiente deploy: cargar las 3 vars en el entorno productivo del backend.**
+- [x] **Decisión: suscripciones anónimas** (broadcast de promos, sin atar al usuario). `POST /push/subscribe` guarda en `push_subscriptions` con `sha256(endpoint)` como doc id (idempotente); `POST /push/unsubscribe` la elimina.
+- [x] Envío con `minishlink/web-push` (`App\Services\WebPushSender::broadcast`); las suscripciones vencidas (404/410) se eliminan automáticamente al enviar.
+- [x] **Decisión: form en el panel** (`/admin/notifications`, solo admin, link "Notificaciones" en el sidebar): título, mensaje y ruta de destino; muestra cantidad de suscriptos y resultado del envío.
+- [x] Tests: `PushApiTest` (public-key, subscribe idempotente, validación, unsubscribe) y `NotificationPanelTest` (403 editor, broadcast con sender mockeado, validación).
 
 ---
 
@@ -470,10 +470,10 @@ Consecuencias concretas:
 - Contraparte de HU-B13 (backend guarda suscripciones y envía). El SW actual (`frontend/public/sw.js`) no tiene handlers `push` ni `notificationclick`.
 
 **Criterios de aceptación**
-- [ ] UI para activar notificaciones (banner o switch en la tienda; **no** pedir permiso automáticamente al cargar — Chrome lo penaliza y es mala UX). Estados: no soportado / denegado / activo.
-- [ ] Al activar: `Notification.requestPermission()` → `registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: <VAPID pública> })` → `POST /push/subscribe`. Desactivar hace `unsubscribe()` + aviso al backend.
-- [ ] `sw.js` maneja `push` (muestra la notificación con título, texto, ícono de la app y URL) y `notificationclick` (abre/enfoca la URL).
-- [ ] Probado en Android real: llega una notificación con la app cerrada y al tocarla abre la página del producto/promo.
+- [x] Botón "Recibir ofertas y novedades" en el footer (`PushToggle`); el permiso se pide recién al tocarlo. Estados: no soportado/dev (oculto), denegado (aviso), activo/inactivo. Solo aparece en producción (igual que el registro del SW).
+- [x] Al activar: `Notification.requestPermission()` → `pushManager.subscribe` con la VAPID pública traída de `/push/public-key` → `POST /push/subscribe`. Desactivar hace `unsubscribe()` + `POST /push/unsubscribe`.
+- [x] `sw.js` maneja `push` (título, texto, ícono de la app, URL en `data`) y `notificationclick` (enfoca la pestaña si ya está abierta o abre la URL).
+- [ ] Probado en Android real: activar desde el footer, enviar desde `/admin/notifications`, llega con la app cerrada y al tocarla abre la página indicada.
 
 ---
 

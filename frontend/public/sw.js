@@ -1,4 +1,4 @@
-// Service worker de MA Piscinas (HU-F12 + HU-F14).
+// Service worker de MA Piscinas (HU-F12 + HU-F14 + HU-F13 push).
 //
 // - Precachea la página /offline y los íconos.
 // - Navegación: network-first; las páginas de catálogo visitadas quedan
@@ -135,4 +135,44 @@ self.addEventListener("fetch", (event) => {
       )
     );
   }
+});
+
+// --- Notificaciones push (HU-F13) ---
+// El backend manda un JSON { title, body, url } cifrado para esta suscripción.
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    // Payload no-JSON: se muestra la notificación genérica.
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || "MA Piscinas", {
+      body: data.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url || "/" },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/";
+
+  // Si ya hay una pestaña/app abierta en esa página, enfocarla; si no, abrirla.
+  event.waitUntil(
+    clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((windows) => {
+        for (const client of windows) {
+          if (new URL(client.url).pathname === url && "focus" in client) {
+            return client.focus();
+          }
+        }
+        return clients.openWindow(url);
+      })
+  );
 });

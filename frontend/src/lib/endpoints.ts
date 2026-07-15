@@ -187,3 +187,24 @@ export async function payOrder(id: string) {
   );
   return data;
 }
+
+// ---------- Notificaciones push (HU-F13) ----------
+
+export async function getPushPublicKey() {
+  const { data } = await apiFetch<{ public_key: string }>("/push/public-key");
+  return data.public_key;
+}
+
+export function subscribePush(subscription: PushSubscriptionJSON) {
+  return apiFetch<null>("/push/subscribe", {
+    method: "POST",
+    body: subscription,
+  });
+}
+
+export function unsubscribePush(endpoint: string) {
+  return apiFetch<null>("/push/unsubscribe", {
+    method: "POST",
+    body: { endpoint },
+  });
+}
