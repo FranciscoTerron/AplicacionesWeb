@@ -9,6 +9,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SettingController;
@@ -68,6 +69,10 @@ Route::middleware(['auth', 'role:admin,editor'])->prefix('admin')->group(functio
         // Envíos
         Route::get('shipments/create', [ShipmentController::class, 'create'])->name('admin.shipments.create');
         Route::post('shipments', [ShipmentController::class, 'store'])->name('admin.shipments.store');
+
+        // Notificaciones push a la tienda (HU-B13)
+        Route::get('notifications', [NotificationController::class, 'index'])->name('admin.notifications.index');
+        Route::post('notifications', [NotificationController::class, 'send'])->name('admin.notifications.send');
     });
 
     // Show para editors y admins (lectura con id dinámico). Va DESPUÉS de /create.

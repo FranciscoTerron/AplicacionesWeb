@@ -9,6 +9,7 @@ import {
   Phone,
   MapPin,
 } from "lucide-react";
+import { PushToggle } from "@/components/push-toggle";
 
 const TRUST = [
   { icon: Truck, title: "Envíos a todo el país", desc: "Despacho en 24/48 hs" },
@@ -52,6 +53,9 @@ export function Footer() {
               Todo para tu piscina: bombas, accesorios, productos de
               mantenimiento y más. Calidad y mejor precio.
             </p>
+            <div className="mt-4">
+              <PushToggle />
+            </div>
           </div>
 
           <div>
