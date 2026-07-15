@@ -26,7 +26,8 @@ export function AccountMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium outline-none hover:bg-black/5">
         <UserIcon className="size-5" />
-        <span className="hidden max-w-28 truncate sm:inline">
+        {/* En mobile el texto queda sr-only: sin él, el botón no tiene nombre accesible (HU-F15). */}
+        <span className="max-w-28 truncate max-sm:sr-only sm:inline">
           {isAuthenticated ? user?.name : "Mi cuenta"}
         </span>
       </DropdownMenuTrigger>

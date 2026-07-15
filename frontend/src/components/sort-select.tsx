@@ -31,7 +31,12 @@ export function SortSelect() {
 
   return (
     <Select value={current} onValueChange={onChange}>
-      <SelectTrigger size="sm" className="w-full sm:w-40">
+      <SelectTrigger
+        size="sm"
+        className="w-full sm:w-40"
+        aria-label="Ordenar productos"
+      >
+
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
