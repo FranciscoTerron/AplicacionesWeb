@@ -27,7 +27,7 @@ export function FiltersSidebar({ categories }: { categories: Category[] }) {
   return (
     <aside className="space-y-6">
       <div>
-        <h3 className="mb-2 text-sm font-semibold">Categorías</h3>
+        <h2 className="mb-2 text-sm font-semibold">Categorías</h2>
         <ul className="space-y-1 text-sm">
           <li>
             <button
@@ -55,7 +55,7 @@ export function FiltersSidebar({ categories }: { categories: Category[] }) {
       </div>
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold">Precio</h3>
+        <h2 className="mb-2 text-sm font-semibold">Precio</h2>
         <div className="flex items-center gap-2">
           <Input
             type="number"

@@ -106,6 +106,8 @@ export default async function ProductsPage({
         </div>
 
         <div>
+          {/* Heading intermedio (h1 → h3 de las cards saltaba un nivel, HU-F15). */}
+          <h2 className="sr-only">Resultados</h2>
           {error ? (
             <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-6 text-center text-destructive">
               {error}

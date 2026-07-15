@@ -214,13 +214,13 @@ function CheckoutContent() {
             <span>{formatPrice(baseSubtotal)}</span>
           </div>
           {autoDiscount > 0 && (
-            <div className="flex justify-between text-green-600">
+            <div className="flex justify-between text-green-700">
               <span>Descuento en productos</span>
               <span>-{formatPrice(autoDiscount)}</span>
             </div>
           )}
           {discount && (
-            <div className="flex justify-between text-green-600">
+            <div className="flex justify-between text-green-700">
               <span>Cupón ({discount.code})</span>
               <span>-{formatPrice(couponAmount)}</span>
             </div>

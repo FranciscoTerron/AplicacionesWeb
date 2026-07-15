@@ -104,7 +104,7 @@ export default async function ProductDetailPage({
                 </Badge>
               )}
               {hasDiscount && (
-                <Badge className="bg-red-600 text-white">
+                <Badge className="bg-red-700 text-white">
                   -{product.discount?.percent_off}% OFF
                 </Badge>
               )}
@@ -128,7 +128,7 @@ export default async function ProductDetailPage({
                     {formatPrice(product.price)}
                   </p>
                 </div>
-                <p className="text-sm font-medium text-green-600">
+                <p className="text-sm font-medium text-green-700">
                   Ahorrás {formatPrice(product.discount_amount)}
                 </p>
               </div>
@@ -142,7 +142,7 @@ export default async function ProductDetailPage({
               {outOfStock ? (
                 <Badge variant="destructive">Sin stock</Badge>
               ) : (
-                <p className="flex items-center gap-1.5 text-sm font-medium text-green-600">
+                <p className="flex items-center gap-1.5 text-sm font-medium text-green-700">
                   <Check className="size-4" />
                   {lowStock
                     ? `¡Últimas ${stock} unidades!`

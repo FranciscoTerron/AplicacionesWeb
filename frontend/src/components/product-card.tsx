@@ -39,7 +39,7 @@ export function ProductCard({ product }: { product: Product }) {
             </Badge>
           )}
           {hasDiscount && (
-            <Badge className="bg-red-600 text-white shadow-sm">
+            <Badge className="bg-red-700 text-white shadow-sm">
               -{product.discount?.percent_off}%
             </Badge>
           )}

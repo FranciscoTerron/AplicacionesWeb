@@ -85,7 +85,10 @@ function LoginForm() {
         </form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
           ¿No tenés cuenta?{" "}
-          <Link href="/registro" className="text-primary hover:underline">
+          <Link
+            href="/registro"
+            className="text-primary underline underline-offset-4"
+          >
             Registrate
           </Link>
         </p>

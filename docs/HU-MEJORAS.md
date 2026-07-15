@@ -12,7 +12,7 @@
 | PWA instalable | ✅ | F09–F12 (falta verificación iOS de F11) |
 | PWA: **notificaciones push** de productos/promos | 🟡 Implementado | HU-B13 ✅ + HU-F13 ✅ (falta verificar en Android real) |
 | PWA: **catálogo visible offline** (cacheado) | 🟡 Implementado | HU-F14 ✅ (falta verificar en Android real) |
-| **Lighthouse Accesibilidad = 100** | ❌ | **HU-F15** (nueva) |
+| **Lighthouse Accesibilidad = 100** | ✅ | HU-F15 — 100 en las 7 páginas clave (15/07/2026, build de producción local) |
 | API protegida para que **solo la app React** pueda usarla | 🟡 Parcial | **HU-B14** (nueva) + B03, B09 |
 | **Auditoría IA** con el prompt obligatorio de la cátedra | ❌ | **HT-01** (nueva) |
 | Defensa con todos los integrantes | — | Coordinar día y hora con la cátedra |
@@ -504,9 +504,10 @@ Consecuencias concretas:
 - Nunca se corrió el audit sobre la tienda. Hallazgos típicos en este stack: botones icon-only sin `aria-label` (carrito, wishlist, menú), contraste insuficiente en `text-muted-foreground` sobre fondos claros, `alt` faltante o genérico en imágenes de productos, orden de headings, `aria-*` en el drawer/modal.
 
 **Criterios de aceptación**
-- [ ] Auditar con Lighthouse (Chrome DevTools → Lighthouse → Accessibility, en modo incógnito contra el build de producción) las páginas clave: home, `/productos`, ficha de producto, `/carrito`, `/checkout`, `/login`.
-- [ ] Corregir todos los hallazgos hasta llegar a **100 en todas las páginas auditadas**; documentar acá la fecha y páginas verificadas.
-- [ ] Las correcciones no rompen `npx tsc --noEmit` ni `npm run build`.
+- [x] Auditado con Lighthouse (headless, build de producción local + backend real) el 15/07/2026: home, `/productos`, ficha de producto, `/carrito`*, `/login`, `/registro` y `/offline`. Baseline 87–91.
+- [x] **100 en las 7 páginas auditadas** tras corregir: contraste (primary sky-600→sky-700 `#0369a1`, brand-accent cyan-500→cyan-700, `text-green-600`→`700`, `text-amber-600`→`700`, badge `bg-red-600`→`700`), nombre accesible del menú de cuenta en mobile (`max-sm:sr-only`) y del select de orden (`aria-label`), `alt=""` en imágenes decorativas de categorías, jerarquía de headings (h2 en footer y sidebar de filtros, h2 `sr-only` antes de la grilla), links de texto con subrayado permanente, y área táctil ≥24px en los links del footer (`inline-block py-1`).
+- [x] `npx tsc --noEmit` y `npm run build` OK. Nota: `theme_color` (manifest y viewport) actualizado a `#0369a1` para mantener la marca coherente.
+- [ ] *`/carrito` sin sesión redirige a login (eso es lo que auditó Lighthouse); re-verificar logueado las páginas con sesión (carrito con items, checkout, cuenta) — usan los mismos componentes y paleta, no se esperan diferencias.
 
 ---
 

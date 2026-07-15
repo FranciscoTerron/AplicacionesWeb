@@ -169,7 +169,7 @@ function OrderDetail() {
               <span className="text-muted-foreground">
                 {it.quantity}× {it.name}
                 {it.discount && (
-                  <span className="ml-1.5 text-xs text-green-600">
+                  <span className="ml-1.5 text-xs text-green-700">
                     (-{formatPrice(it.discount.amount)} c/u)
                   </span>
                 )}
@@ -196,14 +196,14 @@ function OrderDetail() {
             </div>
           )}
           {order.coupon ? (
-            <div className="flex justify-between text-green-600">
+            <div className="flex justify-between text-green-700">
               <span>Cupón ({order.coupon.code})</span>
               <span>-{formatPrice(order.coupon.amount)}</span>
             </div>
           ) : (
             order.discount_total !== undefined &&
             order.discount_total > 0 && (
-              <div className="flex justify-between text-green-600">
+              <div className="flex justify-between text-green-700">
                 <span>Descuento en productos</span>
                 <span>-{formatPrice(order.discount_total)}</span>
               </div>
