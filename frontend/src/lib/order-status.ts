@@ -1,11 +1,11 @@
 import type { OrderStatus, PaymentStatus } from "@/types/api";
 
+// Labels alineados con el backend (OrderController::statuses()).
 export const ORDER_STATUS_LABELS: Record<string, string> = {
   pending: "Pendiente",
   confirmed: "Confirmada",
-  processing: "En preparación",
-  shipped: "Enviada",
-  delivered: "Entregada",
+  in_process: "En proceso",
+  completed: "Completada",
   cancelled: "Cancelada",
 };
 
@@ -23,7 +23,7 @@ export function orderStatusVariant(
   status: string
 ): "default" | "secondary" | "destructive" | "outline" {
   if (status === "cancelled") return "destructive";
-  if (status === "delivered") return "default";
+  if (status === "completed") return "default";
   if (status === "pending") return "secondary";
   return "outline";
 }

@@ -17,6 +17,10 @@ import {
 } from "@/hooks/use-enriched-cart";
 import { createOrder, payOrder, validateDiscount } from "@/lib/endpoints";
 import { cn, formatPrice } from "@/lib/utils";
+import {
+  couponAmount as calcCouponAmount,
+  bestDiscount as calcBestDiscount,
+} from "@/lib/discount";
 import type { Discount, PaymentMethod } from "@/types/api";
 
 // Métodos ofrecidos al cliente: solo dos, como botones (no select). "transfer"
@@ -58,12 +62,8 @@ function CheckoutContent() {
   // se suman, gana el que más baja el total.
   const baseSubtotal = cartBaseSubtotal(enriched);
   const autoDiscount = cartAutoDiscount(enriched);
-  const couponAmount = discount
-    ? discount.discount_type === "percentage"
-      ? (baseSubtotal * discount.value) / 100
-      : Math.min(discount.value, baseSubtotal)
-    : 0;
-  const bestDiscount = Math.max(autoDiscount, couponAmount);
+  const couponAmount = calcCouponAmount(discount, baseSubtotal);
+  const bestDiscount = calcBestDiscount(autoDiscount, discount, baseSubtotal);
   const total = baseSubtotal - bestDiscount;
 
   async function handleSubmit(e: React.FormEvent) {

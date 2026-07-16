@@ -133,12 +133,13 @@ export interface OrderItem {
   discount?: OrderItemDiscount | null;
 }
 
+// Estados de ORDEN. Fuente de verdad: backend (Store/UpdateOrderRequest + OrderController::statuses()).
+// Nota: shipped/delivered NO son estados de orden — pertenecen a Shipment (entidad de envío).
 export type OrderStatus =
   | "pending"
   | "confirmed"
-  | "processing"
-  | "shipped"
-  | "delivered"
+  | "in_process"
+  | "completed"
   | "cancelled";
 
 export type PaymentStatus =

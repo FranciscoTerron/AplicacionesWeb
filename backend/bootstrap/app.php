@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\Api\AuthenticateApiToken;
+use App\Http\Middleware\Api\EnsureAppKey;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\ShareSettingsMiddleware;
 use App\Providers\AppServiceProvider;
@@ -54,6 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => AdminMiddleware::class,
             'auth.api' => AuthenticateApiToken::class,
+            'app.client' => EnsureAppKey::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
