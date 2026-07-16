@@ -1,0 +1,23 @@
+# Nunca subir dependencias ni builds al deploy (Vercel los reinstala/rebuild).
+# Deploy corre desde la raíz del monorepo (rootDirectory server-side por proyecto),
+# así que este ignore aplica a backend y frontend.
+
+# Dependencias
+**/node_modules
+node_modules
+
+# Builds / cache
+**/.next
+.next
+**/.turbo
+frontend/tsconfig.tsbuildinfo
+
+# Git / vercel / editor
+.git
+.vercel
+.vscode
+.idea
+
+# Temp / logs
+*.log
+scratchpad/
