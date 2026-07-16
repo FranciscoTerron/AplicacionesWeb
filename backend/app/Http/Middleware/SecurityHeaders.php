@@ -26,7 +26,13 @@ class SecurityHeaders
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
-        if ($request->secure()) {
+        // HSTS solo sobre HTTPS. En Vercel el TLS lo termina el proxy, así que
+        // $request->secure() puede dar false; se contempla X-Forwarded-Proto
+        // (por eso el proyecto ya usa URL::forceScheme('https') en Vercel).
+        $isHttps = $request->secure()
+            || strtolower((string) $request->header('X-Forwarded-Proto')) === 'https';
+
+        if ($isHttps) {
             $response->headers->set(
                 'Strict-Transport-Security',
                 'max-age=31536000; includeSubDomains'
