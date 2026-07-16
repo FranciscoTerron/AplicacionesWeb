@@ -139,6 +139,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Public API Key
+    |--------------------------------------------------------------------------
+    |
+    | Clave compartida que el frontend React envía en el header X-App-Key para
+    | usar los endpoints públicos de la API (ver middleware EnsureAppKey).
+    | Si no se setea (dev/tests), la verificación no se aplica. En producción
+    | se setea APP_PUBLIC_KEY para restringir la API al frontend.
+    |
+    */
+
+    'public_api_key' => env('APP_PUBLIC_KEY'),
+
+    /*
+    |--------------------------------------------------------------------------
     | API Version
     |--------------------------------------------------------------------------
     |
