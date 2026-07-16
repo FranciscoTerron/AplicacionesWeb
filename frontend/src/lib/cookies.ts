@@ -1,6 +1,11 @@
-// Manejo de token en cookie (legible client-side; SSR-friendly)
+// Manejo de token en cookie (legible client-side; SSR-friendly).
+// Nota (S-3): la cookie NO es HttpOnly porque el token se usa como Bearer en el
+// header Authorization, y el front (SPA cross-domain) necesita leerlo desde JS.
+// Un HttpOnly real exigiría auth por cookie cross-site (SameSite=None + cookies
+// de terceros, bloqueadas por browsers) => rework frágil. Mitigación adoptada:
+// TTL corto (7 días, igual al backend) + security headers/CSP (ver next.config).
 const TOKEN_KEY = "ma_token";
-const MAX_AGE = 60 * 60 * 24 * 30; // 30 días (igual al TTL del backend)
+const MAX_AGE = 60 * 60 * 24 * 7; // 7 días (igual al TTL del backend)
 
 export function getToken(): string | null {
   if (typeof document === "undefined") return null;
