@@ -30,15 +30,20 @@ use Illuminate\Support\Facades\Route;
 /**
  * Ruta publica sin autenticacion: health check.
  */
-Route::prefix('v1')->middleware('throttle:api')->group(function () {
+// 'app.client' (EnsureAppKey) restringe la API al frontend React vía header
+// X-App-Key cuando APP_PUBLIC_KEY está seteada (prod). Webhook y cron quedan
+// exentos (tienen su propia autenticación).
+Route::prefix('v1')->middleware(['throttle:api', 'app.client'])->group(function () {
     // Health check
     Route::get('/health', HealthCheckController::class)
         ->name('api.v1.health');
 
-    // Auth - Fase 3 (público)
+    // Auth - Fase 3 (público) — throttle estricto anti-fuerza-bruta
     Route::post('/auth/login', [AuthApiController::class, 'login'])
+        ->middleware('throttle:auth')
         ->name('api.v1.auth.login');
     Route::post('/auth/register', [AuthApiController::class, 'register'])
+        ->middleware('throttle:auth')
         ->name('api.v1.auth.register');
     Route::post('/auth/refresh', [AuthApiController::class, 'refresh'])
         ->name('api.v1.auth.refresh');
@@ -59,14 +64,16 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::get('/catalog/categories', [CatalogApiController::class, 'categories'])
         ->name('api.v1.catalog.categories');
 
-    // Payment webhook (público - notificación externa)
+    // Payment webhook (público - notificación externa de Mercado Pago).
+    // Exento de app.client (MP no manda X-App-Key); valida firma + reconsulta.
     Route::post('/payments/webhook', PaymentWebhookController::class)
-        ->withoutMiddleware('throttle:api')
+        ->withoutMiddleware(['throttle:api', 'app.client'])
         ->name('api.v1.payments.webhook');
 
-    // Cron (Vercel) - protegido por Bearer CRON_SECRET dentro del controller
+    // Cron (Vercel) - protegido por Bearer CRON_SECRET dentro del controller.
+    // Exento de app.client (el cron de Vercel no manda X-App-Key).
     Route::get('/cron/expire-orders', [CronController::class, 'expireOrders'])
-        ->withoutMiddleware('throttle:api')
+        ->withoutMiddleware(['throttle:api', 'app.client'])
         ->name('api.v1.cron.expire-orders');
 
     // Search - Fase 5 (público)
