@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\DiscountApiController;
 use App\Http\Controllers\Api\V1\HealthCheckController;
 use App\Http\Controllers\Api\V1\OrderApiController;
 use App\Http\Controllers\Api\V1\PaymentWebhookController;
+use App\Http\Controllers\Api\V1\PushSubscriptionController;
 use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\V1\WishlistController;
 use Illuminate\Support\Facades\Route;
@@ -79,6 +80,14 @@ Route::prefix('v1')->middleware(['throttle:api', 'app.client'])->group(function 
     // Search - Fase 5 (público)
     Route::post('/catalog/search', SearchController::class)
         ->name('api.v1.catalog.search');
+
+    // Web Push (HU-B13): suscripciones anónimas para promos/productos nuevos.
+    Route::get('/push/public-key', [PushSubscriptionController::class, 'publicKey'])
+        ->name('api.v1.push.public-key');
+    Route::post('/push/subscribe', [PushSubscriptionController::class, 'subscribe'])
+        ->name('api.v1.push.subscribe');
+    Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'unsubscribe'])
+        ->name('api.v1.push.unsubscribe');
 
     // Rutas protegidas
     Route::middleware('auth.api')->group(function () {

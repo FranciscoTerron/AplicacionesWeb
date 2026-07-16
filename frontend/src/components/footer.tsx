@@ -9,6 +9,7 @@ import {
   Phone,
   MapPin,
 } from "lucide-react";
+import { PushToggle } from "@/components/push-toggle";
 
 const TRUST = [
   { icon: Truck, title: "Envíos a todo el país", desc: "Despacho en 24/48 hs" },
@@ -52,26 +53,29 @@ export function Footer() {
               Todo para tu piscina: bombas, accesorios, productos de
               mantenimiento y más. Calidad y mejor precio.
             </p>
+            <div className="mt-4">
+              <PushToggle />
+            </div>
           </div>
 
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-white">Comprar</h3>
-            <ul className="space-y-2 text-sm">
+            <h2 className="mb-3 text-sm font-semibold text-white">Comprar</h2>
+            <ul className="space-y-0.5 text-sm">
               <li>
-                <Link href="/productos" className="hover:text-sky-400">
+                <Link href="/productos" className="inline-block py-1 hover:text-sky-400">
                   Todos los productos
                 </Link>
               </li>
               <li>
                 <Link
                   href="/productos?featured=1"
-                  className="hover:text-sky-400"
+                  className="inline-block py-1 hover:text-sky-400"
                 >
                   Destacados
                 </Link>
               </li>
               <li>
-                <Link href="/carrito" className="hover:text-sky-400">
+                <Link href="/carrito" className="inline-block py-1 hover:text-sky-400">
                   Mi carrito
                 </Link>
               </li>
@@ -79,20 +83,20 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-white">Mi cuenta</h3>
-            <ul className="space-y-2 text-sm">
+            <h2 className="mb-3 text-sm font-semibold text-white">Mi cuenta</h2>
+            <ul className="space-y-0.5 text-sm">
               <li>
-                <Link href="/login" className="hover:text-sky-400">
+                <Link href="/login" className="inline-block py-1 hover:text-sky-400">
                   Iniciar sesión
                 </Link>
               </li>
               <li>
-                <Link href="/registro" className="hover:text-sky-400">
+                <Link href="/registro" className="inline-block py-1 hover:text-sky-400">
                   Crear cuenta
                 </Link>
               </li>
               <li>
-                <Link href="/cuenta/ordenes" className="hover:text-sky-400">
+                <Link href="/cuenta/ordenes" className="inline-block py-1 hover:text-sky-400">
                   Mis pedidos
                 </Link>
               </li>
@@ -100,8 +104,8 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="mb-3 text-sm font-semibold text-white">Contacto</h3>
-            <ul className="space-y-2 text-sm">
+            <h2 className="mb-3 text-sm font-semibold text-white">Contacto</h2>
+            <ul className="space-y-0.5 text-sm">
               <li className="flex items-center gap-2">
                 <Mail className="size-4 text-sky-400" /> ventas@mapiscinas.com
               </li>

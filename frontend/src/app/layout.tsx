@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { ServiceWorkerRegister } from "@/components/sw-register";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +19,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "MA Piscinas — Tienda online",
   description: "Venta online de piscinas y accesorios.",
+  // iOS no usa el manifest completo: necesita su ícono y meta tags propios
+  // para que "Agregar a pantalla de inicio" se vea como app (HU-F11).
+  appleWebApp: {
+    capable: true,
+    title: "MA Piscinas",
+    statusBarStyle: "default",
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0369a1",
 };
 
 export default function RootLayout({
@@ -36,6 +51,7 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <Footer />
         </Providers>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

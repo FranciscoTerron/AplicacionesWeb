@@ -60,7 +60,7 @@ export default async function HomePage() {
                   {c.image?.url ? (
                     <Image
                       src={c.image.url}
-                      alt={c.name}
+                      alt=""
                       fill
                       sizes="64px"
                       className="object-cover transition-transform group-hover:scale-110"
