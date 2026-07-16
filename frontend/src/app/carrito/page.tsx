@@ -17,6 +17,10 @@ import {
 } from "@/hooks/use-enriched-cart";
 import { validateDiscount } from "@/lib/endpoints";
 import { formatPrice } from "@/lib/utils";
+import {
+  couponAmount as calcCouponAmount,
+  bestDiscount as calcBestDiscount,
+} from "@/lib/discount";
 import type { Discount } from "@/types/api";
 
 function CartContent() {
@@ -31,12 +35,8 @@ function CartContent() {
   // (misma regla que aplica el backend al crear la orden).
   const baseSubtotal = cartBaseSubtotal(enriched);
   const autoDiscount = cartAutoDiscount(enriched);
-  const couponAmount = discount
-    ? discount.discount_type === "percentage"
-      ? (baseSubtotal * discount.value) / 100
-      : Math.min(discount.value, baseSubtotal)
-    : 0;
-  const bestDiscount = Math.max(autoDiscount, couponAmount);
+  const couponAmount = calcCouponAmount(discount, baseSubtotal);
+  const bestDiscount = calcBestDiscount(autoDiscount, discount, baseSubtotal);
   const total = baseSubtotal - bestDiscount;
 
   async function applyDiscount() {
