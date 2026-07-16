@@ -7,6 +7,7 @@ use App\Http\Requests\Api\Auth\LoginRequest;
 use App\Http\Requests\Api\Auth\RegisterRequest;
 use App\Models\User;
 use App\Services\FirestoreService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -14,8 +15,12 @@ use OpenApi\Attributes as OA;
 
 class AuthApiController extends Controller
 {
-    /** Vigencia de un access token, en días. */
-    private const TOKEN_TTL_DAYS = 30;
+    /**
+     * Vigencia de un access token, en días. Se bajó de 30 a 7 (S-3): el token
+     * vive en una cookie legible por JS en el front (SPA con Bearer), así que
+     * acotar la ventana en la que un token robado sirve reduce el impacto.
+     */
+    private const TOKEN_TTL_DAYS = 7;
 
     public function __construct(private readonly FirestoreService $firestore) {}
 
@@ -260,6 +265,21 @@ class AuthApiController extends Controller
         }
 
         $tokenData = $tokens[0];
+
+        // S-4: no revivir tokens vencidos. Antes refresh rotaba sin mirar
+        // expires_at, y como el doc del token no se borra al expirar (solo en
+        // logout), un token filtrado se "resucitaba" indefinidamente. Ahora, si
+        // ya expiró, se borra el doc y se rechaza.
+        $expiresAt = $tokenData['expires_at'] ?? null;
+        if ($expiresAt && now()->greaterThan(Carbon::parse($expiresAt))) {
+            $this->firestore->deleteDocument('api_tokens', (string) ($tokenData['id'] ?? ''));
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Refresh token expirado',
+            ], 401);
+        }
+
         $plainTextToken = $this->generateToken();
         $now = now()->toISOString();
 

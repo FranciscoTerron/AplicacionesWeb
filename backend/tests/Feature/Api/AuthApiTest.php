@@ -215,6 +215,25 @@ class AuthApiTest extends TestCase
             ->assertJson(['success' => false, 'message' => 'Refresh token inválido']);
     }
 
+    public function test_refresh_rejects_expired_token(): void
+    {
+        // S-4: un token ya vencido no debe poder "resucitarse" vía refresh.
+        $this->firestore->seed('api_tokens', [[
+            'id' => 'tok-exp',
+            'name' => 'api-token',
+            'user_id' => 'user-1',
+            'token' => hash('sha256', 'expired-refresh'),
+            'expires_at' => now()->subDay()->toISOString(),
+        ]]);
+
+        $this->postJson('/api/v1/auth/refresh', ['refresh_token' => 'expired-refresh'])
+            ->assertStatus(401)
+            ->assertJson(['success' => false, 'message' => 'Refresh token expirado']);
+
+        // Y el doc vencido se borra: no queda resucitable.
+        $this->assertCount(0, $this->firestore->all('api_tokens'));
+    }
+
     // --- EXPIRACIÓN / LOGOUT ---
 
     public function test_login_token_has_expiration(): void
