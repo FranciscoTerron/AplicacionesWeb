@@ -1,8 +1,21 @@
 # Historias de Usuario — Mejoras y correcciones detectadas en revisión de código
 
-> Fecha de revisión: 2026-07-13
+> Fecha de revisión: 2026-07-13 · Actualizado 2026-07-15 con las **Pautas del examen final** (`docs/Pautas.Final.AW.2026.pdf`).
 > Alcance: `backend/` (Laravel + Firestore) y `frontend/` (Next.js).
 > Cada HU incluye el contexto del problema encontrado, referencias al código y criterios de aceptación.
+
+## Checklist contra las pautas del final
+
+| Requisito de las pautas | Estado | HU relacionadas |
+|---|---|---|
+| Déficits técnicos resueltos (flujo de compra, CRUD, stock, responsive) | 🟡 Parcial | B04 ✅ B05 ✅ · pendientes: B06, F05, F06, F07, F08 |
+| PWA instalable | ✅ | F09–F12 (falta verificación iOS de F11) |
+| PWA: **notificaciones push** de productos/promos | 🟡 Implementado | HU-B13 ✅ + HU-F13 ✅ (falta verificar en Android real) |
+| PWA: **catálogo visible offline** (cacheado) | 🟡 Implementado | HU-F14 ✅ (falta verificar en Android real) |
+| **Lighthouse Accesibilidad = 100** | ✅ | HU-F15 — 100 en las 7 páginas clave (15/07/2026, build de producción local) |
+| API protegida para que **solo la app React** pueda usarla | ✅ | HU-B14 — app key `X-App-Key` + CORS estricto + throttle (PRs #22/#23, `docs/DECISIONES_SEGURIDAD.md`) |
+| **Auditoría IA** con el prompt obligatorio de la cátedra | 🟡 Hecha 16/07 | HT-01 — `docs/AUDITORIA_IA.md` (70 hallazgos, issues #10–#16); re-correr al cierre: se defiende el **último** resultado |
+| Defensa con todos los integrantes | — | Coordinar día y hora con la cátedra |
 
 ## Resumen priorizado
 
@@ -32,6 +45,12 @@
 | HU-F10 | frontend | Íconos de la app (192/512, maskable y apple-touch-icon) | 🔴 Alta |
 | HU-F11 | frontend | Metadata iOS y theme-color para "Agregar a inicio" en Safari | 🟠 Media |
 | HU-F12 | frontend | Service worker con fallback offline básico | 🟠 Media |
+| HU-B13 | backend | Notificaciones push: suscripciones + envío con VAPID (pauta final) | 🔴 Alta |
+| HU-B14 | backend | Proteger la API para que solo la app React pueda usarla (pauta final) | 🔴 Alta |
+| HU-F13 | frontend | Notificaciones push en la tienda: permiso, suscripción y handler en el SW (pauta final) | 🔴 Alta |
+| HU-F14 | frontend | Catálogo navegable offline: cachear páginas visitadas (pauta final) | 🔴 Alta |
+| HU-F15 | frontend | Accesibilidad: 100 en Lighthouse (pauta final) | 🔴 Alta |
+| HT-01 | ambas | Auditoría IA con el prompt obligatorio de la cátedra (pauta final) | 🔴 Alta |
 
 ---
 
@@ -49,9 +68,9 @@
 - Los CRUD (categorías, productos, etc.) se salvan porque sus policies exigen `admin|editor`, pero la protección queda librada a que cada controller llame a `authorize`.
 
 **Criterios de aceptación**
-- [ ] Existe un middleware de rol (ej. `role:admin,editor`) aplicado a TODO el grupo `/admin`; un `cliente` autenticado recibe 403 en cualquier ruta del panel, incluidos dashboard, settings y exportaciones CSV.
-- [ ] Las rutas que hoy usan `admin` (solo admin) mantienen su restricción más estricta.
-- [ ] Test de feature que verifica que un usuario `cliente` recibe 403 en `/admin`, `/admin/settings` y `/admin/export/orders`.
+- [x] Existe un middleware de rol (ej. `role:admin,editor`) aplicado a TODO el grupo `/admin`; un `cliente` autenticado recibe 403 en cualquier ruta del panel, incluidos dashboard, settings y exportaciones CSV.
+- [x] Las rutas que hoy usan `admin` (solo admin) mantienen su restricción más estricta.
+- [x] Test de feature que verifica que un usuario `cliente` recibe 403 en `/admin`, `/admin/settings` y `/admin/export/orders`.
 
 ---
 
@@ -65,9 +84,9 @@
 - Los clientes del e-commerce viven en la colección `clients`, pero el alta por Google los mete en `users`: quedan mezclados usuarios internos con desconocidos.
 
 **Criterios de aceptación**
-- [ ] Primer login con Google de un email desconocido NO crea documentos en `users`. Opciones (decidir en refinamiento): (a) rechazar el acceso salvo que el email ya exista en `users`, o (b) crear el usuario en `clients` y redirigirlo a la tienda sin sesión de panel.
-- [ ] La promoción a `admin` vía `services.google.admin_emails` sigue funcionando.
-- [ ] Si `allowed_domains` está vacío en producción, se loguea un warning al iniciar (o se exige configuración explícita).
+- [x] Primer login con Google de un email desconocido NO crea documentos en `users`. **Decisión: opción (a)** — se rechaza el acceso salvo que el email ya exista en `users` (o esté en `admin_emails`).
+- [x] La promoción a `admin` vía `services.google.admin_emails` sigue funcionando.
+- [x] Si `allowed_domains` está vacío en producción, se loguea un warning (en cada callback de Google).
 - [ ] Nota de coordinación: esta HU define el backend del login con Google **de la tienda** (HU-F01): hace falta un endpoint que complete el flujo OAuth y devuelva un token de API (`api_tokens`) como el de `/auth/login`, en lugar de una sesión web.
 
 ---
@@ -98,10 +117,10 @@
 - La **cancelación** (`OrderApiController::cancel`, cron `expireOrders`, y el panel) no repone stock aunque `stock_decremented = true`; una orden MP pagada y luego cancelada deja el stock descontado y sin reembolso registrado.
 
 **Criterios de aceptación**
-- [ ] Definir en refinamiento el momento de descuento para efectivo (sugerido: al confirmar la orden desde el panel), reutilizando la misma lógica idempotente con `stock_decremented`.
-- [ ] Cancelar una orden con `stock_decremented = true` repone el stock (y limpia la bandera), desde la API, el panel y el cron.
-- [ ] Cancelar una orden con `payment_status = approved` exige una decisión explícita: bloquear la cancelación del lado del cliente o marcar la orden como "pendiente de reembolso" para revisión manual.
-- [ ] Tests: efectivo confirmada descuenta una sola vez; cancelación repone; doble webhook no descuenta dos veces (ya cubierto por la bandera, mantenerlo).
+- [x] **Decisión: al confirmar desde el panel.** El stock de órdenes no-MP se descuenta al pasar a `confirmed` (o cualquier estado aceptado posterior), con la lógica idempotente compartida en `App\Services\StockService` (`stock_decremented`). Para MP lo sigue haciendo el webhook.
+- [x] Cancelar una orden con `stock_decremented = true` repone el stock (y limpia la bandera), desde la API, el panel y el cron.
+- [x] **Decisión: cliente bloqueado, panel sí.** El cliente recibe 422 al cancelar una orden con pago aprobado; el admin puede cancelarla desde el panel y queda marcada `refund_pending = true` para gestión manual del reembolso.
+- [x] Tests: efectivo confirmada descuenta una sola vez (`StockFlowTest`); cancelación repone (panel, API y cron); doble webhook no descuenta dos veces (se mantiene verde).
 
 ---
 
@@ -120,10 +139,10 @@ Consecuencias concretas:
 - Si el admin pone `in_process`/`completed`, la tienda muestra el string crudo (no tiene label).
 
 **Criterios de aceptación**
-- [ ] Un único enum documentado de `status` (sugerido: `pending, confirmed, processing, shipped, delivered, cancelled`) y de `payment_status` (`pending, approved, rejected, refunded`), definido en un solo lugar del backend.
-- [ ] Panel, API, webhook y frontend usan ese enum; se define un mapeo/migración para los datos existentes con estados viejos.
-- [ ] La facturación del dashboard cuenta órdenes con `payment_status = approved` (y efectivo confirmado) y filtra por el mes corriente.
-- [ ] Los selects/filtros del panel (`_form_fields.blade.php`, filtros de índice) reflejan el nuevo vocabulario.
+- [x] Enum único en `App\Support\OrderStatus`: `status` = `pending, confirmed, processing, shipped, delivered, cancelled`; `payment_status` = `pending, approved, rejected, refunded`.
+- [x] Panel, API, webhook y frontend usan el enum. Los datos legacy (`in_process`, `completed`, `paid`, `overdue`, `paymentStatus` camelCase) se mapean al leer vía `OrderStatus::normalize()/normalizePayment()`; el panel dejó de escribir `paymentStatus` camelCase (ahora `payment_status`).
+- [x] La facturación del dashboard cuenta `payment_status = approved` + efectivo aceptado, del mes corriente (`DashboardControllerTest`).
+- [x] Selects/filtros del panel (`_form_fields.blade.php`, filtros del índice, modal JS) toman las opciones de `OrderStatus`.
 
 ---
 
@@ -224,6 +243,40 @@ Consecuencias concretas:
 
 ---
 
+### HU-B13 — Notificaciones push: suscripciones y envío (pauta final)
+
+**Como** dueño del negocio, **quiero** poder enviarles notificaciones push a los clientes que instalaron la app (nueva promoción, producto recién incorporado), **para** cumplir el requisito de la pauta final y traer gente de vuelta a la tienda.
+
+**Contexto**
+- Requisito textual de las pautas: *"permitir notificaciones push sobre nuestros productos, como alguna promoción nueva o algún producto recién incorporado"*.
+- Hoy no existe nada de push en el proyecto: ni almacenamiento de suscripciones, ni claves VAPID, ni librería de envío.
+- Contraparte frontend: HU-F13 (suscripción del navegador + handler `push` en el SW).
+
+**Criterios de aceptación**
+- [x] Par de claves VAPID en config (`services.webpush`, env `VAPID_PUBLIC_KEY/PRIVATE_KEY/SUBJECT`); la pública se expone vía `GET /api/v1/push/public-key` (el frontend no necesita env var propia). ✅ Vars cargadas en Vercel — verificado 17/07: el endpoint productivo devuelve nuestra clave pública.
+- [x] **Decisión: suscripciones anónimas** (broadcast de promos, sin atar al usuario). `POST /push/subscribe` guarda en `push_subscriptions` con `sha256(endpoint)` como doc id (idempotente); `POST /push/unsubscribe` la elimina.
+- [x] Envío con `minishlink/web-push` (`App\Services\WebPushSender::broadcast`); las suscripciones vencidas (404/410) se eliminan automáticamente al enviar.
+- [x] **Decisión: form en el panel** (`/admin/notifications`, solo admin, link "Notificaciones" en el sidebar): título, mensaje y ruta de destino; muestra cantidad de suscriptos y resultado del envío.
+- [x] Tests: `PushApiTest` (public-key, subscribe idempotente, validación, unsubscribe) y `NotificationPanelTest` (403 editor, broadcast con sender mockeado, validación).
+
+---
+
+### HU-B14 — Proteger la API para que solo la app React pueda usarla (pauta final)
+
+**Como** responsable del negocio, **quiero** que la API del backend solo sea consumible desde nuestra aplicación React, **para** cumplir la pauta final ("la API del backend debe estar protegida apropiadamente") y evitar scraping o abuso directo.
+
+**Problema encontrado**
+- `backend/config/cors.php` permite `https://*.vercel.app` (cualquier app de Vercel del mundo, no solo la nuestra — además como entrada literal de `allowed_origins`, los wildcards van en `allowed_origins_patterns`) y `http://localhost:*`.
+- Los endpoints públicos del catálogo (`/catalog/*`, `/auth/login`, `/auth/register`) son consumibles por cualquier cliente HTTP sin ninguna identificación de la app.
+
+**Criterios de aceptación** *(resuelto por PRs #22 y #23 — ver `docs/DECISIONES_SEGURIDAD.md`)*
+- [x] CORS restringido a los orígenes reales (`config/cors.php`): dominios exactos del front (`aplicaciones-web-tienda[-rho].vercel.app` + localhost) y patrón acotado a previews del proyecto en `allowed_origins_patterns`.
+- [x] Los endpoints sensibles ya exigen `auth.api` (se mantiene); throttle en login/register (`throttle:auth`) y en toda la API (`throttle:api`).
+- [x] **Decisión tomada: opción (a)** — middleware `EnsureAppKey` (alias `app.client`) exige header `X-App-Key` si `APP_PUBLIC_KEY` está seteada (prod); webhook de MP y cron quedan exentos (tienen su propia auth). El front lo manda desde `NEXT_PUBLIC_APP_KEY` en `lib/api.ts`. Documentado en `docs/DECISIONES_SEGURIDAD.md`.
+- [x] Test: `tests/Feature/Api/AppKeyTest.php`. ✅ Vars en Vercel verificadas 17/07: la API productiva responde 403 sin `X-App-Key` y el front deployado consume el catálogo sin problema (las claves matchean).
+
+---
+
 ## Frontend (`frontend/`)
 
 ### HU-F01 — Login con Google en la tienda
@@ -249,8 +302,8 @@ Consecuencias concretas:
 - `router.push(params.get("redirect") || "/")` sin validar: `/login?redirect=https://evil.com` navega fuera del sitio después de un login exitoso.
 
 **Criterios de aceptación**
-- [ ] Solo se acepta un `redirect` que sea path interno (empieza con `/` y no con `//`); cualquier otro valor cae a `/`.
-- [ ] Aplicado también en cualquier otro consumidor del param (revisar `registro`).
+- [x] Solo se acepta un `redirect` que sea path interno (empieza con `/` y no con `//`); cualquier otro valor cae a `/`.
+- [x] Aplicado también en cualquier otro consumidor del param (verificado: `registro` no usa el param; `login/page.tsx` era el único consumidor).
 
 ---
 
@@ -353,10 +406,10 @@ Consecuencias concretas:
 - `frontend/src/app/layout.tsx` solo define `title` y `description` en `metadata`; el HTML servido no linkea ningún `manifest.webmanifest`, por lo que Chrome nunca ofrece el prompt de instalación.
 
 **Criterios de aceptación**
-- [ ] Existe `frontend/src/app/manifest.ts` (convención de App Router; Next genera y linkea `/manifest.webmanifest` automáticamente, sin plugins).
-- [ ] El manifest define como mínimo: `name` ("MA Piscinas"), `short_name`, `description`, `start_url: "/"`, `display: "standalone"`, `background_color`, `theme_color` (coherente con la paleta de la tienda) y el array `icons` con los assets de HU-F10.
-- [ ] `GET /manifest.webmanifest` responde 200 en producción y el `<link rel="manifest">` aparece en el HTML.
-- [ ] Verificación: en Chrome DevTools → Application → Manifest no se muestran errores ni warnings de instalabilidad, y en un Android real aparece la opción "Instalar app" / "Agregar a pantalla de inicio".
+- [x] Existe `frontend/src/app/manifest.ts` (convención de App Router; Next genera y linkea `/manifest.webmanifest` automáticamente, sin plugins).
+- [x] El manifest define: `name` ("MA Piscinas"), `short_name`, `description`, `start_url: "/"`, `display: "standalone"`, `background_color: #ffffff`, `theme_color: #0284c7` (el `--primary` de la tienda) y el array `icons` con los assets de HU-F10.
+- [x] `GET /manifest.webmanifest` responde 200 y el `<link rel="manifest">` aparece en el HTML (verificado con `next build` + `next start` local).
+- [x] Verificado en Android real (14/07/2026): Chrome ofreció instalar y la app quedó en la pantalla de inicio.
 
 ---
 
@@ -369,10 +422,10 @@ Consecuencias concretas:
 - Sin íconos de 192×192 y 512×512 el manifest de HU-F09 no pasa los criterios de instalabilidad de Chrome, aunque exista.
 
 **Criterios de aceptación**
-- [ ] A partir del logo de MA Piscinas se generan PNGs de **192×192** y **512×512** (propósito `any`) y una variante **maskable** de 512×512 con margen de seguridad (~10% de padding), ubicados en `frontend/public/icons/`.
-- [ ] Se genera un **apple-touch-icon** de 180×180 (fondo sólido, sin transparencia) para HU-F11.
-- [ ] Los íconos quedan declarados en el array `icons` del manifest con sus `sizes`, `type` y `purpose` correctos.
-- [ ] Verificación: el ícono se ve correcto (no recortado ni pixelado) al instalar en un Android real y en el preview "maskable" de DevTools → Application → Manifest.
+- [x] PNGs de **192×192** y **512×512** (`any`) y **maskable** 512×512 con margen de seguridad en `frontend/public/icons/`. Nota: no había logo fuente en el repo (la marca es el ícono Waves de lucide + texto), así que se generaron desde esa identidad: gradiente azul de la paleta, "MA" y ondas. Si aparece un logo oficial, regenerar.
+- [x] **apple-touch-icon** de 180×180 con fondo sólido, sin transparencia.
+- [x] Íconos declarados en el manifest con `sizes`, `type` y `purpose` correctos.
+- [x] Verificado: instalada en Android real con el ícono correcto (14/07/2026).
 
 ---
 
@@ -386,9 +439,9 @@ Consecuencias concretas:
 - Sin el ícono de Apple, iOS usa un screenshot de la página como ícono, con resultado poco profesional.
 
 **Criterios de aceptación**
-- [ ] `frontend/src/app/layout.tsx` exporta `viewport` con `themeColor` acorde a la paleta de la tienda.
-- [ ] El `metadata` del layout incluye `appleWebApp` (capable, `title: "MA Piscinas"`, `statusBarStyle`) y referencia el `apple-touch-icon` de 180×180 (vía `icons.apple` o colocándolo como `frontend/src/app/apple-icon.png`, que App Router sirve automático).
-- [ ] Verificación en iPhone real o simulador: "Agregar a pantalla de inicio" muestra el logo correcto y, al abrirse, la app corre en modo standalone (sin la barra de Safari).
+- [x] `layout.tsx` exporta `viewport` con `themeColor: #0284c7`.
+- [x] `metadata.appleWebApp` (capable, `title: "MA Piscinas"`, `statusBarStyle`) + `icons.apple` con el apple-touch-icon. Verificado en el HTML servido: `apple-mobile-web-app-title`, `apple-mobile-web-app-status-bar-style`, `mobile-web-app-capable` y el link del ícono.
+- [ ] Verificación pendiente: iPhone real o simulador ("Agregar a pantalla de inicio" + modo standalone).
 
 ---
 
@@ -401,19 +454,103 @@ Consecuencias concretas:
 - Chrome moderno ya no exige SW para permitir la instalación, pero sin él la "app" instalada es solo un acceso directo: sin cache, sin offline, y evaluando el requisito "instalable" como PWA queda incompleto.
 
 **Criterios de aceptación**
-- [ ] Decidir en refinamiento el enfoque: (a) **Serwist** (sucesor mantenido de `next-pwa`, precache automático de assets) o (b) **`public/sw.js` manual mínimo** (sin dependencias: cachea el shell y una página `/offline`). Para el alcance de la materia, (b) es suficiente.
-- [ ] El SW se registra solo en producción (no interferir con HMR en `next dev`).
-- [ ] Existe una página/ruta `offline` con estilo de la tienda, y el SW la sirve como fallback de navegación cuando no hay red.
-- [ ] Los assets estáticos (íconos, fuentes, CSS/JS del shell) se sirven desde cache cuando no hay conexión. Las llamadas a la API **no** se cachean (los datos de stock, precios y órdenes deben ser siempre frescos — coordinar con HU-F03/HU-F04, que asumen requests reales al backend).
-- [ ] Verificación: con la app instalada y el modo avión activado, abrirla muestra la página offline; en DevTools → Application → Service Workers el SW figura activo; Lighthouse (categoría PWA) pasa la auditoría de instalabilidad.
+- [x] **Decisión: opción (b)** — `public/sw.js` manual mínimo, sin dependencias.
+- [x] El SW se registra solo en producción (`ServiceWorkerRegister` en el layout chequea `NODE_ENV`).
+- [x] Página `/offline` con estilo de la tienda; el SW la precachea y la sirve como fallback de navegación sin red.
+- [x] Assets estáticos (`/_next/static/`, `/icons/`, css/js/fuentes/imágenes) cache-first; las llamadas a la API **no** se cachean (GET de otro origen y `/api/` quedan excluidos explícitamente).
+- [x] Verificado en Android real (14/07/2026): con modo avión, la app instalada abre y muestra la página "Sin conexión". Nota: la categoría PWA de Lighthouse ya no existe (se eliminó en Lighthouse 12, 2024); el equivalente actual es DevTools → Application → Manifest sin warnings de instalabilidad.
+
+---
+
+### HU-F13 — Notificaciones push en la tienda (pauta final)
+
+**Como** cliente que instaló la app, **quiero** recibir notificaciones de promociones y productos nuevos, **para** enterarme de ofertas sin abrir la tienda.
+
+**Contexto**
+- Contraparte de HU-B13 (backend guarda suscripciones y envía). El SW actual (`frontend/public/sw.js`) no tiene handlers `push` ni `notificationclick`.
+
+**Criterios de aceptación**
+- [x] Botón "Recibir ofertas y novedades" en el footer (`PushToggle`); el permiso se pide recién al tocarlo. Estados: no soportado/dev (oculto), denegado (aviso), activo/inactivo. Solo aparece en producción (igual que el registro del SW).
+- [x] Al activar: `Notification.requestPermission()` → `pushManager.subscribe` con la VAPID pública traída de `/push/public-key` → `POST /push/subscribe`. Desactivar hace `unsubscribe()` + `POST /push/unsubscribe`.
+- [x] `sw.js` maneja `push` (título, texto, ícono de la app, URL en `data`) y `notificationclick` (enfoca la pestaña si ya está abierta o abre la URL).
+- [ ] Probado en Android real: activar desde el footer, enviar desde `/admin/notifications`, llega con la app cerrada y al tocarla abre la página indicada.
+
+---
+
+### HU-F14 — Catálogo navegable offline (pauta final)
+
+**Como** cliente sin conexión, **quiero** poder ver los productos que ya visité, **para** consultar el catálogo aunque no tenga señal.
+
+**Problema encontrado**
+- Requisito textual de las pautas: *"permitir navegación offline en un grado razonable. Obviamente no se podrán hacer compras, pero al menos debe poder verse parte del catálogo de productos que ha sido cacheado correctamente"*.
+- El SW actual (HU-F12) hace network-first en navegaciones con fallback directo a `/offline`: **ninguna página de contenido queda cacheada**, así que offline no se ve nada del catálogo.
+- A favor: las páginas de catálogo (`/productos`, `/productos/[id]`) son server components — el HTML ya trae los datos, no hace falta cachear la API para verlas offline.
+
+**Criterios de aceptación**
+- [x] Navegaciones exitosas a páginas públicas se guardan en un cache de páginas (network-first, tope 40 entradas, sin cachear errores ni redirects). Sin red: se sirve la copia cacheada de esa URL; si no hay, `/offline`.
+- [x] Las imágenes de productos se cachean cache-first con tope de 60 entradas. Nota: `next/image` las sirve same-origin vía `/_next/image`, así que no hizo falta cachear Cloudinary (otro origen sigue excluido).
+- [x] Rutas con datos personales/volátiles (`/carrito`, `/checkout`, `/cuenta/*`, `/login`, `/registro`) **no** se cachean; la API sigue sin cachearse (stock/precios frescos cuando hay red).
+- [x] Versión de cache subida a `v2`, separada en tres caches (`static`/`pages`/`images`); `activate` borra cualquier cache viejo.
+- [ ] Verificado en Android real: visitar productos con red → modo avión → esos productos se ven (con imagen); una página no visitada muestra "Sin conexión".
+
+---
+
+### HU-F15 — Accesibilidad: 100 en Lighthouse (pauta final)
+
+**Como** equipo, **queremos** que la tienda dé 100 en la categoría Accessibility de Lighthouse, **para** cumplir el requisito de la pauta final y que la tienda sea usable con lector de pantalla.
+
+**Contexto**
+- Requisito textual: *"La aplicación React debe dar 100 en el test de accesibilidad de Lighthouse o similar según el navegador usado"*.
+- Nunca se corrió el audit sobre la tienda. Hallazgos típicos en este stack: botones icon-only sin `aria-label` (carrito, wishlist, menú), contraste insuficiente en `text-muted-foreground` sobre fondos claros, `alt` faltante o genérico en imágenes de productos, orden de headings, `aria-*` en el drawer/modal.
+
+**Criterios de aceptación**
+- [x] Auditado con Lighthouse (headless, build de producción local + backend real) el 15/07/2026: home, `/productos`, ficha de producto, `/carrito`*, `/login`, `/registro` y `/offline`. Baseline 87–91.
+- [x] **100 en las 7 páginas auditadas** tras corregir: contraste (primary sky-600→sky-700 `#0369a1`, brand-accent cyan-500→cyan-700, `text-green-600`→`700`, `text-amber-600`→`700`, badge `bg-red-600`→`700`), nombre accesible del menú de cuenta en mobile (`max-sm:sr-only`) y del select de orden (`aria-label`), `alt=""` en imágenes decorativas de categorías, jerarquía de headings (h2 en footer y sidebar de filtros, h2 `sr-only` antes de la grilla), links de texto con subrayado permanente, y área táctil ≥24px en los links del footer (`inline-block py-1`).
+- [x] `npx tsc --noEmit` y `npm run build` OK. Nota: `theme_color` (manifest y viewport) actualizado a `#0369a1` para mantener la marca coherente.
+- [ ] *`/carrito` sin sesión redirige a login (eso es lo que auditó Lighthouse); re-verificar logueado las páginas con sesión (carrito con items, checkout, cuenta) — usan los mismos componentes y paleta, no se esperan diferencias.
+
+---
+
+## HT-01 — Auditoría IA con el prompt de la cátedra (pauta final)
+
+**Como** equipo, **debemos** auditar ambas aplicaciones (Laravel y React) con una IA usando **exactamente el prompt obligatorio** de las pautas, **para** analizarlo en la defensa según los parámetros de la cátedra.
+
+**Contexto (de las pautas)**
+- El prompt está en la página 2 de `docs/Pautas.Final.AW.2026.pdf` y es obligatorio usarlo tal cual ("usar todos siempre el mismo prompt"). Cubre 6 categorías en orden: Seguridad, Arquitectura, Calidad de código, Rendimiento, PWA y Deuda técnica; formato markdown con tabla resumen + detalle + "Top 3 prioridades".
+- En la defensa evalúan: **comprensión de cada hallazgo** (poder explicarlo con palabras propias, incluso los que no se van a resolver), **cosas nuevas aprendidas**, y **postura crítica frente a la IA** (detectar hallazgos mal fundamentados, exagerados o erróneos).
+- Se analiza "el último resultado obtenido" ⇒ conviene correrla al final, cuando el resto de las HU estén cerradas, y guardar el resultado.
+
+**Criterios de aceptación**
+- [x] Correr la auditoría con el prompt textual sobre el repo (backend y frontend) y guardar el resultado completo con fecha y modelo → **`docs/AUDITORIA_IA.md`** (16/07/2026, Claude Opus 4.8, 70 hallazgos, prompt en `docs/ENUNCIADO_FINAL.md`).
+- [x] Para cada hallazgo relevante: nota propia con explicación y decisión → issues #10–#16 por categoría; seguridad cerrada con decisiones (incluidos no-fixes justificados) en `docs/DECISIONES_SEGURIDAD.md`; PRs #18–#24 resuelven los hallazgos priorizados con review en `docs/REVIEW_PRS_AUDITORIA.md`.
+- [ ] Identificar y documentar los hallazgos que consideremos mal fundamentados/exagerados/erróneos, con la justificación técnica (postura crítica) — hay material en `DECISIONES_SEGURIDAD.md` (S-3, S-6); falta hacerlo para el resto de categorías.
+- [ ] Lista de "cosas nuevas que aprendimos" (temas no vistos en la cursada).
+- [ ] **Re-correr la auditoría al cierre** (con push/offline/a11y ya mergeados) y guardar el resultado — en la defensa se analiza el **último** obtenido.
+
+---
+
+## Checklist de verificación final (pre-defensa)
+
+Pasos concretos para confirmar que todo funciona de punta a punta, en orden:
+
+1. [ ] Pushear el merge de `desarrollo` en `pancho/feat/final-2026` y esperar el redeploy de Vercel (front y back).
+2. [ ] **Push en Android real**: abrir `https://aplicaciones-web-tienda-rho.vercel.app`, activar "Recibir novedades" en el footer → enviar una notificación desde `/admin/notifications` del panel → debe llegar **con el navegador cerrado**, y al tocarla abrir la ruta indicada.
+3. [ ] **Offline en Android real**: navegar home + `/productos` + alguna ficha → modo avión → volver a abrirlas: deben renderizar desde caché (páginas no visitadas caen al fallback `/offline`).
+4. [ ] **Lighthouse en producción**: DevTools → Lighthouse → Accessibility (modo incógnito) sobre home, `/productos` y una ficha del dominio real → debe repetir el 100.
+5. [ ] Spot-check de accesibilidad logueado (carrito con items, checkout, cuenta) — misma paleta/componentes, no se esperan diferencias.
+6. [ ] **iOS** (si hay iPhone disponible): "Agregar a pantalla de inicio" + modo standalone (HU-F11).
+7. [ ] Cerrar HT-01: postura crítica de las categorías restantes (issues #11–#15) + lista de aprendizajes + **re-correr la auditoría** y guardar el último resultado.
+8. [ ] Mergear PR #17 a `main` y coordinar defensa con la cátedra (todos los integrantes).
 
 ---
 
 ## Sugerencia de orden de trabajo
 
-1. **Seguridad de acceso** (bloqueante): HU-B01 → HU-B02 → HU-F02.
-2. **Integridad de negocio**: HU-B04 y HU-B05 juntas (tocan los mismos flujos), luego HU-B08 y HU-B11.
-3. **Sesiones**: HU-B03 + HU-B12 en backend, después HU-F03 + HU-F04.
-4. **Experiencia de compra**: HU-B06 + HU-F05, HU-F06 + HU-F07, HU-F08.
-5. **Google en la tienda**: HU-F01 (depende de la decisión tomada en HU-B02).
-6. **PWA instalable** (requisito de cátedra, independiente del resto — puede avanzar en paralelo): HU-F10 → HU-F09 (mínimo para el prompt de instalación en Android), luego HU-F11 + HU-F12.
+1. ~~**Seguridad de acceso** (bloqueante): HU-B01 → HU-B02 → HU-F02.~~ ✅
+2. ~~**Integridad de negocio**: HU-B04 y HU-B05 juntas.~~ ✅ (quedan HU-B08 y HU-B11)
+3. ~~**PWA instalable**: HU-F10 → HU-F09 → HU-F11 + HU-F12.~~ ✅ (falta verificación iOS)
+4. ~~**PWA pauta final** (requisitos explícitos del examen): HU-F14 (catálogo offline) → HU-B13 + HU-F13 (push) → HU-F15 (accesibilidad 100) → HU-B14 (API protegida).~~ ✅ (faltan verificaciones en Android real + vars de entorno en Vercel)
+5. **Sesiones**: HU-B03 + HU-B12 en backend, después HU-F03 + HU-F04.
+6. **Experiencia de compra** (déficits que las pautas piden resueltos): HU-B06 + HU-F05, HU-F06 + HU-F07, HU-F08; sueltas: HU-B07, HU-B08, HU-B09, HU-B10, HU-B11.
+7. **Google en la tienda**: HU-F01 (depende de la decisión tomada en HU-B02).
+8. **Auditoría IA (HT-01)**: al final, con el resto cerrado — en la defensa se analiza el último resultado.

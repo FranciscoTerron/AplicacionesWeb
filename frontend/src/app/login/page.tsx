@@ -21,7 +21,15 @@ function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
-  const redirect = params.get("redirect") || "/";
+  // Solo paths internos: "//evil.com", "https://evil.com" o "/\evil.com" caen a "/".
+  const rawRedirect = params.get("redirect");
+  const redirect =
+    rawRedirect &&
+    rawRedirect.startsWith("/") &&
+    !rawRedirect.startsWith("//") &&
+    !rawRedirect.includes("\\")
+      ? rawRedirect
+      : "/";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -77,7 +85,10 @@ function LoginForm() {
         </form>
         <p className="mt-4 text-center text-sm text-muted-foreground">
           ¿No tenés cuenta?{" "}
-          <Link href="/registro" className="text-primary hover:underline">
+          <Link
+            href="/registro"
+            className="text-primary underline underline-offset-4"
+          >
             Registrate
           </Link>
         </p>

@@ -2,6 +2,9 @@
 
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\Api\AuthenticateApiToken;
+use App\Http\Middleware\Api\EnsureAppKey;
+use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\ShareSettingsMiddleware;
 use App\Providers\AppServiceProvider;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -36,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             ValidateCsrfToken::class,
             ShareSettingsMiddleware::class,
             SubstituteBindings::class,
+            SecurityHeaders::class,
         ]);
 
         // CORS y headers apropiados para API JSON
@@ -45,12 +49,15 @@ return Application::configure(basePath: dirname(__DIR__))
             PreventRequestsDuringMaintenance::class,
             HandleCors::class,
             SubstituteBindings::class,
+            SecurityHeaders::class,
         ]);
 
         // Add custom middleware aliases
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'role' => RoleMiddleware::class,
             'auth.api' => AuthenticateApiToken::class,
+            'app.client' => EnsureAppKey::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

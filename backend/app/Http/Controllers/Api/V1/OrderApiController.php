@@ -7,7 +7,9 @@ use App\Http\Requests\Api\Order\StoreOrderRequest;
 use App\Services\DiscountService;
 use App\Services\FirestoreService;
 use App\Services\MercadoPagoService;
+use App\Services\StockService;
 use App\Support\ApiResponse;
+use App\Support\OrderStatus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -19,6 +21,7 @@ class OrderApiController extends Controller
         private readonly FirestoreService $firestore,
         private readonly MercadoPagoService $mercadoPago,
         private readonly DiscountService $discounts,
+        private readonly StockService $stock,
     ) {}
 
     /**
@@ -263,6 +266,10 @@ class OrderApiController extends Controller
         // primer lote y no depende de un orderBy global).
         $orders = $this->firestore->query('orders', ['user_id' => $user->id], 200);
 
+        // La tienda solo conoce el vocabulario unificado: normalizar estados
+        // legacy guardados por versiones anteriores.
+        $orders = array_map([self::class, 'normalizeOrder'], $orders);
+
         // Filtro por estado
         if ($status = $request->get('status')) {
             $orders = array_filter($orders, function ($o) use ($status) {
@@ -358,9 +365,24 @@ class OrderApiController extends Controller
         }
 
         return ApiResponse::success(
-            data: $order,
+            data: self::normalizeOrder($order),
             message: 'Orden encontrada'
         );
+    }
+
+    /**
+     * Normaliza los estados de una orden al vocabulario unificado (HU-B05).
+     *
+     * @param  array<string, mixed>  $order
+     * @return array<string, mixed>
+     */
+    private static function normalizeOrder(array $order): array
+    {
+        $order['status'] = OrderStatus::of($order);
+        $order['payment_status'] = OrderStatus::paymentOf($order);
+        unset($order['paymentStatus']);
+
+        return $order;
     }
 
     /**
@@ -429,8 +451,8 @@ class OrderApiController extends Controller
         }
 
         // Estados que permiten cancelación
-        $currentStatus = $order['status'] ?? 'pending';
-        $cancelableStatuses = ['pending', 'confirmed'];
+        $currentStatus = OrderStatus::of($order);
+        $cancelableStatuses = [OrderStatus::PENDING, OrderStatus::CONFIRMED];
 
         if (! in_array($currentStatus, $cancelableStatuses)) {
             return response()->json([
@@ -439,10 +461,19 @@ class OrderApiController extends Controller
             ], 400);
         }
 
-        $updatedOrder = $this->firestore->updateDocument('orders', $id, [
-            'status' => 'cancelled',
+        // Una orden ya paga no la cancela el cliente: el reembolso se gestiona
+        // con el negocio (el admin sí puede cancelarla desde el panel).
+        if (OrderStatus::paymentOf($order) === OrderStatus::PAYMENT_APPROVED) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La orden ya tiene el pago acreditado. Contactá al negocio para gestionar la cancelación y el reembolso.',
+            ], 422);
+        }
+
+        $updatedOrder = $this->firestore->updateDocument('orders', $id, array_merge([
+            'status' => OrderStatus::CANCELLED,
             'updated_at' => now()->toISOString(),
-        ]);
+        ], $this->stock->restoreForOrder($order)));
 
         return ApiResponse::success(
             data: $updatedOrder,

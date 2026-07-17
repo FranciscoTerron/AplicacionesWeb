@@ -8,6 +8,9 @@ class DiscountService
 {
     private ?array $activeCache = null;
 
+    /** @var array<string, array>|null Mapa id => descuento usable (cache para lookup O(1)). */
+    private ?array $activeById = null;
+
     public function __construct(private readonly FirestoreService $firestore) {}
 
     public function activeDiscounts(): array
@@ -24,6 +27,29 @@ class DiscountService
             ->all();
 
         return $this->activeCache;
+    }
+
+    /**
+     * Mapa id => descuento usable, construido una sola vez desde activeDiscounts().
+     * Evita el N+1 de un getDocument por producto al decorar listados.
+     *
+     * @return array<string, array>
+     */
+    private function activeDiscountsById(): array
+    {
+        if ($this->activeById !== null) {
+            return $this->activeById;
+        }
+
+        $map = [];
+        foreach ($this->activeDiscounts() as $discount) {
+            $id = $discount['id'] ?? null;
+            if ($id !== null) {
+                $map[$id] = $discount;
+            }
+        }
+
+        return $this->activeById = $map;
     }
 
     public function isUsable(array $d): bool
@@ -86,12 +112,10 @@ class DiscountService
             return null;
         }
 
-        $discount = $this->firestore->getDocument('discounts', $discountId);
-        if (! $discount || ! $this->isUsable($discount)) {
-            return null;
-        }
-
-        return $discount;
+        // Resuelve desde el cache de descuentos activos (ya filtrados por isUsable).
+        // Antes hacía un getDocument('discounts', $id) por producto => N+1 en cada
+        // listado del catálogo. Ahora es un lookup O(1) en memoria.
+        return $this->activeDiscountsById()[$discountId] ?? null;
     }
 
     public function decorate(array $product): array

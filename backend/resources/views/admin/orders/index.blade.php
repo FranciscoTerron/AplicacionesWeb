@@ -241,7 +241,7 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Estado de Pago</label>
-                    <select name="paymentStatus" class="form-select">${buildOptions(orderPaymentStatuses, o.paymentStatus || o.payment_status || 'pending')}</select>
+                    <select name="payment_status" class="form-select">${buildOptions(orderPaymentStatuses, o.payment_status || o.paymentStatus || 'pending')}</select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Método de Pago</label>
@@ -306,7 +306,7 @@
             const orderId = o.id || '';
             const clientLabel = o.client_name || o.clientId || o.client_id || '—';
             const statusKey = o.status || 'pending';
-            const paymentKey = o.paymentStatus || o.payment_status || 'pending';
+            const paymentKey = o.payment_status || o.paymentStatus || 'pending';
             const total = o.total_amount || o.total || (o.items || []).reduce((s, it) => s + (Number(it.quantity || 0) * Number(it.unitPrice || it.unit_price || 0)), 0);
             const itemsHtml = (o.items || []).map(it => `
                 <tr>

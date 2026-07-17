@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\DiscountApiController;
 use App\Http\Controllers\Api\V1\HealthCheckController;
 use App\Http\Controllers\Api\V1\OrderApiController;
 use App\Http\Controllers\Api\V1\PaymentWebhookController;
+use App\Http\Controllers\Api\V1\PushSubscriptionController;
 use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\V1\WishlistController;
 use Illuminate\Support\Facades\Route;
@@ -30,15 +31,20 @@ use Illuminate\Support\Facades\Route;
 /**
  * Ruta publica sin autenticacion: health check.
  */
-Route::prefix('v1')->middleware('throttle:api')->group(function () {
+// 'app.client' (EnsureAppKey) restringe la API al frontend React vía header
+// X-App-Key cuando APP_PUBLIC_KEY está seteada (prod). Webhook y cron quedan
+// exentos (tienen su propia autenticación).
+Route::prefix('v1')->middleware(['throttle:api', 'app.client'])->group(function () {
     // Health check
     Route::get('/health', HealthCheckController::class)
         ->name('api.v1.health');
 
-    // Auth - Fase 3 (público)
+    // Auth - Fase 3 (público) — throttle estricto anti-fuerza-bruta
     Route::post('/auth/login', [AuthApiController::class, 'login'])
+        ->middleware('throttle:auth')
         ->name('api.v1.auth.login');
     Route::post('/auth/register', [AuthApiController::class, 'register'])
+        ->middleware('throttle:auth')
         ->name('api.v1.auth.register');
     Route::post('/auth/refresh', [AuthApiController::class, 'refresh'])
         ->name('api.v1.auth.refresh');
@@ -59,19 +65,29 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::get('/catalog/categories', [CatalogApiController::class, 'categories'])
         ->name('api.v1.catalog.categories');
 
-    // Payment webhook (público - notificación externa)
+    // Payment webhook (público - notificación externa de Mercado Pago).
+    // Exento de app.client (MP no manda X-App-Key); valida firma + reconsulta.
     Route::post('/payments/webhook', PaymentWebhookController::class)
-        ->withoutMiddleware('throttle:api')
+        ->withoutMiddleware(['throttle:api', 'app.client'])
         ->name('api.v1.payments.webhook');
 
-    // Cron (Vercel) - protegido por Bearer CRON_SECRET dentro del controller
+    // Cron (Vercel) - protegido por Bearer CRON_SECRET dentro del controller.
+    // Exento de app.client (el cron de Vercel no manda X-App-Key).
     Route::get('/cron/expire-orders', [CronController::class, 'expireOrders'])
-        ->withoutMiddleware('throttle:api')
+        ->withoutMiddleware(['throttle:api', 'app.client'])
         ->name('api.v1.cron.expire-orders');
 
     // Search - Fase 5 (público)
     Route::post('/catalog/search', SearchController::class)
         ->name('api.v1.catalog.search');
+
+    // Web Push (HU-B13): suscripciones anónimas para promos/productos nuevos.
+    Route::get('/push/public-key', [PushSubscriptionController::class, 'publicKey'])
+        ->name('api.v1.push.public-key');
+    Route::post('/push/subscribe', [PushSubscriptionController::class, 'subscribe'])
+        ->name('api.v1.push.subscribe');
+    Route::post('/push/unsubscribe', [PushSubscriptionController::class, 'unsubscribe'])
+        ->name('api.v1.push.unsubscribe');
 
     // Rutas protegidas
     Route::middleware('auth.api')->group(function () {

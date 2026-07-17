@@ -138,6 +138,21 @@ class FirestoreService
             return null;
         }
 
+        // Antes solo se manejaba el 404: ante 403/500/timeout, parseDocument()
+        // corria sobre un body de error y devolvia ['id' => ...] como si el doc
+        // existiera vacio, enmascarando fallos reales de Firestore (ordenes/
+        // productos que "desaparecen" sin log). Ahora fallamos ruidosamente,
+        // igual que listDocuments()/create/update/query.
+        if ($response->failed()) {
+            \Log::error('Firestore getDocument FAILED', [
+                'collection' => $collection,
+                'docId' => $docId,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            throw new Exception('Firestore get document failed: '.$response->body());
+        }
+
         return $this->parseDocument($response->json());
     }
 
@@ -238,7 +253,9 @@ class FirestoreService
      */
     public function countDocuments(string $collection): int
     {
-        $url = "{$this->baseUrl}/{$collection}:runAggregationQuery";
+        // La agregación se corre sobre el recurso documents (parent), no sobre
+        // la colección: .../documents/{collection}:runAggregationQuery da 400.
+        $url = "{$this->baseUrl}/:runAggregationQuery";
 
         $body = [
             'structuredAggregationQuery' => [

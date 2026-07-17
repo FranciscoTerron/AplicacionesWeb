@@ -296,6 +296,51 @@ class OrderApiTest extends TestCase
         $this->putJson('/api/v1/orders/o1/cancel', [], $headers)->assertStatus(404);
     }
 
+    public function test_cancel_rejects_order_with_approved_payment(): void
+    {
+        // HU-B04: una orden ya paga no la cancela el cliente; el reembolso se
+        // gestiona con el negocio (el admin puede cancelarla desde el panel).
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('orders', [
+            ['id' => 'o1', 'user_id' => 'user-1', 'status' => 'confirmed', 'payment_status' => 'approved'],
+        ]);
+
+        $this->putJson('/api/v1/orders/o1/cancel', [], $headers)
+            ->assertStatus(422)
+            ->assertJson(['success' => false]);
+
+        $this->assertSame('confirmed', $this->firestore->getDocument('orders', 'o1')['status']);
+    }
+
+    public function test_cancel_restores_stock_when_order_had_decremented_it(): void
+    {
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('products', [['id' => 'p1', 'stock' => 3]]);
+        $this->firestore->seed('orders', [
+            ['id' => 'o1', 'user_id' => 'user-1', 'status' => 'confirmed', 'payment_status' => 'pending',
+                'stock_decremented' => true, 'items' => [['product_id' => 'p1', 'quantity' => 2]]],
+        ]);
+
+        $this->putJson('/api/v1/orders/o1/cancel', [], $headers)
+            ->assertStatus(200)
+            ->assertJson(['success' => true, 'data' => ['status' => 'cancelled', 'stock_decremented' => false]]);
+
+        $this->assertSame(5, $this->firestore->getDocument('products', 'p1')['stock']);
+    }
+
+    public function test_show_normalizes_legacy_statuses(): void
+    {
+        // HU-B05: la tienda solo conoce el vocabulario unificado.
+        $headers = $this->actingAsApiUser(['id' => 'user-1']);
+        $this->firestore->seed('orders', [
+            ['id' => 'o1', 'user_id' => 'user-1', 'status' => 'in_process', 'paymentStatus' => 'paid'],
+        ]);
+
+        $this->getJson('/api/v1/orders/o1', $headers)
+            ->assertStatus(200)
+            ->assertJson(['data' => ['status' => 'processing', 'payment_status' => 'approved']]);
+    }
+
     // --- Descuentos aplicados al cobrar ---
 
     public function test_store_charges_discounted_total(): void

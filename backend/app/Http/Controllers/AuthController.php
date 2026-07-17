@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\FirestoreService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
@@ -86,6 +87,9 @@ class AuthController extends Controller
         }
 
         $allowedDomains = config('services.google.allowed_domains', []);
+        if (empty($allowedDomains) && app()->isProduction()) {
+            Log::warning('Google login: services.google.allowed_domains está vacío en producción; el acceso queda restringido solo a usuarios existentes en `users`.');
+        }
         if (! empty($allowedDomains)) {
             $domain = substr(strrchr($email, '@') ?: '', 1);
             if (! in_array($domain, $allowedDomains, true)) {
@@ -111,16 +115,20 @@ class AuthController extends Controller
                 'updated_at' => now()->toISOString(),
             ]);
         } else {
-            // Primer login con Google: por defecto el usuario es cliente.
-            // Solo se promueve a admin si el email está en services.google.admin_emails.
-            // La promoción a editor se hace manualmente desde /admin/users por un admin.
+            // Email desconocido: NO se crean usuarios internos desde el login con
+            // Google. La única excepción es services.google.admin_emails, que
+            // bootstrapea admins; el resto de las altas se hace desde /admin/users.
             $adminEmails = array_map('strtolower', config('services.google.admin_emails', []));
-            $role = in_array($email, $adminEmails, true) ? 'admin' : 'cliente';
+            if (! in_array($email, $adminEmails, true)) {
+                return redirect()->route('login')->withErrors([
+                    'email' => 'Tu cuenta de Google no tiene acceso al panel. Contactá a un administrador para que te dé de alta.',
+                ]);
+            }
 
             $userData = $this->firestore->createDocument('users', [
                 'name' => $googleUser->getName() ?: $email,
                 'email' => $email,
-                'role' => $role,
+                'role' => 'admin',
                 'active' => true,
                 'google_id' => $googleUser->getId(),
                 'avatar' => $googleUser->getAvatar(),

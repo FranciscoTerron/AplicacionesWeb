@@ -8,6 +8,8 @@ use App\Http\Requests\Order\UpdateOrderRequest;
 use App\Http\Traits\CrudActionsTrait;
 use App\Models\Order;
 use App\Services\FirestoreService;
+use App\Services\StockService;
+use App\Support\OrderStatus;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +27,7 @@ class OrderController extends Controller
 {
     use CrudActionsTrait;
 
-    public function __construct(FirestoreService $firestore)
+    public function __construct(FirestoreService $firestore, private readonly StockService $stock)
     {
         $this->firestore = $firestore;
     }
@@ -77,13 +79,7 @@ class OrderController extends Controller
 
     public static function statuses(): array
     {
-        return [
-            'pending' => 'Pendiente',
-            'confirmed' => 'Confirmada',
-            'in_process' => 'En proceso',
-            'completed' => 'Completada',
-            'cancelled' => 'Cancelada',
-        ];
+        return OrderStatus::statuses();
     }
 
     protected function getExtraCreateData(): array
@@ -124,7 +120,15 @@ class OrderController extends Controller
             $startAfter,
             'created_at',
         );
-        $items = collect($fetchResult['documents'] ?? []);
+        // Normalizar estados legacy (in_process, paid, paymentStatus camelCase)
+        // al vocabulario unificado: filtros, labels y badges trabajan sobre esto.
+        $items = collect($fetchResult['documents'] ?? [])->map(function ($item) {
+            $item['status'] = OrderStatus::of($item);
+            $item['payment_status'] = OrderStatus::paymentOf($item);
+            unset($item['paymentStatus']);
+
+            return $item;
+        });
 
         if ($search) {
             $items = $items->filter(function ($item) use ($search) {
@@ -139,9 +143,7 @@ class OrderController extends Controller
         }
 
         if ($paymentFilter) {
-            $items = $items->filter(function ($item) use ($paymentFilter) {
-                return ($item['paymentStatus'] ?? $item['payment_status'] ?? '') === $paymentFilter;
-            })->values();
+            $items = $items->where('payment_status', $paymentFilter)->values();
         }
 
         // Datos para el modal "new" (selects de cliente/producto, sin paginar — máx. 100).
@@ -162,11 +164,7 @@ class OrderController extends Controller
             'clients' => $clients,
             'products' => $products,
             'statuses' => self::statuses(),
-            'paymentStatuses' => [
-                'pending' => 'Pendiente',
-                'paid' => 'Pagado',
-                'overdue' => 'Vencido',
-            ],
+            'paymentStatuses' => OrderStatus::paymentStatuses(),
             'search' => $search,
             'statusFilter' => $statusFilter,
             'paymentFilter' => $paymentFilter,
@@ -189,11 +187,36 @@ class OrderController extends Controller
         ]);
 
         try {
+            $order = $this->firestore->getDocument($this->getCollectionName(), $id) ?? [];
+            $newStatus = $request->input('status');
+
             $data = [
-                'status' => $request->input('status'),
+                'status' => $newStatus,
                 'updated_at' => now()->toISOString(),
                 'updated_by' => auth()->id(),
             ];
+
+            // HU-B04: para métodos sin acreditación online (efectivo), el stock
+            // se compromete cuando el negocio acepta la orden. Para Mercado Pago
+            // lo descuenta el webhook al aprobarse el pago. Idempotente vía
+            // stock_decremented, así reconfirmar no descuenta dos veces.
+            $paymentMethod = (string) ($order['payment_method'] ?? $order['paymentMethod'] ?? '');
+            if (in_array($newStatus, OrderStatus::COMMITTED_STATUSES, true) && $paymentMethod !== 'mercado_pago') {
+                $data = array_merge($data, $this->stock->decrementForOrder($order));
+            }
+
+            if ($newStatus === OrderStatus::CANCELLED) {
+                // Cancelar repone el stock que la orden tenía descontado.
+                $data = array_merge($data, $this->stock->restoreForOrder($order));
+
+                // Orden ya paga: el admin puede cancelarla igual, pero queda
+                // marcada para gestionar el reembolso a mano (no hay refund
+                // automático contra MP).
+                if (OrderStatus::paymentOf($order) === OrderStatus::PAYMENT_APPROVED) {
+                    $data['refund_pending'] = true;
+                }
+            }
+
             $this->firestore->updateDocument($this->getCollectionName(), $id, $data);
 
             $message = 'Estado del pedido actualizado correctamente.';

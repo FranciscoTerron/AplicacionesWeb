@@ -4,6 +4,10 @@ import type { ApiResponse, PaginationMeta } from "@/types/api";
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
+// Clave compartida que identifica al frontend ante la API (header X-App-Key).
+// El backend la exige solo si tiene APP_PUBLIC_KEY seteada (prod).
+const APP_KEY = process.env.NEXT_PUBLIC_APP_KEY;
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -41,6 +45,7 @@ export async function apiFetch<T>(
     Accept: "application/json",
   };
   if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (APP_KEY) headers["X-App-Key"] = APP_KEY;
 
   const token = options.token ?? (auth ? getToken() : null);
   if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -94,6 +99,7 @@ export async function apiFetchRaw<T>(
 
   const headers: Record<string, string> = { Accept: "application/json" };
   if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (APP_KEY) headers["X-App-Key"] = APP_KEY;
 
   const token = options.token ?? (auth ? getToken() : null);
   if (token) headers["Authorization"] = `Bearer ${token}`;

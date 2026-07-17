@@ -56,4 +56,12 @@ return [
         'secret' => env('CRON_SECRET'),
     ],
 
+    'webpush' => [
+        // Claves VAPID para Web Push (HU-B13). La pública se expone al
+        // frontend vía GET /push/public-key; la privada nunca sale del server.
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+        'subject' => env('VAPID_SUBJECT', 'mailto:admin@mapiscinas.local'),
+    ],
+
 ];

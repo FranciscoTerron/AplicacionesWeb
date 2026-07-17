@@ -6,18 +6,13 @@
 
 @section('content')
 @php
-    $statusLabels = [
-        'pending' => 'Pendiente',
-        'confirmed' => 'Confirmada',
-        'in_process' => 'En proceso',
-        'completed' => 'Completada',
-        'cancelled' => 'Cancelada',
-    ];
+    $statusLabels = \App\Support\OrderStatus::statuses();
     $statusBadgeMap = [
         'pending' => 'badge-amber',
         'confirmed' => 'badge-sky',
-        'in_process' => 'badge-indigo',
-        'completed' => 'badge-emerald',
+        'processing' => 'badge-indigo',
+        'shipped' => 'badge-sky',
+        'delivered' => 'badge-emerald',
         'cancelled' => 'badge-rose',
     ];
 @endphp
