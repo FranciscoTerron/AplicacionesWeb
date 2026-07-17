@@ -12,7 +12,7 @@
 // - Nunca cachea llamadas a la API (stock/precios/órdenes siempre frescos).
 //
 // Al cambiar el shell o la estrategia, subir VERSION para invalidar lo viejo.
-const VERSION = "v2";
+const VERSION = "v3";
 const STATIC_CACHE = `ma-piscinas-static-${VERSION}`;
 const PAGES_CACHE = `ma-piscinas-pages-${VERSION}`;
 const IMAGES_CACHE = `ma-piscinas-images-${VERSION}`;
@@ -20,6 +20,11 @@ const ACTIVE_CACHES = [STATIC_CACHE, PAGES_CACHE, IMAGES_CACHE];
 
 const OFFLINE_URL = "/offline";
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/icon-512.png"];
+
+// Páginas que se precachean al instalar para que el catálogo se vea offline
+// aunque nunca se hayan visitado (best-effort: si falla una, la instalación
+// no se aborta — a diferencia del PRECACHE crítico de arriba).
+const PRECACHE_PAGES = ["/", "/productos"];
 
 const PAGES_MAX_ENTRIES = 40;
 const IMAGES_MAX_ENTRIES = 60;
@@ -29,10 +34,10 @@ const PRIVATE_PATHS = [/^\/carrito/, /^\/checkout/, /^\/cuenta/, /^\/login/, /^\
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(STATIC_CACHE)
-      .then((cache) => cache.addAll(PRECACHE))
-      .then(() => self.skipWaiting())
+    Promise.all([
+      caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE)),
+      Promise.allSettled(PRECACHE_PAGES.map((page) => cachePage(page))),
+    ]).then(() => self.skipWaiting())
   );
 });
 
@@ -65,6 +70,21 @@ async function putAndTrim(cacheName, request, response, maxEntries) {
   const cache = await caches.open(cacheName);
   await cache.put(request, response);
   await trimCache(cacheName, maxEntries);
+}
+
+// Trae y guarda el HTML completo de una página pública (si no está ya).
+// Silencioso ante fallas: es relleno en segundo plano, nunca bloquea nada.
+async function cachePage(pageUrl) {
+  try {
+    const cache = await caches.open(PAGES_CACHE);
+    if (await cache.match(pageUrl)) return;
+    const response = await fetch(pageUrl);
+    if (response.ok && !response.redirected) {
+      await putAndTrim(PAGES_CACHE, pageUrl, response, PAGES_MAX_ENTRIES);
+    }
+  } catch {
+    // Sin red o error del server: se reintenta sola la próxima visita/prefetch.
+  }
 }
 
 self.addEventListener("fetch", (event) => {
@@ -102,6 +122,23 @@ self.addEventListener("fetch", (event) => {
           return offline ?? Response.error();
         })
     );
+    return;
+  }
+
+  // Navegación SPA del App Router: los clicks y prefetches de <Link> no son
+  // "navigate", son fetches RSC (?_rsc=...). Se dejan pasar tal cual (si
+  // fallan offline, Next cae solo a navegación dura y la atiende el handler
+  // de arriba), pero se aprovechan como disparador: al ver/clickear un link
+  // público, el HTML de esa página se cachea en segundo plano. Así las fichas
+  // de la grilla quedan disponibles offline con solo haberlas tenido en
+  // pantalla (requisito: "parte del catálogo cacheado").
+  if (url.searchParams.has("_rsc")) {
+    const isPrivate = PRIVATE_PATHS.some((re) => re.test(url.pathname));
+    if (!isPrivate) {
+      const clean = new URL(url);
+      clean.searchParams.delete("_rsc");
+      event.waitUntil(cachePage(clean.pathname + clean.search));
+    }
     return;
   }
 
