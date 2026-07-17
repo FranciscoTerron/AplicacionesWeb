@@ -19,6 +19,38 @@
         </div>
     @endif
 
+    {{-- Plantillas rápidas: precargan el formulario y solo queda completar la
+         parte entre [corchetes] (queda seleccionada para tipear encima). --}}
+    <div class="mb-5">
+        <p class="text-sm font-medium text-dark mb-2">Plantillas rápidas</p>
+        <div class="flex flex-wrap gap-2">
+            <button type="button" class="js-plantilla px-3 py-1.5 text-sm border border-gray-300 rounded-full hover:border-primary hover:text-primary transition-colors"
+                data-title="🔥 ¡Nueva promoción!"
+                data-body="Aprovechá [DESCUENTO]% OFF en [PRODUCTO O CATEGORÍA]. Por tiempo limitado."
+                data-url="/productos">
+                🔥 Promoción
+            </button>
+            <button type="button" class="js-plantilla px-3 py-1.5 text-sm border border-gray-300 rounded-full hover:border-primary hover:text-primary transition-colors"
+                data-title="✨ ¡Recién llegado!"
+                data-body="Ya podés conseguir [PRODUCTO] en la tienda. Miralo antes de que se agote."
+                data-url="/productos">
+                ✨ Producto nuevo
+            </button>
+            <button type="button" class="js-plantilla px-3 py-1.5 text-sm border border-gray-300 rounded-full hover:border-primary hover:text-primary transition-colors"
+                data-title="🏷️ Oferta imperdible"
+                data-body="[PRODUCTO] ahora a $[PRECIO]. Hay stock limitado, ¡no te lo pierdas!"
+                data-url="/productos/[ID-DEL-PRODUCTO]">
+                🏷️ Oferta puntual
+            </button>
+            <button type="button" class="js-plantilla px-3 py-1.5 text-sm border border-gray-300 rounded-full hover:border-primary hover:text-primary transition-colors"
+                data-title="🚚 Envío gratis"
+                data-body="Envío gratis en compras desde $[MONTO]. Solo por esta semana."
+                data-url="/productos">
+                🚚 Envío gratis
+            </button>
+        </div>
+    </div>
+
     <form method="POST" action="{{ route('admin.notifications.send') }}">
         @csrf
 
@@ -59,4 +91,25 @@
         </div>
     </form>
 </div>
+
+<script>
+    // Al elegir una plantilla se llenan los campos y se selecciona el primer
+    // [placeholder] del mensaje para escribir directamente encima.
+    document.querySelectorAll('.js-plantilla').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const form = document.querySelector('form[action*="notifications"]');
+            form.querySelector('[name="title"]').value = btn.dataset.title;
+            form.querySelector('[name="url"]').value = btn.dataset.url;
+
+            const body = form.querySelector('[name="body"]');
+            body.value = btn.dataset.body;
+            const start = body.value.indexOf('[');
+            const end = body.value.indexOf(']');
+            body.focus();
+            if (start !== -1 && end !== -1) {
+                body.setSelectionRange(start, end + 1);
+            }
+        });
+    });
+</script>
 @endsection

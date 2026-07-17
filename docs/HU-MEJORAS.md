@@ -256,7 +256,8 @@ Consecuencias concretas:
 - [x] Par de claves VAPID en config (`services.webpush`, env `VAPID_PUBLIC_KEY/PRIVATE_KEY/SUBJECT`); la pública se expone vía `GET /api/v1/push/public-key` (el frontend no necesita env var propia). ✅ Vars cargadas en Vercel — verificado 17/07: el endpoint productivo devuelve nuestra clave pública.
 - [x] **Decisión: suscripciones anónimas** (broadcast de promos, sin atar al usuario). `POST /push/subscribe` guarda en `push_subscriptions` con `sha256(endpoint)` como doc id (idempotente); `POST /push/unsubscribe` la elimina.
 - [x] Envío con `minishlink/web-push` (`App\Services\WebPushSender::broadcast`); las suscripciones vencidas (404/410) se eliminan automáticamente al enviar.
-- [x] **Decisión: form en el panel** (`/admin/notifications`, solo admin, link "Notificaciones" en el sidebar): título, mensaje y ruta de destino; muestra cantidad de suscriptos y resultado del envío.
+- [x] **Decisión: form en el panel** (`/admin/notifications`, solo admin, link "Notificaciones" en el sidebar): título, mensaje y ruta de destino; muestra cantidad de suscriptos y resultado del envío. Con **plantillas rápidas** (promo, producto nuevo, oferta puntual, envío gratis) que precargan el form y solo piden completar el dato entre corchetes.
+- [x] **Fix entrega en Android (17/07)**: el envío ahora va con `urgency: high` y TTL 24 h — con los defaults (urgencia normal, TTL 5 min) FCM difería la notificación con el navegador cerrado (Doze) y la descartaba a los 5 minutos: llegaba solo con la app abierta.
 - [x] Tests: `PushApiTest` (public-key, subscribe idempotente, validación, unsubscribe) y `NotificationPanelTest` (403 editor, broadcast con sender mockeado, validación).
 
 ---
@@ -491,7 +492,8 @@ Consecuencias concretas:
 - [x] Las imágenes de productos se cachean cache-first con tope de 60 entradas. Nota: `next/image` las sirve same-origin vía `/_next/image`, así que no hizo falta cachear Cloudinary (otro origen sigue excluido).
 - [x] Rutas con datos personales/volátiles (`/carrito`, `/checkout`, `/cuenta/*`, `/login`, `/registro`) **no** se cachean; la API sigue sin cachearse (stock/precios frescos cuando hay red).
 - [x] Versión de cache subida a `v2`, separada en tres caches (`static`/`pages`/`images`); `activate` borra cualquier cache viejo.
-- [ ] Verificado en Android real: visitar productos con red → modo avión → esos productos se ven (con imagen); una página no visitada muestra "Sin conexión".
+- [x] **Mejora v3 (17/07)**: las navegaciones SPA del App Router no son `navigate` (son fetches RSC), así que las páginas navegadas con clicks no quedaban cacheadas — offline solo se veía la página de entrada. Ahora: (a) se precachean `/` y `/productos` al instalar (el catálogo se ve offline aunque nunca se haya visitado), y (b) cada fetch/prefetch RSC de una ruta pública dispara el cacheo en segundo plano de su HTML — con solo ver la grilla, las fichas visibles quedan disponibles offline.
+- [ ] Verificado en Android real: visitar productos con red → modo avión → home, grilla y fichas vistas se ven; una página no cacheada muestra "Sin conexión".
 
 ---
 

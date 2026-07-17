@@ -44,6 +44,11 @@ class WebPushSender
                 'publicKey' => config('services.webpush.public_key'),
                 'privateKey' => config('services.webpush.private_key'),
             ],
+        ], [
+            // Sin esto FCM difiere la entrega con el navegador cerrado (Doze) y
+            // descarta el mensaje al vencer el TTL default de 5 minutos.
+            'TTL' => 86400,
+            'urgency' => 'high',
         ]);
 
         $payload = json_encode([
