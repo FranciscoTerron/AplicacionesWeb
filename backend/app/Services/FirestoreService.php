@@ -253,7 +253,9 @@ class FirestoreService
      */
     public function countDocuments(string $collection): int
     {
-        $url = "{$this->baseUrl}/{$collection}:runAggregationQuery";
+        // La agregación se corre sobre el recurso documents (parent), no sobre
+        // la colección: .../documents/{collection}:runAggregationQuery da 400.
+        $url = "{$this->baseUrl}/:runAggregationQuery";
 
         $body = [
             'structuredAggregationQuery' => [

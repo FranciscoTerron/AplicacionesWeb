@@ -253,7 +253,7 @@ Consecuencias concretas:
 - Contraparte frontend: HU-F13 (suscripción del navegador + handler `push` en el SW).
 
 **Criterios de aceptación**
-- [x] Par de claves VAPID en config (`services.webpush`, env `VAPID_PUBLIC_KEY/PRIVATE_KEY/SUBJECT`); la pública se expone vía `GET /api/v1/push/public-key` (el frontend no necesita env var propia). **Pendiente deploy: cargar las 3 vars en el entorno productivo del backend.**
+- [x] Par de claves VAPID en config (`services.webpush`, env `VAPID_PUBLIC_KEY/PRIVATE_KEY/SUBJECT`); la pública se expone vía `GET /api/v1/push/public-key` (el frontend no necesita env var propia). ✅ Vars cargadas en Vercel — verificado 17/07: el endpoint productivo devuelve nuestra clave pública.
 - [x] **Decisión: suscripciones anónimas** (broadcast de promos, sin atar al usuario). `POST /push/subscribe` guarda en `push_subscriptions` con `sha256(endpoint)` como doc id (idempotente); `POST /push/unsubscribe` la elimina.
 - [x] Envío con `minishlink/web-push` (`App\Services\WebPushSender::broadcast`); las suscripciones vencidas (404/410) se eliminan automáticamente al enviar.
 - [x] **Decisión: form en el panel** (`/admin/notifications`, solo admin, link "Notificaciones" en el sidebar): título, mensaje y ruta de destino; muestra cantidad de suscriptos y resultado del envío.
@@ -273,7 +273,7 @@ Consecuencias concretas:
 - [x] CORS restringido a los orígenes reales (`config/cors.php`): dominios exactos del front (`aplicaciones-web-tienda[-rho].vercel.app` + localhost) y patrón acotado a previews del proyecto en `allowed_origins_patterns`.
 - [x] Los endpoints sensibles ya exigen `auth.api` (se mantiene); throttle en login/register (`throttle:auth`) y en toda la API (`throttle:api`).
 - [x] **Decisión tomada: opción (a)** — middleware `EnsureAppKey` (alias `app.client`) exige header `X-App-Key` si `APP_PUBLIC_KEY` está seteada (prod); webhook de MP y cron quedan exentos (tienen su propia auth). El front lo manda desde `NEXT_PUBLIC_APP_KEY` en `lib/api.ts`. Documentado en `docs/DECISIONES_SEGURIDAD.md`.
-- [x] Test: `tests/Feature/Api/AppKeyTest.php`. **Pendiente deploy: setear `APP_PUBLIC_KEY` (backend) y `NEXT_PUBLIC_APP_KEY` (frontend) en Vercel con el mismo valor.**
+- [x] Test: `tests/Feature/Api/AppKeyTest.php`. ✅ Vars en Vercel verificadas 17/07: la API productiva responde 403 sin `X-App-Key` y el front deployado consume el catálogo sin problema (las claves matchean).
 
 ---
 
@@ -526,6 +526,21 @@ Consecuencias concretas:
 - [ ] Identificar y documentar los hallazgos que consideremos mal fundamentados/exagerados/erróneos, con la justificación técnica (postura crítica) — hay material en `DECISIONES_SEGURIDAD.md` (S-3, S-6); falta hacerlo para el resto de categorías.
 - [ ] Lista de "cosas nuevas que aprendimos" (temas no vistos en la cursada).
 - [ ] **Re-correr la auditoría al cierre** (con push/offline/a11y ya mergeados) y guardar el resultado — en la defensa se analiza el **último** obtenido.
+
+---
+
+## Checklist de verificación final (pre-defensa)
+
+Pasos concretos para confirmar que todo funciona de punta a punta, en orden:
+
+1. [ ] Pushear el merge de `desarrollo` en `pancho/feat/final-2026` y esperar el redeploy de Vercel (front y back).
+2. [ ] **Push en Android real**: abrir `https://aplicaciones-web-tienda-rho.vercel.app`, activar "Recibir novedades" en el footer → enviar una notificación desde `/admin/notifications` del panel → debe llegar **con el navegador cerrado**, y al tocarla abrir la ruta indicada.
+3. [ ] **Offline en Android real**: navegar home + `/productos` + alguna ficha → modo avión → volver a abrirlas: deben renderizar desde caché (páginas no visitadas caen al fallback `/offline`).
+4. [ ] **Lighthouse en producción**: DevTools → Lighthouse → Accessibility (modo incógnito) sobre home, `/productos` y una ficha del dominio real → debe repetir el 100.
+5. [ ] Spot-check de accesibilidad logueado (carrito con items, checkout, cuenta) — misma paleta/componentes, no se esperan diferencias.
+6. [ ] **iOS** (si hay iPhone disponible): "Agregar a pantalla de inicio" + modo standalone (HU-F11).
+7. [ ] Cerrar HT-01: postura crítica de las categorías restantes (issues #11–#15) + lista de aprendizajes + **re-correr la auditoría** y guardar el último resultado.
+8. [ ] Mergear PR #17 a `main` y coordinar defensa con la cátedra (todos los integrantes).
 
 ---
 
