@@ -1,8 +1,8 @@
 @php
     $orderId = $order['id'] ?? '';
-    $statusKey = $order['status'] ?? 'pending';
+    $statusKey = \App\Support\OrderStatus::of($order);
     $statusLabel = $statuses[$statusKey] ?? $statusKey;
-    $paymentKey = $order['paymentStatus'] ?? $order['payment_status'] ?? 'pending';
+    $paymentKey = \App\Support\OrderStatus::paymentOf($order);
     $paymentLabel = $paymentStatuses[$paymentKey] ?? $paymentKey;
     $total = $order['total_amount'] ?? $order['total'] ?? 0;
     if (! $total && isset($order['items']) && is_array($order['items'])) {
@@ -15,15 +15,17 @@
     $statusBadge = match($statusKey) {
         'pending' => 'bg-warning text-dark',
         'confirmed' => 'bg-info',
-        'in_process' => 'bg-primary',
-        'completed' => 'bg-success',
+        'processing' => 'bg-primary',
+        'shipped' => 'bg-dark',
+        'delivered' => 'bg-success',
         'cancelled' => 'bg-danger',
         default => 'bg-secondary',
     };
     $paymentBadge = match($paymentKey) {
-        'paid' => 'bg-success',
+        'approved' => 'bg-success',
         'pending' => 'bg-warning text-dark',
-        'overdue' => 'bg-danger',
+        'rejected' => 'bg-danger',
+        'refunded' => 'bg-secondary',
         default => 'bg-secondary',
     };
 @endphp

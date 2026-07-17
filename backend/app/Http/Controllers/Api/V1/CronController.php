@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\FirestoreService;
+use App\Services\StockService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +22,10 @@ class CronController extends Controller
     /** Horas que una orden puede quedar sin pagar antes de expirar. */
     private const EXPIRE_AFTER_HOURS = 48;
 
-    public function __construct(private readonly FirestoreService $firestore) {}
+    public function __construct(
+        private readonly FirestoreService $firestore,
+        private readonly StockService $stock,
+    ) {}
 
     /**
      * GET /api/v1/cron/expire-orders
@@ -49,11 +53,13 @@ class CronController extends Controller
             }
 
             if (Carbon::parse($createdAt)->lt($cutoff)) {
-                $this->firestore->updateDocument('orders', (string) $order['id'], [
+                // Una pending/pending normalmente no descontó stock, pero si lo
+                // hizo (flujo viejo o manual), cancelar lo repone igual.
+                $this->firestore->updateDocument('orders', (string) $order['id'], array_merge([
                     'status' => 'cancelled',
                     'cancel_reason' => 'expired_unpaid',
                     'updated_at' => now()->toISOString(),
-                ]);
+                ], $this->stock->restoreForOrder($order)));
                 $expired++;
             }
         }

@@ -36,7 +36,6 @@ export function SortSelect() {
         className="w-full sm:w-40"
         aria-label="Ordenar productos"
       >
-
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

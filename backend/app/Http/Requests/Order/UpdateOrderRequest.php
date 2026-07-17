@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Order;
 
+use App\Support\OrderStatus;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateOrderRequest extends FormRequest
@@ -19,8 +20,8 @@ class UpdateOrderRequest extends FormRequest
             'items.*.productId' => 'required|string',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.unitPrice' => 'required|numeric|min:0',
-            'status' => 'sometimes|required|in:pending,confirmed,in_process,completed,cancelled',
-            'paymentStatus' => 'nullable|in:pending,paid,overdue',
+            'status' => 'sometimes|required|in:'.implode(',', array_keys(OrderStatus::statuses())),
+            'payment_status' => 'nullable|in:'.implode(',', array_keys(OrderStatus::paymentStatuses())),
             'paymentMethod' => 'nullable|in:cash,transfer,card,mercado_pago',
             'notes' => 'nullable|string|max:1000',
         ];
@@ -38,7 +39,7 @@ class UpdateOrderRequest extends FormRequest
             'items.*.unitPrice.required' => 'El precio es obligatorio.',
             'items.*.unitPrice.min' => 'El precio no puede ser negativo.',
             'status.in' => 'Estado no válido.',
-            'paymentStatus.in' => 'Estado de pago no válido.',
+            'payment_status.in' => 'Estado de pago no válido.',
             'paymentMethod.in' => 'Método de pago no válido.',
             'notes.max' => 'Las notas no pueden tener más de 1000 caracteres.',
         ];

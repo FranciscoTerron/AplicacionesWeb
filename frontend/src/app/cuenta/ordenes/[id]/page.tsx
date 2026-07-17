@@ -93,7 +93,11 @@ function OrderDetail() {
     );
   }
 
-  const canCancel = CANCELABLE_STATUSES.includes(order.status);
+  // Una orden con pago acreditado no la cancela el cliente (el backend
+  // devuelve 422): el reembolso se gestiona con el negocio.
+  const canCancel =
+    CANCELABLE_STATUSES.includes(order.status) &&
+    order.payment_status !== "approved";
 
   return (
     <div className="space-y-5">

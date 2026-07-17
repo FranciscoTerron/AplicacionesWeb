@@ -171,8 +171,8 @@ class OrderControllerTest extends TestCase
         $orderId = 'order-123';
         $updateData = [
             'clientId' => 'Juan Pérez',
-            'status' => 'completed',
-            'paymentStatus' => 'paid',
+            'status' => 'delivered',
+            'payment_status' => 'approved',
             'items' => [
                 ['productId' => 'Cloro', 'quantity' => 2, 'unitPrice' => 1500],
             ],
@@ -229,7 +229,7 @@ class OrderControllerTest extends TestCase
         $orderId = 'order-123';
 
         $this->firestoreMock
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('getDocument')
             ->willReturn(['status' => 'pending']);
 
@@ -237,11 +237,11 @@ class OrderControllerTest extends TestCase
             ->expects($this->once())
             ->method('updateDocument')
             ->with('orders', $orderId, $this->callback(function ($data) {
-                return ($data['status'] ?? null) === 'completed';
+                return ($data['status'] ?? null) === 'delivered';
             }));
 
         $response = $this->patch(route('admin.orders.status', $orderId), [
-            'status' => 'completed',
+            'status' => 'delivered',
         ]);
 
         $response->assertRedirect(route('admin.orders.index'));
@@ -286,7 +286,7 @@ class OrderControllerTest extends TestCase
         $orderId = 'order-123';
 
         $this->firestoreMock
-            ->expects($this->once())
+            ->expects($this->exactly(2))
             ->method('getDocument')
             ->willReturn(['status' => 'pending']);
 
@@ -294,11 +294,11 @@ class OrderControllerTest extends TestCase
             ->expects($this->once())
             ->method('updateDocument')
             ->with('orders', $orderId, $this->callback(function ($data) {
-                return ($data['status'] ?? null) === 'completed';
+                return ($data['status'] ?? null) === 'delivered';
             }));
 
         $response = $this->patch(route('admin.orders.status', $orderId), [
-            'status' => 'completed',
+            'status' => 'delivered',
         ]);
 
         $response->assertRedirect(route('admin.orders.index'));

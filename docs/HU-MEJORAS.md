@@ -13,8 +13,8 @@
 | PWA: **notificaciones push** de productos/promos | 🟡 Implementado | HU-B13 ✅ + HU-F13 ✅ (falta verificar en Android real) |
 | PWA: **catálogo visible offline** (cacheado) | 🟡 Implementado | HU-F14 ✅ (falta verificar en Android real) |
 | **Lighthouse Accesibilidad = 100** | ✅ | HU-F15 — 100 en las 7 páginas clave (15/07/2026, build de producción local) |
-| API protegida para que **solo la app React** pueda usarla | 🟡 Parcial | **HU-B14** (nueva) + B03, B09 |
-| **Auditoría IA** con el prompt obligatorio de la cátedra | ❌ | **HT-01** (nueva) |
+| API protegida para que **solo la app React** pueda usarla | ✅ | HU-B14 — app key `X-App-Key` + CORS estricto + throttle (PRs #22/#23, `docs/DECISIONES_SEGURIDAD.md`) |
+| **Auditoría IA** con el prompt obligatorio de la cátedra | 🟡 Hecha 16/07 | HT-01 — `docs/AUDITORIA_IA.md` (70 hallazgos, issues #10–#16); re-correr al cierre: se defiende el **último** resultado |
 | Defensa con todos los integrantes | — | Coordinar día y hora con la cátedra |
 
 ## Resumen priorizado
@@ -68,9 +68,9 @@
 - Los CRUD (categorías, productos, etc.) se salvan porque sus policies exigen `admin|editor`, pero la protección queda librada a que cada controller llame a `authorize`.
 
 **Criterios de aceptación**
-- [ ] Existe un middleware de rol (ej. `role:admin,editor`) aplicado a TODO el grupo `/admin`; un `cliente` autenticado recibe 403 en cualquier ruta del panel, incluidos dashboard, settings y exportaciones CSV.
-- [ ] Las rutas que hoy usan `admin` (solo admin) mantienen su restricción más estricta.
-- [ ] Test de feature que verifica que un usuario `cliente` recibe 403 en `/admin`, `/admin/settings` y `/admin/export/orders`.
+- [x] Existe un middleware de rol (ej. `role:admin,editor`) aplicado a TODO el grupo `/admin`; un `cliente` autenticado recibe 403 en cualquier ruta del panel, incluidos dashboard, settings y exportaciones CSV.
+- [x] Las rutas que hoy usan `admin` (solo admin) mantienen su restricción más estricta.
+- [x] Test de feature que verifica que un usuario `cliente` recibe 403 en `/admin`, `/admin/settings` y `/admin/export/orders`.
 
 ---
 
@@ -84,9 +84,9 @@
 - Los clientes del e-commerce viven en la colección `clients`, pero el alta por Google los mete en `users`: quedan mezclados usuarios internos con desconocidos.
 
 **Criterios de aceptación**
-- [ ] Primer login con Google de un email desconocido NO crea documentos en `users`. Opciones (decidir en refinamiento): (a) rechazar el acceso salvo que el email ya exista en `users`, o (b) crear el usuario en `clients` y redirigirlo a la tienda sin sesión de panel.
-- [ ] La promoción a `admin` vía `services.google.admin_emails` sigue funcionando.
-- [ ] Si `allowed_domains` está vacío en producción, se loguea un warning al iniciar (o se exige configuración explícita).
+- [x] Primer login con Google de un email desconocido NO crea documentos en `users`. **Decisión: opción (a)** — se rechaza el acceso salvo que el email ya exista en `users` (o esté en `admin_emails`).
+- [x] La promoción a `admin` vía `services.google.admin_emails` sigue funcionando.
+- [x] Si `allowed_domains` está vacío en producción, se loguea un warning (en cada callback de Google).
 - [ ] Nota de coordinación: esta HU define el backend del login con Google **de la tienda** (HU-F01): hace falta un endpoint que complete el flujo OAuth y devuelva un token de API (`api_tokens`) como el de `/auth/login`, en lugar de una sesión web.
 
 ---
@@ -117,10 +117,10 @@
 - La **cancelación** (`OrderApiController::cancel`, cron `expireOrders`, y el panel) no repone stock aunque `stock_decremented = true`; una orden MP pagada y luego cancelada deja el stock descontado y sin reembolso registrado.
 
 **Criterios de aceptación**
-- [ ] Definir en refinamiento el momento de descuento para efectivo (sugerido: al confirmar la orden desde el panel), reutilizando la misma lógica idempotente con `stock_decremented`.
-- [ ] Cancelar una orden con `stock_decremented = true` repone el stock (y limpia la bandera), desde la API, el panel y el cron.
-- [ ] Cancelar una orden con `payment_status = approved` exige una decisión explícita: bloquear la cancelación del lado del cliente o marcar la orden como "pendiente de reembolso" para revisión manual.
-- [ ] Tests: efectivo confirmada descuenta una sola vez; cancelación repone; doble webhook no descuenta dos veces (ya cubierto por la bandera, mantenerlo).
+- [x] **Decisión: al confirmar desde el panel.** El stock de órdenes no-MP se descuenta al pasar a `confirmed` (o cualquier estado aceptado posterior), con la lógica idempotente compartida en `App\Services\StockService` (`stock_decremented`). Para MP lo sigue haciendo el webhook.
+- [x] Cancelar una orden con `stock_decremented = true` repone el stock (y limpia la bandera), desde la API, el panel y el cron.
+- [x] **Decisión: cliente bloqueado, panel sí.** El cliente recibe 422 al cancelar una orden con pago aprobado; el admin puede cancelarla desde el panel y queda marcada `refund_pending = true` para gestión manual del reembolso.
+- [x] Tests: efectivo confirmada descuenta una sola vez (`StockFlowTest`); cancelación repone (panel, API y cron); doble webhook no descuenta dos veces (se mantiene verde).
 
 ---
 
@@ -139,10 +139,10 @@ Consecuencias concretas:
 - Si el admin pone `in_process`/`completed`, la tienda muestra el string crudo (no tiene label).
 
 **Criterios de aceptación**
-- [ ] Un único enum documentado de `status` (sugerido: `pending, confirmed, processing, shipped, delivered, cancelled`) y de `payment_status` (`pending, approved, rejected, refunded`), definido en un solo lugar del backend.
-- [ ] Panel, API, webhook y frontend usan ese enum; se define un mapeo/migración para los datos existentes con estados viejos.
-- [ ] La facturación del dashboard cuenta órdenes con `payment_status = approved` (y efectivo confirmado) y filtra por el mes corriente.
-- [ ] Los selects/filtros del panel (`_form_fields.blade.php`, filtros de índice) reflejan el nuevo vocabulario.
+- [x] Enum único en `App\Support\OrderStatus`: `status` = `pending, confirmed, processing, shipped, delivered, cancelled`; `payment_status` = `pending, approved, rejected, refunded`.
+- [x] Panel, API, webhook y frontend usan el enum. Los datos legacy (`in_process`, `completed`, `paid`, `overdue`, `paymentStatus` camelCase) se mapean al leer vía `OrderStatus::normalize()/normalizePayment()`; el panel dejó de escribir `paymentStatus` camelCase (ahora `payment_status`).
+- [x] La facturación del dashboard cuenta `payment_status = approved` + efectivo aceptado, del mes corriente (`DashboardControllerTest`).
+- [x] Selects/filtros del panel (`_form_fields.blade.php`, filtros del índice, modal JS) toman las opciones de `OrderStatus`.
 
 ---
 
@@ -269,11 +269,11 @@ Consecuencias concretas:
 - `backend/config/cors.php` permite `https://*.vercel.app` (cualquier app de Vercel del mundo, no solo la nuestra — además como entrada literal de `allowed_origins`, los wildcards van en `allowed_origins_patterns`) y `http://localhost:*`.
 - Los endpoints públicos del catálogo (`/catalog/*`, `/auth/login`, `/auth/register`) son consumibles por cualquier cliente HTTP sin ninguna identificación de la app.
 
-**Criterios de aceptación**
-- [ ] CORS restringido a los orígenes reales: el dominio productivo de Vercel + `http://localhost:3000` solo fuera de producción (mover patrones a `allowed_origins_patterns` si se necesita un patrón para previews).
-- [ ] Los endpoints sensibles ya exigen `auth.api` (se mantiene); rate limiting de HU-B09 complementa esta HU.
-- [ ] Decidir en refinamiento el nivel extra para los endpoints públicos y **documentar la decisión para la defensa**: (a) header de aplicación (`X-App-Key`) validado por middleware — simple y demostrable, aunque un cliente decidido puede extraerlo del bundle; (b) dejar catálogo público con CORS estricto + throttle y justificarlo. Nota honesta: ninguna técnica browser-side impide el 100% del acceso directo; el objetivo es que el uso normal solo sea posible desde la app.
-- [ ] Test: request con `Origin` no permitido no recibe headers CORS; si se implementa (a), request sin el header a un endpoint protegido por él recibe 401/403.
+**Criterios de aceptación** *(resuelto por PRs #22 y #23 — ver `docs/DECISIONES_SEGURIDAD.md`)*
+- [x] CORS restringido a los orígenes reales (`config/cors.php`): dominios exactos del front (`aplicaciones-web-tienda[-rho].vercel.app` + localhost) y patrón acotado a previews del proyecto en `allowed_origins_patterns`.
+- [x] Los endpoints sensibles ya exigen `auth.api` (se mantiene); throttle en login/register (`throttle:auth`) y en toda la API (`throttle:api`).
+- [x] **Decisión tomada: opción (a)** — middleware `EnsureAppKey` (alias `app.client`) exige header `X-App-Key` si `APP_PUBLIC_KEY` está seteada (prod); webhook de MP y cron quedan exentos (tienen su propia auth). El front lo manda desde `NEXT_PUBLIC_APP_KEY` en `lib/api.ts`. Documentado en `docs/DECISIONES_SEGURIDAD.md`.
+- [x] Test: `tests/Feature/Api/AppKeyTest.php`. **Pendiente deploy: setear `APP_PUBLIC_KEY` (backend) y `NEXT_PUBLIC_APP_KEY` (frontend) en Vercel con el mismo valor.**
 
 ---
 
@@ -302,8 +302,8 @@ Consecuencias concretas:
 - `router.push(params.get("redirect") || "/")` sin validar: `/login?redirect=https://evil.com` navega fuera del sitio después de un login exitoso.
 
 **Criterios de aceptación**
-- [ ] Solo se acepta un `redirect` que sea path interno (empieza con `/` y no con `//`); cualquier otro valor cae a `/`.
-- [ ] Aplicado también en cualquier otro consumidor del param (revisar `registro`).
+- [x] Solo se acepta un `redirect` que sea path interno (empieza con `/` y no con `//`); cualquier otro valor cae a `/`.
+- [x] Aplicado también en cualquier otro consumidor del param (verificado: `registro` no usa el param; `login/page.tsx` era el único consumidor).
 
 ---
 
@@ -521,11 +521,11 @@ Consecuencias concretas:
 - Se analiza "el último resultado obtenido" ⇒ conviene correrla al final, cuando el resto de las HU estén cerradas, y guardar el resultado.
 
 **Criterios de aceptación**
-- [ ] Correr la auditoría con el prompt textual sobre el repo (backend y frontend) y guardar el resultado completo en `docs/auditoria-ia/` (con fecha y herramienta/modelo usados).
-- [ ] Para cada hallazgo relevante: nota propia con (a) explicación en palabras del equipo de qué señala y por qué importa, (b) si se resuelve o no y por qué.
-- [ ] Identificar y documentar al menos los hallazgos que consideremos mal fundamentados/exagerados/erróneos, con la justificación técnica (postura crítica).
+- [x] Correr la auditoría con el prompt textual sobre el repo (backend y frontend) y guardar el resultado completo con fecha y modelo → **`docs/AUDITORIA_IA.md`** (16/07/2026, Claude Opus 4.8, 70 hallazgos, prompt en `docs/ENUNCIADO_FINAL.md`).
+- [x] Para cada hallazgo relevante: nota propia con explicación y decisión → issues #10–#16 por categoría; seguridad cerrada con decisiones (incluidos no-fixes justificados) en `docs/DECISIONES_SEGURIDAD.md`; PRs #18–#24 resuelven los hallazgos priorizados con review en `docs/REVIEW_PRS_AUDITORIA.md`.
+- [ ] Identificar y documentar los hallazgos que consideremos mal fundamentados/exagerados/erróneos, con la justificación técnica (postura crítica) — hay material en `DECISIONES_SEGURIDAD.md` (S-3, S-6); falta hacerlo para el resto de categorías.
 - [ ] Lista de "cosas nuevas que aprendimos" (temas no vistos en la cursada).
-- [ ] Si la auditoría destapa algo grave y barato de arreglar, arreglarlo y volver a correrla (se analiza el **último** resultado).
+- [ ] **Re-correr la auditoría al cierre** (con push/offline/a11y ya mergeados) y guardar el resultado — en la defensa se analiza el **último** obtenido.
 
 ---
 
@@ -534,7 +534,7 @@ Consecuencias concretas:
 1. ~~**Seguridad de acceso** (bloqueante): HU-B01 → HU-B02 → HU-F02.~~ ✅
 2. ~~**Integridad de negocio**: HU-B04 y HU-B05 juntas.~~ ✅ (quedan HU-B08 y HU-B11)
 3. ~~**PWA instalable**: HU-F10 → HU-F09 → HU-F11 + HU-F12.~~ ✅ (falta verificación iOS)
-4. **PWA pauta final** (requisitos explícitos del examen): HU-F14 (catálogo offline) → HU-B13 + HU-F13 (push) → HU-F15 (accesibilidad 100) → HU-B14 (API protegida).
+4. ~~**PWA pauta final** (requisitos explícitos del examen): HU-F14 (catálogo offline) → HU-B13 + HU-F13 (push) → HU-F15 (accesibilidad 100) → HU-B14 (API protegida).~~ ✅ (faltan verificaciones en Android real + vars de entorno en Vercel)
 5. **Sesiones**: HU-B03 + HU-B12 en backend, después HU-F03 + HU-F04.
 6. **Experiencia de compra** (déficits que las pautas piden resueltos): HU-B06 + HU-F05, HU-F06 + HU-F07, HU-F08; sueltas: HU-B07, HU-B08, HU-B09, HU-B10, HU-B11.
 7. **Google en la tienda**: HU-F01 (depende de la decisión tomada en HU-B02).

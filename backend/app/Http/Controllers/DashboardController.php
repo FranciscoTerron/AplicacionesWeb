@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\FirestoreService;
+use App\Support\OrderStatus;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
@@ -14,19 +15,36 @@ class DashboardController extends Controller
     {
         $products = $this->fetch('products');
         $clients = $this->fetch('clients');
-        $orders = $this->fetch('orders', 'created_at');
         $shipments = $this->fetch('shipments', 'created_at');
+
+        // Estados normalizados al vocabulario unificado (los docs viejos pueden
+        // traer in_process/completed/paid/paymentStatus camelCase).
+        $orders = $this->fetch('orders', 'created_at')->map(function ($o) {
+            $o['status'] = OrderStatus::of($o);
+            $o['payment_status'] = OrderStatus::paymentOf($o);
+
+            return $o;
+        });
 
         $activeProducts = $products->where('active', true)->count();
         $activeClients = $clients->where('active', true)->count();
         $totalOrders = $orders->count();
 
+        // Facturación del mes corriente: pagos acreditados (Mercado Pago) más
+        // órdenes de pago presencial (efectivo) que el negocio ya aceptó.
+        $currentMonth = now()->format('Y-m');
         $monthlyRevenue = $orders
-            ->filter(function ($o) {
-                $status = $o['status'] ?? '';
-                $payment = $o['paymentStatus'] ?? $o['payment_status'] ?? '';
+            ->filter(function ($o) use ($currentMonth) {
+                if (! str_starts_with((string) ($o['created_at'] ?? ''), $currentMonth)) {
+                    return false;
+                }
 
-                return in_array($status, ['completed', 'in_process']) || $payment === 'paid';
+                if ($o['payment_status'] === OrderStatus::PAYMENT_APPROVED) {
+                    return $o['status'] !== OrderStatus::CANCELLED;
+                }
+
+                return ($o['payment_method'] ?? $o['paymentMethod'] ?? '') !== 'mercado_pago'
+                    && in_array($o['status'], OrderStatus::COMMITTED_STATUSES, true);
             })
             ->sum(function ($o) {
                 return (float) ($o['total_amount'] ?? $o['total'] ?? 0);
