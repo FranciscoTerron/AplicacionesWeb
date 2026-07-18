@@ -8,7 +8,7 @@
 
 | Requisito de las pautas | Estado | HU relacionadas |
 |---|---|---|
-| Déficits técnicos resueltos (flujo de compra, CRUD, stock, responsive) | 🟡 Parcial | B04 ✅ B05 ✅ · pendientes: B06, F05, F06, F07, F08 |
+| Déficits técnicos resueltos (flujo de compra, CRUD, stock, responsive) | 🟢 Casi completo | B04 ✅ B05 ✅ B06 ✅ F05 ✅ F06 ✅ (18/07) · pendientes: F07, F08 (severidad baja) |
 | PWA instalable | ✅ | F09–F12 (falta verificación iOS de F11) |
 | PWA: **notificaciones push** de productos/promos | ✅ | HU-B13 + HU-F13 — verificado en Android real 17/07 (llega con el navegador cerrado tras el fix de urgency/TTL) |
 | PWA: **catálogo visible offline** (cacheado) | ✅ | HU-F14 — verificado en Android real 17/07 (SW v3: precache + cacheo por prefetch RSC) |
@@ -156,10 +156,12 @@ Consecuencias concretas:
 - `update` con `quantity <= 0` deja el ítem con cantidad 0 en vez de eliminarlo.
 
 **Criterios de aceptación**
-- [ ] FormRequest con reglas: `action in (add, update, remove, clear)`, `product_id` requerido (salvo `clear`), `quantity` entera `min:1` para `add`/`update`.
-- [ ] `add`/`update` verifican producto existente y activo (422 si no), y capean la cantidad al stock disponible (o devuelven 422, decidir en refinamiento).
-- [ ] `update` con cantidad 0 elimina el ítem.
-- [ ] Tests de los casos inválidos.
+- [x] FormRequest con reglas: `action in (add, update, remove, clear)`, `product_id` requerido (salvo `clear`), `quantity` entera `min:1` para `add` (`min:0` en `update`: 0 = quitar).
+- [x] `add`/`update` verifican producto existente y activo (422 si no), y **capean la cantidad al stock** disponible (refinamiento decidido: capear en vez de 422; stock 0 sí devuelve 422 con el nombre del producto).
+- [x] `update` con cantidad 0 elimina el ítem (y no exige producto vigente: si no, un producto dado de baja quedaría clavado en el carrito).
+- [x] Tests de los casos inválidos (8 nuevos en `CartApiTest`).
+
+✅ **Resuelta (18/07/2026)** — `CartOperationRequest` + validación en `CartApiController`.
 
 ---
 
@@ -345,9 +347,11 @@ Consecuencias concretas:
 - Ni `add-to-cart-button.tsx` ni la página `carrito/` consideran `product.stock`: se puede agregar/incrementar sin tope y el error aparece recién como 422 del `POST /orders` ("Stock insuficiente"), con mensaje que muestra el `product_id` crudo.
 
 **Criterios de aceptación**
-- [ ] El botón de agregar y el stepper del carrito se limitan al stock del producto (deshabilitado + hint "Sin stock"/"Máx. N").
-- [ ] Si igual llega un 422 de stock del backend, el mensaje muestra el **nombre** del producto y linkea al carrito para corregir.
-- [ ] Coordinado con la validación server-side (HU-B06), que es la fuente de verdad.
+- [x] El botón de agregar y el stepper del carrito se limitan al stock del producto: la ficha ya capeaba (`product-purchase.tsx`); el stepper del carrito ahora deshabilita "+" al llegar al stock y muestra "Máx. N disponibles".
+- [x] Si igual llega un 422 de stock del backend, el mensaje muestra el **nombre** del producto (`OrderApiController`); el usuario está en el checkout con el carrito a un click.
+- [x] Coordinado con la validación server-side (HU-B06), que es la fuente de verdad.
+
+✅ **Resuelta (18/07/2026)** — `carrito/page.tsx` + mensaje 422 con nombre.
 
 ---
 
@@ -359,8 +363,12 @@ Consecuencias concretas:
 - El backend ya lo soporta (`POST /orders/{id}/pay` acepta `payment_status` `pending|rejected`), y el flujo de MP deja la orden pendiente a propósito, pero `cuenta/ordenes/[id]/page.tsx` no ofrece ninguna forma de reintentar: el cliente queda con una orden pendiente sin salida (hasta que el cron la cancela a las 48 h).
 
 **Criterios de aceptación**
-- [ ] En el detalle de una orden `mercado_pago` con status `pending` y pago `pending|rejected`, aparece "Pagar ahora" que llama a `payOrder(id)` y abre el `init_point` (mismo patrón de pestaña nueva del checkout).
-- [ ] El botón no aparece para órdenes pagadas, canceladas ni en efectivo.
+- [x] En el detalle de una orden `mercado_pago` con status `pending` y pago `pending|rejected`, aparece "Pagar ahora" que llama a `payOrder(id)` y abre el `init_point` (mismo patrón de pestaña nueva del checkout).
+- [x] El botón no aparece para órdenes pagadas, canceladas ni en efectivo (`canRetryPay`).
+
+✅ **Resuelta (18/07/2026)** — `cuenta/ordenes/[id]/page.tsx`; el banner de pago
+rechazado (`?pago=failure`) también ofrece "Reintentar pago" en vez de mandar
+al carrito.
 
 ---
 

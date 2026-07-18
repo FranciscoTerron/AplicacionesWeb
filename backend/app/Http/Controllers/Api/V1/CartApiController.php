@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\Cart\CartOperationRequest;
 use App\Services\FirestoreService;
 use App\Support\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -54,12 +55,35 @@ class CartApiController extends Controller
             ),
         ]
     )]
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(CartOperationRequest $request): JsonResponse
     {
         $user = $request->user();
-        $action = $request->get('action', 'add');
-        $productId = $request->get('product_id');
-        $quantity = (int) $request->get('quantity', 1);
+        $action = (string) $request->input('action');
+        $productId = (string) $request->input('product_id', '');
+        $quantity = (int) $request->input('quantity', 1);
+
+        // HU-B06: para add/update el producto debe existir, estar activo y con
+        // stock, y la cantidad se capea al stock disponible. El carrito deja de
+        // aceptar datos que después rompen el checkout; la UI (HU-F05) muestra
+        // el mismo tope, pero la fuente de verdad es esta.
+        // (update con cantidad 0 es una eliminación: no exige producto vigente,
+        // si no un producto dado de baja quedaría clavado en el carrito.)
+        $stock = PHP_INT_MAX;
+        if ($action === 'add' || ($action === 'update' && $quantity !== 0)) {
+            $product = $this->firestore->getDocument('products', $productId);
+
+            if ($product === null || ! ($product['active'] ?? false)) {
+                return ApiResponse::error(message: 'El producto no está disponible', status: 422);
+            }
+
+            $stock = max(0, (int) ($product['stock'] ?? 0));
+            if ($stock === 0) {
+                return ApiResponse::error(
+                    message: 'Sin stock disponible para: '.($product['name'] ?? $productId),
+                    status: 422
+                );
+            }
+        }
 
         // Obtener carrito actual o crear uno nuevo
         $cartResult = $this->firestore->query(
@@ -78,11 +102,11 @@ class CartApiController extends Controller
 
         switch ($action) {
             case 'add':
-                // Agregar producto al carrito
+                // Agregar producto al carrito (capeado al stock disponible)
                 $exists = false;
                 foreach ($items as &$item) {
                     if (($item['product_id'] ?? '') === $productId) {
-                        $item['quantity'] = ($item['quantity'] ?? 0) + $quantity;
+                        $item['quantity'] = min(($item['quantity'] ?? 0) + $quantity, $stock);
                         $exists = true;
                         break;
                     }
@@ -92,16 +116,24 @@ class CartApiController extends Controller
                 if (! $exists) {
                     $items[] = [
                         'product_id' => $productId,
-                        'quantity' => $quantity,
+                        'quantity' => min($quantity, $stock),
                     ];
                 }
                 break;
 
             case 'update':
-                // Actualizar cantidad
+                // Cantidad 0 = quitar el ítem (refinamiento HU-B06); si no,
+                // actualizar capeando al stock.
+                if ($quantity === 0) {
+                    $items = array_values(array_filter($items, function ($item) use ($productId) {
+                        return ($item['product_id'] ?? '') !== $productId;
+                    }));
+                    break;
+                }
+
                 foreach ($items as &$item) {
                     if (($item['product_id'] ?? '') === $productId) {
-                        $item['quantity'] = $quantity;
+                        $item['quantity'] = min($quantity, $stock);
                         break;
                     }
                 }

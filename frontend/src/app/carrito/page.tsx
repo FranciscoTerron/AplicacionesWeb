@@ -85,6 +85,10 @@ function CartContent() {
           const img = p?.images?.[0]?.url;
           const itemHasDiscount = p?.has_discount && p.discount;
           const unitPrice = p ? Number(p.final_price ?? p.price) : 0;
+          // HU-F05: el stepper no supera el stock (el backend igual capea:
+          // fuente de verdad server-side, esto es solo UX).
+          const stock = p ? Number(p.stock ?? 0) : null;
+          const atMax = stock !== null && it.quantity >= stock;
           return (
             <div
               key={it.product_id}
@@ -136,13 +140,19 @@ function CartContent() {
                       {it.quantity}
                     </span>
                     <button
-                      className="px-2 py-1 hover:bg-muted"
+                      className="px-2 py-1 hover:bg-muted disabled:opacity-40"
+                      disabled={atMax}
                       onClick={() => update(it.product_id, it.quantity + 1)}
                       aria-label="Sumar"
                     >
                       <Plus className="size-3.5" />
                     </button>
                   </div>
+                  {atMax && (
+                    <span className="text-xs text-amber-700">
+                      Máx. {stock} disponibles
+                    </span>
+                  )}
                   <button
                     className="ml-auto flex items-center gap-1 text-sm text-destructive hover:underline"
                     onClick={() => remove(it.product_id)}
