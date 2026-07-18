@@ -33,6 +33,27 @@
 
 **Fix**: `refresh()` ahora valida `expires_at` **antes** de rotar. Si está vencido, **borra el doc** (para que no quede resucitable) y responde `401 Refresh token expirado`. Cubierto por test `test_refresh_rejects_expired_token`.
 
+## S-1 (auditoría v2) — Refresh sin tope absoluto de sesión: **resuelto**
+
+**El hallazgo** (re-auditoría 18/07, `docs/AUDITORIA_IA_V2.md`): `refresh` extendía
+`expires_at` +7 días sin límite → un token robado podía renovarse para siempre,
+anulando en la práctica la mitigación de "TTL corto" adoptada para S-3.
+
+**Análisis previo**: el frontend **no consume** `/auth/refresh` (cero llamadas en
+`frontend/src`), así que se evaluó eliminar el endpoint. Se decidió conservarlo
+por completitud de la API documentada y **caparlo**.
+
+**Fix**: tope absoluto de sesión de **30 días desde `created_at`** (que se fija en
+el login y el refresh no pisa). Pasado el tope, el refresh borra el doc del token
+y responde `401 Sesión expirada`. Un token robado pasa de "renovable infinito" a
+30 días máximo desde el login original. Tokens legacy sin `created_at` no se
+capean: igual mueren a los 7 días por `expires_at`. Tests:
+`test_refresh_rejects_session_older_than_absolute_cap` y
+`test_refresh_allows_session_within_absolute_cap`.
+
+**Pendiente futuro (HU-B03)**: separar access/refresh token como registros
+distintos; el tope actual acota el riesgo mientras tanto.
+
 ## S-6 — Firma del webhook MP best-effort: **tradeoff aceptado**
 
 **El hallazgo**: si la firma `x-signature` de Mercado Pago no valida, se loguea un warning y se continúa (no `return 400`).

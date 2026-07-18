@@ -105,6 +105,12 @@
 - [ ] Un access token no puede usarse como refresh token, y viceversa.
 - [ ] El frontend recibe ambos tokens en la respuesta de login/registro (coordinar con HU-F04).
 
+> **Nota (18/07/2026)**: el riesgo principal ya está acotado sin el rework: el
+> refresh valida `expires_at` (S-4) y ahora también un **tope absoluto de sesión
+> de 30 días** desde `created_at` (S-1 de la auditoría v2, ver
+> `docs/DECISIONES_SEGURIDAD.md`). El par access/refresh separado queda como
+> mejora futura de esta HU.
+
 ---
 
 ### HU-B04 — Stock consistente: efectivo y cancelaciones
