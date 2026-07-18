@@ -8,6 +8,7 @@ parameters:
 
     paths:
         - app
+        - bootstrap/app.php
 
     ignoreErrors:
         - '#Attribute class OpenApi\\Attributes#'

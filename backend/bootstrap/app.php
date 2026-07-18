@@ -7,6 +7,7 @@ use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\ShareSettingsMiddleware;
 use App\Providers\AppServiceProvider;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
