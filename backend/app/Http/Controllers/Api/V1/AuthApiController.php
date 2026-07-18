@@ -22,6 +22,14 @@ class AuthApiController extends Controller
      */
     private const TOKEN_TTL_DAYS = 7;
 
+    /**
+     * Tope absoluto de una sesión, en días (S-1 de la auditoría v2): el
+     * refresh rota el token pero no puede extender la sesión más allá de
+     * este máximo contado desde el login. Sin tope, un token robado se
+     * renovaba indefinidamente y anulaba la mitigación del TTL corto (S-3).
+     */
+    private const SESSION_MAX_DAYS = 30;
+
     public function __construct(private readonly FirestoreService $firestore) {}
 
     /**
@@ -277,6 +285,20 @@ class AuthApiController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Refresh token expirado',
+            ], 401);
+        }
+
+        // S-1 (auditoría v2): tope absoluto de sesión. created_at se fija en el
+        // login y el refresh no lo pisa, así que marca el inicio real de la
+        // sesión. Tokens legacy sin created_at no se capean: igual mueren a los
+        // 7 días por expires_at.
+        $createdAt = $tokenData['created_at'] ?? null;
+        if ($createdAt && now()->greaterThan(Carbon::parse($createdAt)->addDays(self::SESSION_MAX_DAYS))) {
+            $this->firestore->deleteDocument('api_tokens', (string) ($tokenData['id'] ?? ''));
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Sesión expirada, iniciá sesión de nuevo',
             ], 401);
         }
 

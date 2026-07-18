@@ -103,7 +103,7 @@ class OrderApiController extends Controller
 
             if ($stock < $quantity) {
                 return ApiResponse::error(
-                    message: 'Stock insuficiente para: '.$item['product_id'],
+                    message: 'Stock insuficiente para: '.($product['name'] ?? $item['product_id']),
                     status: 422
                 );
             }

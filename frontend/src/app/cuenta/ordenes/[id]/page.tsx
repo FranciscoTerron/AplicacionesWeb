@@ -3,13 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Loader2, CheckCircle2, ArrowLeft, Clock, XCircle } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle2,
+  ArrowLeft,
+  Clock,
+  XCircle,
+  CreditCard,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { RequireAuth } from "@/components/require-auth";
-import { getOrder, cancelOrder } from "@/lib/endpoints";
+import { getOrder, cancelOrder, payOrder } from "@/lib/endpoints";
 import { formatPrice } from "@/lib/utils";
 import {
   CANCELABLE_STATUSES,
@@ -32,6 +39,7 @@ function OrderDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     if (!params.id) return;
@@ -62,6 +70,31 @@ function OrderDetail() {
     }, 3000);
     return () => clearInterval(iv);
   }, [pago, params.id, order?.payment_status]);
+
+  // HU-F06: reintentar el pago de una orden de MP que quedó pendiente o
+  // rechazada, sin crear otra orden. Mismo patrón que el checkout: la pestaña
+  // se abre DENTRO del gesto del click (o el navegador la bloquea como popup)
+  // y luego se le setea la URL del init_point.
+  async function handleRetryPay() {
+    if (!order) return;
+    const mpTab = window.open("", "_blank");
+    setPaying(true);
+    try {
+      const { init_point } = await payOrder(order.id);
+      if (mpTab) {
+        mpTab.location.href = init_point;
+      } else {
+        window.location.href = init_point;
+      }
+    } catch (e) {
+      mpTab?.close();
+      toast.error(
+        e instanceof Error ? e.message : "No se pudo iniciar el pago"
+      );
+    } finally {
+      setPaying(false);
+    }
+  }
 
   async function handleCancel() {
     if (!order) return;
@@ -99,6 +132,14 @@ function OrderDetail() {
     CANCELABLE_STATUSES.includes(order.status) &&
     order.payment_status !== "approved";
 
+  // "Pagar ahora" solo para órdenes de MP aún pendientes cuyo pago no se
+  // concretó (pendiente o rechazado). El backend valida lo mismo en /pay.
+  const canRetryPay =
+    order.payment_method === "mercado_pago" &&
+    order.status === "pending" &&
+    (order.payment_status === "pending" ||
+      order.payment_status === "rejected");
+
   return (
     <div className="space-y-5">
       {justCreated && !pago && (
@@ -124,11 +165,19 @@ function OrderDetail() {
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-destructive">
           <span className="flex items-center gap-2">
             <XCircle className="size-5 shrink-0" />
-            El pago fue rechazado. Podés intentar nuevamente desde el carrito.
+            El pago fue rechazado. Podés reintentarlo sin crear otra orden.
           </span>
-          <Button asChild size="sm" variant="destructive">
-            <Link href="/carrito">Ir al carrito</Link>
-          </Button>
+          {canRetryPay && (
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleRetryPay}
+              disabled={paying}
+            >
+              {paying && <Loader2 className="animate-spin" />}
+              Reintentar pago
+            </Button>
+          )}
         </div>
       )}
 
@@ -147,17 +196,29 @@ function OrderDetail() {
               </Badge>
             </div>
           </div>
-          {canCancel && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleCancel}
-              disabled={cancelling}
-            >
-              {cancelling && <Loader2 className="animate-spin" />}
-              Cancelar orden
-            </Button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {canRetryPay && (
+              <Button size="sm" onClick={handleRetryPay} disabled={paying}>
+                {paying ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <CreditCard />
+                )}
+                Pagar ahora
+              </Button>
+            )}
+            {canCancel && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleCancel}
+                disabled={cancelling}
+              >
+                {cancelling && <Loader2 className="animate-spin" />}
+                Cancelar orden
+              </Button>
+            )}
+          </div>
         </div>
 
         <Separator className="my-4" />

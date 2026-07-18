@@ -172,3 +172,17 @@ La categoría está bien cubierta: manifest completo con maskable icon (`fronten
 1. **C-1 — Importar `DecryptException` en `bootstrap/app.php`**: una línea restaura un manejo de errores que hoy no se ejecuta nunca; mientras tanto existe un fix que el equipo cree activo y no lo está. Máximo retorno por esfuerzo de todo el informe.
 2. **R-1 — Cachear el access token de Google (50 min)**: pocas líneas que eliminan un round-trip a Google de *cada* request del sitio y del panel; es la mejora de latencia más barata disponible.
 3. **S-1 — Tope absoluto de sesión en `refresh`**: cierra la renovación infinita que hoy debilita la decisión documentada de acortar el TTL a 7 días; el cambio es un campo más en el doc del token y un chequeo.
+
+---
+
+## Seguimiento post-auditoría (18/07, mismo día)
+
+- **C-1 resuelto**: `use Illuminate\Contracts\Encryption\DecryptException;` agregado
+  en `bootstrap/app.php`, y `bootstrap/app.php` sumado a los paths de PHPStan
+  (verificado: sin el import, el análisis ahora lo marca como `class.notFound`).
+- **S-1 resuelto**: tope absoluto de sesión de 30 días desde `created_at` en
+  `refresh()` (borra el doc y responde 401 al superarlo). Análisis y decisión en
+  `docs/DECISIONES_SEGURIDAD.md`; 2 tests nuevos.
+- **R-1 y el resto**: quedan documentados como mejoras conocidas de baja
+  urgencia; ninguno afecta requisitos del final ni tiene impacto observable a la
+  escala actual.

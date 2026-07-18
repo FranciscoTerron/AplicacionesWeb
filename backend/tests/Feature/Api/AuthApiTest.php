@@ -234,6 +234,43 @@ class AuthApiTest extends TestCase
         $this->assertCount(0, $this->firestore->all('api_tokens'));
     }
 
+    public function test_refresh_rejects_session_older_than_absolute_cap(): void
+    {
+        // S-1 (auditoría v2): aunque el token esté vigente (expires_at futuro),
+        // una sesión iniciada hace más de 30 días no puede seguir renovándose.
+        $this->firestore->seed('api_tokens', [[
+            'id' => 'tok-viejo',
+            'name' => 'api-token',
+            'user_id' => 'user-1',
+            'token' => hash('sha256', 'old-session'),
+            'created_at' => now()->subDays(31)->toISOString(),
+            'expires_at' => now()->addDays(3)->toISOString(),
+        ]]);
+
+        $this->postJson('/api/v1/auth/refresh', ['refresh_token' => 'old-session'])
+            ->assertStatus(401)
+            ->assertJson(['success' => false, 'message' => 'Sesión expirada, iniciá sesión de nuevo']);
+
+        // El doc se borra: la sesión terminó, no queda renovable.
+        $this->assertCount(0, $this->firestore->all('api_tokens'));
+    }
+
+    public function test_refresh_allows_session_within_absolute_cap(): void
+    {
+        $this->firestore->seed('api_tokens', [[
+            'id' => 'tok-joven',
+            'name' => 'api-token',
+            'user_id' => 'user-1',
+            'token' => hash('sha256', 'young-session'),
+            'created_at' => now()->subDays(10)->toISOString(),
+            'expires_at' => now()->addDays(3)->toISOString(),
+        ]]);
+
+        $this->postJson('/api/v1/auth/refresh', ['refresh_token' => 'young-session'])
+            ->assertStatus(200)
+            ->assertJson(['success' => true]);
+    }
+
     // --- EXPIRACIÓN / LOGOUT ---
 
     public function test_login_token_has_expiration(): void

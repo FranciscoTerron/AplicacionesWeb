@@ -110,6 +110,11 @@ Hallazgos donde validamos contra el código en vez de aceptar a ciegas:
   controllers grandes) — que es exactamente lo que se defiende. La v2 además
   encontró cosas nuevas y chicas (el mejor ejemplo: un `use` faltante en
   `bootstrap/app.php` que dejaba muerto el handler de `DecryptException`).
+- [x] **Actuar sobre el Top 3 de la v2** ✅ (mismo día): C-1 resuelto (1 línea +
+  PHPStan cubriendo `bootstrap/`) y S-1 resuelto (tope absoluto de sesión de 30
+  días en `refresh`, análisis en `docs/DECISIONES_SEGURIDAD.md`). R-1 (cachear el
+  token OAuth) queda documentado como mejora opcional de latencia — no afecta
+  ningún requisito del final.
 - [ ] (Recomendado por el enunciado) Correrla también con **otro modelo**
   (Gemini/GPT) y comparar: afina la postura crítica con ejemplos de divergencia.
 - [ ] Cerrar #16 con el resultado de la re-auditoría.
