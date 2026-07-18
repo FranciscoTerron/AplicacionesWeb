@@ -10,11 +10,11 @@
 |---|---|---|
 | Déficits técnicos resueltos (flujo de compra, CRUD, stock, responsive) | 🟡 Parcial | B04 ✅ B05 ✅ · pendientes: B06, F05, F06, F07, F08 |
 | PWA instalable | ✅ | F09–F12 (falta verificación iOS de F11) |
-| PWA: **notificaciones push** de productos/promos | 🟡 Implementado | HU-B13 ✅ + HU-F13 ✅ (falta verificar en Android real) |
-| PWA: **catálogo visible offline** (cacheado) | 🟡 Implementado | HU-F14 ✅ (falta verificar en Android real) |
-| **Lighthouse Accesibilidad = 100** | ✅ | HU-F15 — 100 en las 7 páginas clave (15/07/2026, build de producción local) |
+| PWA: **notificaciones push** de productos/promos | ✅ | HU-B13 + HU-F13 — verificado en Android real 17/07 (llega con el navegador cerrado tras el fix de urgency/TTL) |
+| PWA: **catálogo visible offline** (cacheado) | ✅ | HU-F14 — verificado en Android real 17/07 (SW v3: precache + cacheo por prefetch RSC) |
+| **Lighthouse Accesibilidad = 100** | ✅ | HU-F15 — 100 en las 7 páginas clave (15/07 local) y **100 en producción** (17/07: home, /productos, ficha, /login) |
 | API protegida para que **solo la app React** pueda usarla | ✅ | HU-B14 — app key `X-App-Key` + CORS estricto + throttle (PRs #22/#23, `docs/DECISIONES_SEGURIDAD.md`) |
-| **Auditoría IA** con el prompt obligatorio de la cátedra | 🟡 Hecha 16/07 | HT-01 — `docs/AUDITORIA_IA.md` (70 hallazgos, issues #10–#16); re-correr al cierre: se defiende el **último** resultado |
+| **Auditoría IA** con el prompt obligatorio de la cátedra | ✅ v1 16/07 + v2 18/07 | HT-01 — v1: `docs/AUDITORIA_IA.md` (70 hallazgos, issues #10–#16); re-auditoría de cierre: `docs/AUDITORIA_IA_V2.md` (20 hallazgos, sin Críticas/Altas) — el **último** resultado, que es el que se defiende |
 | Defensa con todos los integrantes | — | Coordinar día y hora con la cátedra |
 
 ## Resumen priorizado
@@ -493,7 +493,7 @@ Consecuencias concretas:
 - [x] Rutas con datos personales/volátiles (`/carrito`, `/checkout`, `/cuenta/*`, `/login`, `/registro`) **no** se cachean; la API sigue sin cachearse (stock/precios frescos cuando hay red).
 - [x] Versión de cache subida a `v2`, separada en tres caches (`static`/`pages`/`images`); `activate` borra cualquier cache viejo.
 - [x] **Mejora v3 (17/07)**: las navegaciones SPA del App Router no son `navigate` (son fetches RSC), así que las páginas navegadas con clicks no quedaban cacheadas — offline solo se veía la página de entrada. Ahora: (a) se precachean `/` y `/productos` al instalar (el catálogo se ve offline aunque nunca se haya visitado), y (b) cada fetch/prefetch RSC de una ruta pública dispara el cacheo en segundo plano de su HTML — con solo ver la grilla, las fichas visibles quedan disponibles offline.
-- [ ] Verificado en Android real: visitar productos con red → modo avión → home, grilla y fichas vistas se ven; una página no cacheada muestra "Sin conexión".
+- [x] Verificado en Android real (17/07): visitar productos con red → modo avión → home, grilla y fichas vistas se ven; una página no cacheada muestra "Sin conexión".
 
 ---
 
@@ -535,14 +535,14 @@ Consecuencias concretas:
 
 Pasos concretos para confirmar que todo funciona de punta a punta, en orden:
 
-1. [ ] Pushear el merge de `desarrollo` en `pancho/feat/final-2026` y esperar el redeploy de Vercel (front y back).
-2. [ ] **Push en Android real**: abrir `https://aplicaciones-web-tienda-rho.vercel.app`, activar "Recibir novedades" en el footer → enviar una notificación desde `/admin/notifications` del panel → debe llegar **con el navegador cerrado**, y al tocarla abrir la ruta indicada.
-3. [ ] **Offline en Android real**: navegar home + `/productos` + alguna ficha → modo avión → volver a abrirlas: deben renderizar desde caché (páginas no visitadas caen al fallback `/offline`).
-4. [ ] **Lighthouse en producción**: DevTools → Lighthouse → Accessibility (modo incógnito) sobre home, `/productos` y una ficha del dominio real → debe repetir el 100.
+1. [x] ~~Pushear el merge de `desarrollo`~~ — mergeado a `main` vía PR #17 (17/07); producción deploya automáticamente con cada merge a `main`.
+2. [x] **Push en Android real** ✅ 17/07: llega con el navegador cerrado (tras fix urgency/TTL) y al tocarla abre la ruta indicada.
+3. [x] **Offline en Android real** ✅ 17/07: home, grilla y fichas vistas se ven en modo avión (SW v3).
+4. [x] **Lighthouse en producción** ✅ 17/07: 100 en home, `/productos`, ficha y `/login` del dominio real.
 5. [ ] Spot-check de accesibilidad logueado (carrito con items, checkout, cuenta) — misma paleta/componentes, no se esperan diferencias.
 6. [ ] **iOS** (si hay iPhone disponible): "Agregar a pantalla de inicio" + modo standalone (HU-F11).
-7. [ ] Cerrar HT-01: postura crítica de las categorías restantes (issues #11–#15) + lista de aprendizajes + **re-correr la auditoría** y guardar el último resultado.
-8. [ ] Mergear PR #17 a `main` y coordinar defensa con la cátedra (todos los integrantes).
+7. [x] Cerrar HT-01: ~~postura crítica de las categorías restantes + lista de aprendizajes~~ ✅ (documento maestro: `docs/DEFENSA-FINAL.md`; issues #10–#15 justificados) + ~~re-correr la auditoría~~ ✅ 18/07 → `docs/AUDITORIA_IA_V2.md` (70 → 20 hallazgos, sin Críticas/Altas). Queda: cerrar el issue #16 con este resultado.
+8. [ ] Coordinar defensa con la cátedra (todos los integrantes).
 
 ---
 
